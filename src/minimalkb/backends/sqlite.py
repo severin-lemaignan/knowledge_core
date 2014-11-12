@@ -113,8 +113,9 @@ class SQLStore:
         query = '''
                 SELECT subject, predicate, object 
                 FROM %s
-                WHERE (subject=:res OR predicate=:res OR object IN ('"%s"',:res)
-                AND model IN (%s))''' % (TRIPLETABLENAME, resource, ",".join([":m%s" % i for i in range(len(models))]))
+                WHERE ((subject=:res OR predicate=:res OR object IN ('"%s"',:res))
+                       AND model IN (%s))''' % (TRIPLETABLENAME, resource, ",".join([":m%s" % i for i in range(len(models))]))
+        
         with self.conn:
             res = self.conn.execute(query, params)
             return [[row[0], row[1], row[2]] for row in res]
