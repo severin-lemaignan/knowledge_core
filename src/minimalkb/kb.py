@@ -230,7 +230,7 @@ class MinimalKB:
     @api
     def lookup(self, resource, models = None):
         logger.info("Lookup for " + str(resource) + \
-                    " in " + (str(models) if models else "any model."))
+                    " in " + (str(models) if models else "default model."))
         models = self.normalize_models(models)
         about =  self.store.about(resource, models)
         if not about:
@@ -307,7 +307,7 @@ class MinimalKB:
     @api
     def exist(self, stmts, models = None):
         logger.info("Checking existence of " + str(stmts) + \
-                    " in " + (str(models) if models else "any model."))
+                    " in " + (str(models) if models else "default model."))
         stmts = [parse_stmt(s) for s in stmts]
 
         return self.store.has(stmts,
@@ -452,7 +452,7 @@ class MinimalKB:
         patterns = [parse_stmt(p) for p in patterns]
 
         logger.info("Registering a new event: %s %s for %s on %s" % (type, trigger, var, patterns) + \
-                    " in " + (str(models) if models else "any model."))
+                    " in " + (str(models) if models else "default model."))
 
         event = Event(self, type, trigger, var, patterns, models)
 
@@ -529,7 +529,8 @@ class MinimalKB:
         self._lifespan_manager.join()
 
     def normalize_models(self, models):
-        """ If 'models' is None, [] or contains 'all', then
+        """ If 'models' is None or [], returns the default model (ie, the
+        base model of the robot). If 'models' is 'all', then
         returns the set of all models known to the KB.
         Else, add the models to the list of all models, and return
         only the models passed as argument.
@@ -544,7 +545,7 @@ class MinimalKB:
                 self.models = self.models | set(models)
                 return frozenset(models)
         else:
-            return self.models
+            return {DEFAULT_MODEL}
 
     def execute(self, client, name, *args, **kwargs):
 
