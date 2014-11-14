@@ -244,7 +244,7 @@ class MinimalKB:
         Returns a dictionary containing the following details on a given resource:
         - 'name': resource label, if any, literal value for literals, else resource ID.
         - 'id': resource ID or 'literal' for literals
-        - 'type': one of ['instance', 'class', 'object_property', 'datatype_property', 'undefined']
+        - 'type': one of ['instance', 'class', 'object_property', 'datatype_property', 'undecided']
         - 'sameAs': list of equivalent classes or instances, if any
         - 'attributes':
             - for classes, a list of three dictionaries:

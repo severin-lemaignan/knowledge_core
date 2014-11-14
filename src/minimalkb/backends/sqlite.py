@@ -179,8 +179,8 @@ class SQLStore:
             else:
                 return "object_property"
 
-        logger.warn("Concept <%s> has undefined type." % concept)
-        return "undefined"
+        logger.warn("Concept <%s> has undecidable type." % concept)
+        return "undecided"
 
 
     def classesof(self, concept, direct, models = []):
