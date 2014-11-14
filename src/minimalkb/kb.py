@@ -236,7 +236,18 @@ class MinimalKB:
         if not about:
             return []
 
-        return [(resource, self.store.typeof(resource, models) )]
+        matching_concepts = set()
+
+        for s, p, o in about:
+            if s == resource or \
+               p == resource or \
+               o == resource:
+                matching_concepts.add(resource)
+            if resource in o and \
+               p == "rdfs:label": # resource is the label -> add s
+                matching_concepts.add(s)
+
+        return [(concept, self.store.typeof(concept, models) ) for concept in matching_concepts]
 
     @api
     def details(self, resource, models = None):

@@ -101,15 +101,36 @@ class TestSequenceFunctions(unittest.TestCase):
     def test_lookup(self):
         self.assertItemsEqual(self.kb.lookup('alfred'), [])
 
+        self.kb += ["alfred rdfs:label \"alfred\""]
+        self.assertItemsEqual(self.kb.lookup('alfred'), [['alfred', 'undecided']])
+        self.assertItemsEqual(self.kb.lookup('rdfs:label'), [['rdfs:label', 'datatype_property']])
+ 
         self.kb += ["alfred rdf:type Robot"]
         self.assertItemsEqual(self.kb.lookup('alfred'), [['alfred', 'instance']])
         self.assertItemsEqual(self.kb.lookup('Robot'), [['Robot', 'class']])
+        self.assertItemsEqual(self.kb.lookup('rdf:type'), [['rdf:type', 'object_property']])
+
+        # The following test would fail: alfred would still be recognized as an instance due to memoization.
+        # I'm not sure what is the best strategy here, but likely to reset memoizers in case of a non-monotomic
+        # modification (ie, retractation or update)
+        #self.kb -= ["alfred rdf:type Robot"]
+        #self.assertItemsEqual(self.kb.lookup('alfred'), [['alfred', 'undecided']])
 
         self.kb += ["alfred likes icecream"]
         self.assertItemsEqual(self.kb.lookup('likes'), [['likes', 'object_property']])
-
+        self.assertItemsEqual(self.kb.lookup('alfred'), [['alfred', 'instance']])
+ 
         self.kb += ["nono rdfs:label \"alfred\""]
         self.assertItemsEqual(self.kb.lookup('alfred'), [['alfred', 'instance'], ['nono', 'undecided']])
+
+        self.kb += ["gerard rdfs:label \"likes\""]
+        self.assertItemsEqual(self.kb.lookup('likes'), [['likes', 'object_property'], ['gerard', 'undecided']])
+
+
+        self.kb += ["gerard age 18"]
+        self.assertItemsEqual(self.kb.lookup('age'), [['age', 'datatype_property']])
+
+
 
     def test_literals(self):
 
