@@ -10,7 +10,13 @@ def memoize(obj):
     def memoizer(*args, **kwargs):
         key = str(args) + str(kwargs)
         if key not in cache:
-            cache[key] = obj(*args, **kwargs)
+            res = obj(*args, **kwargs)
+
+            # never memoize undecided reasoning result: we want to re-evaluate everytime
+            if res == "undecided":
+                return res
+
+            cache[key] = res
         return cache[key]
     return memoizer
 
