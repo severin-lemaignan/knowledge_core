@@ -40,7 +40,17 @@ class SQLStore:
             self.conn.execute("DROP TABLE %s" % TRIPLETABLENAME)
 
         self.create_kb()
+        self.clear_cache()
+
         self.onupdate()
+
+    def clear_cache(self):
+        """ Clears all the memoize results (ie, clears the cache of all methods
+        using the decorator @memoize)
+        """
+        for obj in [getattr(self, name) for name in dir(self)]:
+            if hasattr(obj, "cache"):
+                obj.cache.clear()
 
     def add(self, stmts, model = DEFAULT_MODEL, lifespan = 0, replace = False):
 
