@@ -50,7 +50,12 @@ class SQLiteSimpleRDFSReasoner:
 
 
         starttime = time.time()
-        self.copydb()
+        ok = self.copydb()
+        if not ok:
+            logger.info("The reasoner couldn't copy the fact database. Probably"
+                    "due to the database being cleared. Skipping"
+                    "classification.")
+            return
 
         models = self.get_models()
         newstmts = []
@@ -169,12 +174,18 @@ class SQLiteSimpleRDFSReasoner:
     def copydb(self):
         """ Tried several other options (with ATTACH DATABASE -> that would likely lock the shared database as well, with iterdump, we miss the 'OR IGNORE')
         """
-        res = self.shareddb.execute("SELECT * FROM triples")
-        with self.db:
-            self.db.execute("DELETE FROM triples")
-            self.db.executemany('''INSERT INTO triples
-                               VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
-                               res)
+        try:
+            res = self.shareddb.execute("SELECT * FROM triples")
+            with self.db:
+                self.db.execute("DELETE FROM triples")
+                self.db.executemany('''INSERT INTO triples
+                                VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
+                                res)
+            return True
+        except sqlite3.OperationalError: 
+            # can happen if the main application is in the middle of clearing the
+            # database (ie, DROP triples)
+            return False
 
     def update_shared_db(self, stmts):
 
