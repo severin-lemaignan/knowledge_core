@@ -311,9 +311,11 @@ class MinimalKB:
         return self.details(concept)
 
     @api
-    def check(self, *args):
-        logger.warn("'check' has been invoked, but no classification supported. Returning always True.")
-        return True
+    def check(self, stmts, models = None):
+        logger.warn("'check' has been invoked, but no classification supported."
+                "Returning true if the statements are already asserted/inferred,"
+                "false otherwise (ie, calls 'exist' instead of 'check').")
+        return self.exist(stmts, models)
 
     @api
     def exist(self, stmts, models = None):
