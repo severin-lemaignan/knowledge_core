@@ -234,6 +234,7 @@ class MinimalKB:
         models = self.normalize_models(models)
         about =  self.store.about(resource, models)
         if not about:
+            logger.info("'%s' not found." % str(resource))
             return []
 
         matching_concepts = set()
@@ -247,7 +248,9 @@ class MinimalKB:
                p == "rdfs:label": # resource is the label -> add s
                 matching_concepts.add(s)
 
-        return [(concept, self.store.typeof(concept, models) ) for concept in matching_concepts]
+        res = [(concept, self.store.typeof(concept, models) ) for concept in matching_concepts]
+        logger.info("Found: " + str(res))
+        return res
 
     @api
     def details(self, resource, models = None):
@@ -323,8 +326,11 @@ class MinimalKB:
                     " in " + (str(models) if models else "default model."))
         stmts = [parse_stmt(s) for s in stmts]
 
-        return self.store.has(stmts,
+        res = self.store.has(stmts,
                               self.normalize_models(models))
+
+        logger.info("It exists" if res else "It does not exist.")
+        return res
 
     @api
     def revise(self, stmts, policy):
