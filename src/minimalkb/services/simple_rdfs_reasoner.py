@@ -61,10 +61,11 @@ class SQLiteSimpleRDFSReasoner:
         newstmts = []
 
         for model in models:
-            rdftype, subclassof = self.get_missing_taxonomy_stmts(model)
+            rdftype, subclassof, equivalentclasses = self.get_missing_taxonomy_stmts(model)
 
             newstmts += [(i, "rdf:type", c, model) for i,c in rdftype]
             newstmts += [(cc, "rdfs:subClassOf", cp, model) for cc,cp in subclassof]
+            newstmts += [(eq1, "owl:equivalentClass", eq2, model) for eq1,eq2 in equivalentclasses]
 
             newstmts += self.symmetric_statements(model)
 
@@ -119,41 +120,68 @@ class SQLiteSimpleRDFSReasoner:
             equi2.equivalents.add(equi1)
 
 
-        return onto, rdftype, subclassof
+        return onto, rdftype, subclassof, equivalentclasses
 
     def get_missing_taxonomy_stmts(self, model = DEFAULT_MODEL):
 
-        onto, rdftype, subclassof = self.get_onto(self.db, model)
+        onto, rdftype, subclassof, equivalentclasses = self.get_onto(self.db, model)
 
         newrdftype = set()
         newsubclassof = set()
-
+        newequivalentclasses=set()
+        
+        
         def addinstance(instance, cls):
             newrdftype.add((instance, cls.name))
             for p in cls.parents:
                 addinstance(instance, p)
 
+        def addoverclassof(cls, ocls):
+            newsubclassof.add((cls.name, ocls.name))
+            ocls.children.add(cls)
+            cls.parents.add(ocls)
+            for c in frozenset(cls.children):
+                addoverclassof(c, cls)
+                
         def addsubclassof(scls, cls):
             newsubclassof.add((scls.name, cls.name))
-            for p in cls.parents:
+            cls.children.add(scls)
+            scls.parents.add(cls)
+            for p in frozenset(cls.parents):
                 addsubclassof(scls, p)
+                
+        def addequivalent(cls, equ, memory):
+            if equ not in memory:
+                memory.add(equ)
+                newequivalentclasses.add((cls.name, equ.name))
+                cls.equivalents.add(equ)
+                equ.equivalents.add(cls)
+                for e in frozenset(equ.equivalents):
+                    addequivalent(cls, e, memory)
 
         for name, cls in onto.items():
-            for i in cls.instances:
-                addinstance(i, cls)
-            for p in cls.parents:
+            for p in frozenset(cls.parents):
                 addsubclassof(cls, p)
-
+            for i in cls.instances: 
+                addinstance(i, cls)
+            
+            memory = set()
+            for equivalent in frozenset(cls.equivalents):
+                addequivalent(cls, equivalent, memory)
             for equivalent in cls.equivalents:
+                for p in frozenset(cls.parents):
+                    addsubclassof(equivalent, p)
+                for c in frozenset(cls.children):
+                    addoverclassof(c, equivalent)
                 for i in cls.instances:
                     addinstance(i, equivalent)
-                for p in cls.parents:
-                    addsubclassof(equivalent, p)
 
-
+                
+        
         newrdftype -= rdftype
         newsubclassof -= subclassof
-        return newrdftype, newsubclassof
+        newequivalentclasses -= equivalentclasses
+        return newrdftype, newsubclassof, newequivalentclasses
 
     def symmetric_statements(self, model):
 
