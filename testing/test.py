@@ -87,17 +87,6 @@ class TestSequenceFunctions(unittest.TestCase):
         self.assertFalse('alfred likes icecream' in self.kb)
         self.assertFalse('alfred' in self.kb)
 
-    def test_existence_with_inference(self):
-        """ Requires a RDFS reasoner to run.
-        """
-        self.kb += ["alfred rdf:type Human", "Human rdfs:subClassOf Animal"]
-        time.sleep(REASONING_DELAY)
-        self.assertTrue('alfred rdf:type Animal' in self.kb)
-
-        self.kb += ["Animal rdfs:subClassOf Thing"]
-        time.sleep(REASONING_DELAY)
-        self.assertTrue('alfred rdf:type Thing' in self.kb)
-
     def test_lookup(self):
         self.assertItemsEqual(self.kb.lookup('alfred'), [])
 
@@ -380,36 +369,6 @@ class TestSequenceFunctions(unittest.TestCase):
         self.assertEqual(id, evtid)
         self.assertItemsEqual(value, [u"alfred"])
 
-    def test_complex_events_rdfs(self):
-        """ Requires a RDFS reasoner to run.
-        """
-        evtid = self.kb.subscribe(["?a desires ?act", "?act rdf:type Action"], var = "a")
-
-        # should not trigger an event
-        self.kb += ["alfred desires ragnagna"]
-        time.sleep(0.1)
-
-        with self.assertRaises(Empty):
-            self.kb.events.get_nowait()
-
-        # should not trigger an event
-        self.kb += ["ragnagna rdf:type Zorro"]
-        time.sleep(0.1)
-
-        with self.assertRaises(Empty):
-            self.kb.events.get_nowait()
-
-        # should trigger an event
-        self.kb += ["Zorro rdfs:subClassOf Action"]
-        time.sleep(REASONING_DELAY)
-        # required to ensure the event is triggered after classification!
-        self.kb += ["nop nop nop"]
-        time.sleep(0.1)
-
-        id, value = self.kb.events.get_nowait()
-        self.assertEqual(id, evtid)
-        self.assertItemsEqual(value, [u"alfred"])
-
     def test_taxonomy_walking(self):
 
         self.assertFalse(self.kb.classesof("john"))
@@ -419,19 +378,6 @@ class TestSequenceFunctions(unittest.TestCase):
         self.assertItemsEqual(self.kb.classesof("john"), [u'Human', u'Genius'])
         self.kb -= ["john rdf:type Human"]
         self.assertItemsEqual(self.kb.classesof("john"), [u'Genius'])
-
-    def test_taxonomy_walking_inheritance(self):
-        """ Requires a RDFS reasoner to run.
-        """
-        self.kb += ["john rdf:type Human"]
-        self.assertItemsEqual(self.kb.classesof("john"), [u'Human'])
-        self.kb += ["Human rdfs:subClassOf Animal"]
-        time.sleep(REASONING_DELAY)
-        self.assertItemsEqual(self.kb.classesof("john"), [u'Human', u'Animal'])
-        self.assertItemsEqual(self.kb.classesof("john", True), [u'Human'])
-        self.kb -= ["john rdf:type Human"]
-        time.sleep(REASONING_DELAY)
-        self.assertFalse(self.kb.classesof("john"))
 
     def test_memory(self):
 
