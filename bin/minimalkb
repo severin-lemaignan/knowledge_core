@@ -108,7 +108,7 @@ if __name__ == '__main__':
                                 help='enables verbose output')
     parser.add_argument('-p', '--port', default=PORT, type=int, nargs='?',
                                 help='port the server listen to.')
-    parser.add_argument('ontology', default="", nargs='?', help="local file or URL of an intial ontology to load")
+    parser.add_argument('ontology', nargs='*', help="Files (OWL, RDF or raw triples) with initial ontologies to load")
 
     args = parser.parse_args()
 

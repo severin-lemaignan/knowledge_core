@@ -119,7 +119,7 @@ class MinimalKB:
     MEMORYPROFILE_DEFAULT = ""
     MEMORYPROFILE_SHORTTERM = "SHORTTERM"
 
-    def __init__(self, filename = None):
+    def __init__(self, filenames = None):
         _api = [getattr(self, fn) for fn in dir(self) if hasattr(getattr(self, fn), "_api")]
         self._api = {fn.__name__:fn for fn in _api}
 
@@ -141,8 +141,9 @@ class MinimalKB:
 
         self.start_services()
 
-        if filename:
-            self.load(filename)
+        if filenames:
+            for filename in filenames:
+                self.load(filename)
 
     @api
     def hello(self):
@@ -155,9 +156,9 @@ class MinimalKB:
 
     @api
     def load(self, filename):
-        logger.info("Loading triples from %s" % filename)
 
-        if hasRDFlib:
+        if hasRDFlib and (filename.endswith("owl") or filename.endswith("rdf")):
+            logger.info("Trying to load RDF file %s..." % filename)
             g = rdflib.Graph()
             nsm = rdflib.namespace.NamespaceManager(g)
             #namespace_manager.bind(DEFAULT_NAMESPACE[0], self.default_ns)
@@ -190,6 +191,13 @@ class MinimalKB:
             logger.debug("Importing:\n%s" % triples)
             self.store.add(triples)
         else:
+            if filename.endswith("owl") or filename.endswith("rdf"):
+                logger.error("Trying to load a RDF file, but RDFlib is not available"
+                             "Install first RDFlib for Python. Ignoring the file for "
+                             "now.")
+                return
+
+            logger.info("Trying to load raw triples from %s..." % filename)
             with open(filename, 'r') as triples:
                 self.store.add([shlex.split(s.strip()) for s in triples.readlines()])
 
