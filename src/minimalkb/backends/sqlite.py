@@ -25,7 +25,7 @@ def sqlhash(s,p,o,model):
 class SQLStore:
 
     def __init__(self):
-        self.conn = sqlite3.connect('kb.db')
+        self.conn = sqlite3.connect('kb.sqlite')
         self.create_kb()
 
         self._functionalproperties = frozenset()
