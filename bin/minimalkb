@@ -13,7 +13,6 @@ import traceback
 
 import json
 
-from minimalkb.kb import MinimalKB, KbServerError
 
 PORT = 6969
 
@@ -125,6 +124,10 @@ if __name__ == '__main__':
     formatter = logging.Formatter('%(asctime)-15s: %(message)s')
     console.setFormatter(formatter)
     logger.addHandler(console)
+
+
+    # The logging handlers are now setup, import the other minimalkb components
+    from minimalkb.kb import MinimalKB, KbServerError
 
     kb = MinimalKB(args.ontology)
 
