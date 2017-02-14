@@ -476,7 +476,9 @@ class MinimalKB:
     def subscribe(self, type, trigger, var, patterns, models = None):
 
         models = self.normalize_models(models)
-        patterns = [parse_stmt(p) for p in patterns]
+
+        if type not in [Event.NEW_CLASS_INSTANCE, Event.NEW_CLASS_INSTANCE_ONE_SHOT]:
+            patterns = [parse_stmt(p) for p in patterns]
 
         logger.info("Registering a new event: %s %s for %s on %s" % (type, trigger, var, patterns) + \
                     " in " + (str(models) if models else "default model."))
