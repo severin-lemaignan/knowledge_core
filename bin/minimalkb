@@ -20,7 +20,7 @@ class MinimalKBChannel(asynchat.async_chat):
 
     def __init__(self, server, sock, addr, kb):
         asynchat.async_chat.__init__(self, sock)
-        self.set_terminator("#end#")
+        self.set_terminator("#end#".encode("utf-8"))
         self.request = None
         self.data = ""
 
@@ -46,7 +46,7 @@ class MinimalKBChannel(asynchat.async_chat):
             return tokens[0], args, kwargs
 
     def collect_incoming_data(self, data):
-        self.data = self.data + data
+        self.data = self.data + data.decode()
 
     def found_terminator(self):
 
@@ -63,16 +63,16 @@ class MinimalKBChannel(asynchat.async_chat):
 
         raw = ""
         if status == "ok":
-            raw = "ok\n%s\n" % json.dumps(res, ensure_ascii=False).encode("utf8") if res is not None else "ok\n"
+            raw = "ok\n%s\n" % json.dumps(res, ensure_ascii=False) if res is not None else "ok\n"
         elif status == "error":
             raw = "error\nkberror\n%s\n" % str(res)
         elif status == "event":
-            raw = "event\n%s\n%s\n" % (res.id, json.dumps(res.content, ensure_ascii=False).encode("utf8"))
+            raw = "event\n%s\n%s\n" % (res.id, json.dumps(res.content, ensure_ascii=False))
         else:
             raise RuntimeError("Unexpected message status: %s" % status)
 
         logger.debug("Sent message:" + raw)
-        self.push(raw + "#end#\n")
+        self.push((raw + "#end#\n").encode('utf-8'))
 
 
 class MinimalKBServer(asyncore.dispatcher):

@@ -1,6 +1,6 @@
 import logging; logger = logging.getLogger("minimalKB."+__name__);
 
-from Queue import Queue, Empty
+from queue import Queue, Empty
 import json
 import traceback
 
@@ -18,14 +18,14 @@ except ImportError:
     logger.warn("RDFlib not available. You won't be able to load existing ontologies.")
     pass
 
-from exceptions import KbServerError
+from .exceptions import KbServerError
 from minimalkb import __version__
 
-from backends.sqlite import SQLStore
+from .backends.sqlite import SQLStore
 #from backends.rdflib_backend import RDFlibStore
 
-from services.simple_rdfs_reasoner import start_reasoner, stop_reasoner
-from services import lifespan
+from .services.simple_rdfs_reasoner import start_reasoner, stop_reasoner
+from .services import lifespan
 
 def api(fn):
     fn._api = True
@@ -224,7 +224,7 @@ class MinimalKB:
 
     @api
     def methods(self):
-        return self._api.keys()
+        return list(self._api.keys())
 
     @api
     def about(self, resource, models = None):
@@ -351,7 +351,7 @@ class MinimalKB:
           seconds, float
         """
 
-        if isinstance(stmts, (str, unicode)):
+        if isinstance(stmts, str):
             raise KbServerError("A list of statements is expected")
         stmts = [parse_stmt(s) for s in stmts]
 
@@ -568,7 +568,7 @@ class MinimalKB:
             if "all" in models:
                 return frozenset(self.models)
             else:
-                if isinstance(models, (str, unicode)):
+                if isinstance(models, str):
                     models = [models]
                 #add to the set of all models
                 self.models = self.models | set(models)

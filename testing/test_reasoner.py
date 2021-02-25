@@ -1,13 +1,18 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import logging
 import unittest
 import time
-import kb
+try:
+    import kb
+except ImportError:
+    import sys
+    print("You must first install pykb")
+    sys.exit(1)
 from minimalkb import __version__
 
-from Queue import Empty
+from queue import Empty
 
 REASONING_DELAY = 0.2
 
@@ -47,16 +52,16 @@ class TestRDFSReasoner(unittest.TestCase):
 
         id, value = self.kb.events.get_nowait()
         self.assertEqual(id, evtid)
-        self.assertItemsEqual(value, [u"alfred"])
+        self.assertCountEqual(value, [u"alfred"])
 
     def test_taxonomy_walking_inheritance(self):
 
         self.kb += ["john rdf:type Human"]
-        self.assertItemsEqual(self.kb.classesof("john"), [u'Human'])
+        self.assertCountEqual(self.kb.classesof("john"), [u'Human'])
         self.kb += ["Human rdfs:subClassOf Animal"]
         time.sleep(REASONING_DELAY)
-        self.assertItemsEqual(self.kb.classesof("john"), [u'Human', u'Animal'])
-        self.assertItemsEqual(self.kb.classesof("john", True), [u'Human'])
+        self.assertCountEqual(self.kb.classesof("john"), [u'Human', u'Animal'])
+        self.assertCountEqual(self.kb.classesof("john", True), [u'Human'])
         self.kb -= ["john rdf:type Human"]
         time.sleep(REASONING_DELAY)
         self.assertFalse(self.kb.classesof("john"))
@@ -82,7 +87,7 @@ class TestRDFSReasoner(unittest.TestCase):
         time.sleep(REASONING_DELAY)
 
         self.assertTrue('Robot owl:equivalentClass Automaton' in self.kb)
-        self.assertItemsEqual(self.kb.classesof("myself"), [u'Robot', u'Machine', u'Automaton'])
+        self.assertCountEqual(self.kb.classesof("myself"), [u'Robot', u'Machine', u'Automaton'])
         self.assertTrue('PR2 rdfs:subClassOf Robot' in self.kb)
 
     def test_existence_with_inference(self):

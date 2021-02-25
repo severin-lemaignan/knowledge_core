@@ -1,13 +1,19 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import logging
 import unittest
 import time
-import kb
+try:
+    import kb
+except ImportError:
+    import sys
+    print("You must first install pykb")
+    sys.exit(1)
+
 from minimalkb import __version__
 
-from Queue import Empty
+from queue import Empty
 
 REASONING_DELAY = 0.2
 
@@ -50,14 +56,14 @@ class TestSequenceFunctions(unittest.TestCase):
         self.assertFalse(self.kb["* * *"])
         
         self.kb += ["alfred rdf:type Human"]
-        self.assertItemsEqual(self.kb["* * *"], 
+        self.assertCountEqual(self.kb["* * *"], 
                               [['alfred', 'rdf:type', 'Human']])
 
         self.kb -= ["alfred rdf:type Human"]
         self.assertFalse(self.kb["* * *"])
 
         self.kb += ["alfred rdf:type Human", "alfred likes icecream"]
-        self.assertItemsEqual(self.kb["* * *"], 
+        self.assertCountEqual(self.kb["* * *"], 
                               [['alfred', 'likes', 'icecream'],
                                ['alfred', 'rdf:type', 'Human']])
 
@@ -88,36 +94,36 @@ class TestSequenceFunctions(unittest.TestCase):
         self.assertFalse('alfred' in self.kb)
 
     def test_lookup(self):
-        self.assertItemsEqual(self.kb.lookup('alfred'), [])
+        self.assertCountEqual(self.kb.lookup('alfred'), [])
 
         self.kb += ["alfred rdfs:label \"alfred\""]
-        self.assertItemsEqual(self.kb.lookup('alfred'), [['alfred', 'undecided']])
-        self.assertItemsEqual(self.kb.lookup('rdfs:label'), [['rdfs:label', 'datatype_property']])
+        self.assertCountEqual(self.kb.lookup('alfred'), [['alfred', 'undecided']])
+        self.assertCountEqual(self.kb.lookup('rdfs:label'), [['rdfs:label', 'datatype_property']])
  
         self.kb += ["alfred rdf:type Robot"]
-        self.assertItemsEqual(self.kb.lookup('alfred'), [['alfred', 'instance']])
-        self.assertItemsEqual(self.kb.lookup('Robot'), [['Robot', 'class']])
-        self.assertItemsEqual(self.kb.lookup('rdf:type'), [['rdf:type', 'object_property']])
+        self.assertCountEqual(self.kb.lookup('alfred'), [['alfred', 'instance']])
+        self.assertCountEqual(self.kb.lookup('Robot'), [['Robot', 'class']])
+        self.assertCountEqual(self.kb.lookup('rdf:type'), [['rdf:type', 'object_property']])
 
         # The following test would fail: alfred would still be recognized as an instance due to memoization.
         # I'm not sure what is the best strategy here, but likely to reset memoizers in case of a non-monotomic
         # modification (ie, retractation or update)
         #self.kb -= ["alfred rdf:type Robot"]
-        #self.assertItemsEqual(self.kb.lookup('alfred'), [['alfred', 'undecided']])
+        #self.assertCountEqual(self.kb.lookup('alfred'), [['alfred', 'undecided']])
 
         self.kb += ["alfred likes icecream"]
-        self.assertItemsEqual(self.kb.lookup('likes'), [['likes', 'object_property']])
-        self.assertItemsEqual(self.kb.lookup('alfred'), [['alfred', 'instance']])
+        self.assertCountEqual(self.kb.lookup('likes'), [['likes', 'object_property']])
+        self.assertCountEqual(self.kb.lookup('alfred'), [['alfred', 'instance']])
  
         self.kb += ["nono rdfs:label \"alfred\""]
-        self.assertItemsEqual(self.kb.lookup('alfred'), [['alfred', 'instance'], ['nono', 'undecided']])
+        self.assertCountEqual(self.kb.lookup('alfred'), [['alfred', 'instance'], ['nono', 'undecided']])
 
         self.kb += ["gerard rdfs:label \"likes\""]
-        self.assertItemsEqual(self.kb.lookup('likes'), [['likes', 'object_property'], ['gerard', 'undecided']])
+        self.assertCountEqual(self.kb.lookup('likes'), [['likes', 'object_property'], ['gerard', 'undecided']])
 
 
         self.kb += ["gerard age 18"]
-        self.assertItemsEqual(self.kb.lookup('age'), [['age', 'datatype_property']])
+        self.assertCountEqual(self.kb.lookup('age'), [['age', 'datatype_property']])
 
 
 
@@ -159,11 +165,11 @@ class TestSequenceFunctions(unittest.TestCase):
 
         for i, val in enumerate(literals):
             self.kb += ["robert rel%s %s" % (i, val)]
-            self.assertItemsEqual(self.kb.lookup('rel%s'%i), [['rel%s' % i, 'datatype_property']])
+            self.assertCountEqual(self.kb.lookup('rel%s'%i), [['rel%s' % i, 'datatype_property']])
 
         for i, val in enumerate(objects):
             self.kb += ["robert relobj%s %s" % (i, val)]
-            self.assertItemsEqual(self.kb.lookup('relobj%s'%i), [['relobj%s' % i, 'object_property']])
+            self.assertCountEqual(self.kb.lookup('relobj%s'%i), [['relobj%s' % i, 'object_property']])
  
         #for val in malformed:
         #    with self.assertRaises():
@@ -177,44 +183,44 @@ class TestSequenceFunctions(unittest.TestCase):
         self.kb += ["johnny rdf:type Human", "johnny rdfs:label \"A que Johnny\""]
         self.kb += ["alfred rdf:type Human", "alfred likes icecream"]
 
-        self.assertItemsEqual(self.kb.about("Human"), 
+        self.assertCountEqual(self.kb.about("Human"), 
                             [['johnny', 'rdf:type', 'Human'],
                              ['alfred', 'rdf:type', 'Human']])
 
-        self.assertItemsEqual(self.kb["* rdf:type Human"],
+        self.assertCountEqual(self.kb["* rdf:type Human"],
                               ['johnny', 'alfred'])
 
         self.kb -= ["alfred rdf:type Human", "alfred likes icecream"]
 
-        self.assertItemsEqual(self.kb["* rdf:type Human"],
+        self.assertCountEqual(self.kb["* rdf:type Human"],
                               ['johnny'])
 
 
     def test_complex_queries(self):
-        self.assertItemsEqual(self.kb["?agent rdf:type Robot", "?agent desires ?obj"], [])
+        self.assertCountEqual(self.kb["?agent rdf:type Robot", "?agent desires ?obj"], [])
 
         self.kb += ["nono rdf:type Human", "alfred rdf:type Robot"]
-        self.assertItemsEqual(self.kb["* * *"], [["nono", "rdf:type", "Human"], ["alfred", "rdf:type", "Robot"]])
+        self.assertCountEqual(self.kb["* * *"], [["nono", "rdf:type", "Human"], ["alfred", "rdf:type", "Robot"]])
 
         self.kb += ["nono desires jump", "alfred desires oil"]
-        self.assertItemsEqual(self.kb["* * *"], [["nono", "desires", "jump"], ["alfred", "desires", "oil"], ["nono", "rdf:type", "Human"], ["alfred", "rdf:type", "Robot"]])
+        self.assertCountEqual(self.kb["* * *"], [["nono", "desires", "jump"], ["alfred", "desires", "oil"], ["nono", "rdf:type", "Human"], ["alfred", "rdf:type", "Robot"]])
 
         self.kb += ["nono loves icecream"]
-        self.assertItemsEqual(self.kb["?agent desires jump", "?agent loves icecream"], ["nono"])
-        self.assertItemsEqual(self.kb["?agent desires *", "?agent loves icecream"], ["nono"])
+        self.assertCountEqual(self.kb["?agent desires jump", "?agent loves icecream"], ["nono"])
+        self.assertCountEqual(self.kb["?agent desires *", "?agent loves icecream"], ["nono"])
 
         self.kb += ["jump rdf:type Action"]
-        self.assertItemsEqual(self.kb["?agent rdf:type Robot", "?agent desires ?obj"], [{"agent":"alfred", "obj":"oil"}])
-        self.assertItemsEqual(self.kb["?agent desires ?act", "?act rdf:type Action"], [{"agent":"nono", "act":"jump"}])
-        self.assertItemsEqual(self.kb["?agent desires ?obj"], [{"agent":"alfred", "obj":"oil"}, {"agent":"nono", "obj":"jump"}])
+        self.assertCountEqual(self.kb["?agent rdf:type Robot", "?agent desires ?obj"], [{"agent":"alfred", "obj":"oil"}])
+        self.assertCountEqual(self.kb["?agent desires ?act", "?act rdf:type Action"], [{"agent":"nono", "act":"jump"}])
+        self.assertCountEqual(self.kb["?agent desires ?obj"], [{"agent":"alfred", "obj":"oil"}, {"agent":"nono", "obj":"jump"}])
 
     def test_update(self):
         self.kb += ["nono isNice true", "isNice rdf:type owl:FunctionalProperty"]
-        self.assertItemsEqual(self.kb["* isNice true"], ['nono'])
+        self.assertCountEqual(self.kb["* isNice true"], ['nono'])
 
         self.kb += ["nono isNice false"]
         self.assertFalse(self.kb["* isNice true"])
-        self.assertItemsEqual(self.kb["* isNice false"], ['nono'])
+        self.assertCountEqual(self.kb["* isNice false"], ['nono'])
 
     def test_about(self):
         self.kb.add(["nono isNice true"], ["model1"])
@@ -310,7 +316,7 @@ class TestSequenceFunctions(unittest.TestCase):
 
         id, value = self.kb.events.get_nowait()
         self.assertEqual(id, evtid)
-        self.assertItemsEqual(value, [u"alfred"])
+        self.assertCountEqual(value, [u"alfred"])
 
         # should not trigger an event
         self.kb += ["alfred leaves room"]
@@ -340,7 +346,7 @@ class TestSequenceFunctions(unittest.TestCase):
 
         id, value = self.kb.events.get_nowait()
         self.assertEqual(id, evtid)
-        self.assertItemsEqual(value, [u"batman"])
+        self.assertCountEqual(value, [u"batman"])
 
     def test_complex_events(self):
 
@@ -367,17 +373,17 @@ class TestSequenceFunctions(unittest.TestCase):
 
         id, value = self.kb.events.get_nowait()
         self.assertEqual(id, evtid)
-        self.assertItemsEqual(value, [u"alfred"])
+        self.assertCountEqual(value, [u"alfred"])
 
     def test_taxonomy_walking(self):
 
         self.assertFalse(self.kb.classesof("john"))
         self.kb += ["john rdf:type Human"]
-        self.assertItemsEqual(self.kb.classesof("john"), [u'Human'])
+        self.assertCountEqual(self.kb.classesof("john"), [u'Human'])
         self.kb += ["john rdf:type Genius"]
-        self.assertItemsEqual(self.kb.classesof("john"), [u'Human', u'Genius'])
+        self.assertCountEqual(self.kb.classesof("john"), [u'Human', u'Genius'])
         self.kb -= ["john rdf:type Human"]
-        self.assertItemsEqual(self.kb.classesof("john"), [u'Genius'])
+        self.assertCountEqual(self.kb.classesof("john"), [u'Genius'])
 
     def test_memory(self):
 

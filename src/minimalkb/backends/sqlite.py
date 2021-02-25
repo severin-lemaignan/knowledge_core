@@ -4,7 +4,7 @@ DEBUG_LEVEL=logging.DEBUG
 import datetime
 import sqlite3
 
-from sqlite_queries import query, simplequery, matchingstmt
+from .sqlite_queries import query, simplequery, matchingstmt
 from minimalkb.kb import DEFAULT_MODEL
 from minimalkb.helpers import memoize
 

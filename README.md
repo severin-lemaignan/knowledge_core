@@ -23,6 +23,8 @@ formats in the knowledge base.
 Installation
 ------------
 
+**minimalkb only supports Python 3**
+
 ```
 $ git clone https://github.com/severin-lemaignan/minimalkb.git
 $ cd minimalkb
