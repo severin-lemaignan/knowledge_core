@@ -32,7 +32,63 @@ $ python setup.py install
 $ minimalkb
 ```
 
-Run `minimalkb --help` for available options.
+
+Documentation
+-------------
+
+You can use `minimalkb` either as a server, accessible from multiple
+applications (clients), or in *embedded* mode (which does not require to start a
+server process, but is limited to one single component). Note that the embedded
+mode is only available for Python applciations.
+
+In both case, and if your application is written in Python, it is highly recommended
+to use [pykb](https://github.com/severin-lemaignan/pykb) to interact the
+knowledge base.
+
+### Server mode
+
+
+To start the knowledge base as a server, simply type:
+
+```
+$ minimalkb
+```
+
+(run `minimalkb --help` for available options)
+
+Then:
+
+```python
+import kb
+
+with kb.KB() as kb:
+    #...
+```
+
+See usage examples on the [pykb](https://github.com/severin-lemaignan/pykb) page, or in the `minimalkb` [unit-tests](testing).
+
+### Embedded mode
+
+No need to start `minimalkb`. Simply use the following code to start using the
+knowledge base in your code:
+
+```python
+import kb
+
+with kb.KB(embedded=True) as kb:
+    #...
+```
+
+### Interacting with the minimalkb from other languages
+
+- from C++: check [liboro](https://github.com/severin-lemaignan/liboro)
+- from any other language: the communication with the server relies on a simply
+  socket-based text protocol. Feel free to get in touch if you need help to add
+  support for your favourite language!
+
+### How do I get that fancy image on top of the README?
+
+Check [oro-view](https://github.com/severin-lemaignan/oro-view) ;-)
 
 Features
 --------
