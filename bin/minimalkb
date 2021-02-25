@@ -101,7 +101,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='A minimal knowledge base for robots.')
     parser.add_argument('-v', '--version', action='version',
-                       version=version(), help='returns minimalKB version')
+                       version=__version__, help='returns minimalKB version')
     parser.add_argument('-q', '--quiet', action='store_true',
                                 help='be quiet (only errors are reported)')
     parser.add_argument('-d', '--debug', action='store_true',
