@@ -4,6 +4,27 @@ minimalkb API
 Core API
 --------
 
+### Statements
+
+`minimalkb` currently only support binary predicates, using the infix syntax to
+represent symbolic statements: `subject predicate object`.
+For instance: `sky0 hasColor blue`
+
+Statements are represented as a single string, with the subject, predicate and
+object separated by a space character.
+
+Subjects and predicates must by valid OWL identifiers. Objects can be either OWL
+identifiers, or literals. String literals must be surrounded by double quotes.
+
+OWL identifiers might include XML namespaces, separated with a semi colon. For
+instance: `james rdf:type oro:Human`.
+
+A *partial statement* is a statement with a least one unbound member. Unbound
+variable must start with a question mark `?`. For instance: `["?ag sees obj1",
+"?ag rdf:type Human"]`.  Partial statements are masks or patterns, and used as
+such in methods like `find`.
+
+
 ### Models
 
 Several methods take an optional `models` parameter. If set to `None` or to an
