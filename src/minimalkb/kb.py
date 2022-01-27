@@ -186,8 +186,9 @@ class MinimalKB:
         return {"version": __version__}
 
     @api
-    def load(self, filename):
+    def load(self, filename, models=None):
 
+        models = self.normalize_models(models)
         if hasRDFlib and (filename.endswith("owl") or filename.endswith("rdf")):
             logger.info("Trying to load RDF file %s..." % filename)
             g = rdflib.Graph()
@@ -222,7 +223,7 @@ class MinimalKB:
                 triples += [(s, p, o)]
 
             logger.debug("Importing:\n%s" % triples)
-            self.store.add(triples)
+            self.store.add(triples, models)
         else:
             if filename.endswith("owl") or filename.endswith("rdf"):
                 logger.error(
@@ -234,7 +235,9 @@ class MinimalKB:
 
             logger.info("Trying to load raw triples from %s..." % filename)
             with open(filename, "r") as triples:
-                self.store.add([shlex.split(s.strip()) for s in triples.readlines()])
+                self.store.add(
+                    [shlex.split(s.strip()) for s in triples.readlines()], models
+                )
 
     @compat
     @api
