@@ -1,4 +1,6 @@
-import logging; logger = logging.getLogger("minimalKB."+__name__);
+import logging
+
+logger = logging.getLogger("minimalKB." + __name__)
 
 from queue import Queue, Empty
 import json
@@ -13,6 +15,7 @@ hasRDFlib = False
 try:
     import rdflib
     import rdflib.namespace
+
     hasRDFlib = True
 except ImportError:
     logger.warn("RDFlib not available. You won't be able to load existing ontologies.")
@@ -22,24 +25,30 @@ from .exceptions import KbServerError
 from minimalkb import __version__
 
 from .backends.sqlite import SQLStore
-#from backends.rdflib_backend import RDFlibStore
+
+# from backends.rdflib_backend import RDFlibStore
 
 from .services.simple_rdfs_reasoner import start_reasoner, stop_reasoner
 from .services import lifespan
+
 
 def api(fn):
     fn._api = True
     return fn
 
+
 def compat(fn):
     fn._compat = True
     return fn
+
 
 def parse_stmt(stmt):
 
     tokens = stmt.split()
     if len(tokens) < 3:
-        logger.error("Error while parsing the statement: %s. Only 2 tokens found" % stmt)
+        logger.error(
+            "Error while parsing the statement: %s. Only 2 tokens found" % stmt
+        )
         raise RuntimeError("Malformed statement <%s>" % stmt)
 
     return tokens[0], tokens[1], " ".join(tokens[2:])
@@ -58,11 +67,15 @@ class Event:
         if type == Event.NEW_CLASS_INSTANCE:
             self.type = Event.NEW_INSTANCE
             self.var = "?instance"
-            self.patterns = [parse_stmt("?instance rdf:type %s" % klass[0]) for klass in patterns]
+            self.patterns = [
+                parse_stmt("?instance rdf:type %s" % klass[0]) for klass in patterns
+            ]
         elif type == Event.NEW_CLASS_INSTANCE_ONE_SHOT:
             self.type = Event.NEW_INSTANCE_ONE_SHOT
             self.var = "?instance"
-            self.patterns = [parse_stmt("?instance rdf:type %s" % klass[0]) for klass in patterns]
+            self.patterns = [
+                parse_stmt("?instance rdf:type %s" % klass[0]) for klass in patterns
+            ]
         else:
             self.type = type
             self.var = var
@@ -71,11 +84,15 @@ class Event:
         self.trigger = trigger
         self.models = models
 
-        self.id =  "evt_" + str(hash(self.type + \
-                    self.trigger + \
-                    (self.var if self.var else "") + \
-                    str(sorted(self.patterns)) + \
-                    str(sorted(self.models))))
+        self.id = "evt_" + str(
+            hash(
+                self.type
+                + self.trigger
+                + (self.var if self.var else "")
+                + str(sorted(self.patterns))
+                + str(sorted(self.models))
+            )
+        )
 
         self.content = None
 
@@ -83,8 +100,12 @@ class Event:
 
         self.previous_instances = set()
         if type in [Event.NEW_INSTANCE, Event.NEW_INSTANCE_ONE_SHOT]:
-            instances = self.kb.store.query([self.var], self.patterns, frozenset(self.models))
-            logger.debug("Creating a NEW_INSTANCE event with initial instances %s"%instances)
+            instances = self.kb.store.query(
+                [self.var], self.patterns, frozenset(self.models)
+            )
+            logger.debug(
+                "Creating a NEW_INSTANCE event with initial instances %s" % instances
+            )
             self.previous_instances = set(instances)
 
     def __hash__(self):
@@ -98,20 +119,23 @@ class Event:
             self.valid = False
 
         if self.type in [Event.NEW_INSTANCE, Event.NEW_INSTANCE_ONE_SHOT]:
-            instances = set(self.kb.store.query([self.var], self.patterns, frozenset(self.models)))
+            instances = set(
+                self.kb.store.query([self.var], self.patterns, frozenset(self.models))
+            )
             newinstances = instances - self.previous_instances
 
             # previous_instances must be set to the current set of matching instance
-            # else we won't trigger events when an instance disappear and 
+            # else we won't trigger events when an instance disappear and
             # re-appear later.
             self.previous_instances = instances
 
             if not newinstances:
                 return False
 
-            self.content = [i for i in newinstances] # for some reason, calling list() does not work
+            self.content = [
+                i for i in newinstances
+            ]  # for some reason, calling list() does not work
             return True
-
 
 
 class MinimalKB:
@@ -119,19 +143,26 @@ class MinimalKB:
     MEMORYPROFILE_DEFAULT = ""
     MEMORYPROFILE_SHORTTERM = "SHORTTERM"
 
-    def __init__(self, filenames = None):
-        _api = [getattr(self, fn) for fn in dir(self) if hasattr(getattr(self, fn), "_api")]
-        self._api = {fn.__name__:fn for fn in _api}
+    def __init__(self, filenames=None):
+        _api = [
+            getattr(self, fn) for fn in dir(self) if hasattr(getattr(self, fn), "_api")
+        ]
+        self._api = {fn.__name__: fn for fn in _api}
 
         self.store = SQLStore()
-        #self.store = RDFlibStore()
+        # self.store = RDFlibStore()
 
         self.models = {DEFAULT_MODEL}
 
-        apilist = [key + (" (compatibility)" if hasattr(val, "_compat") else "") for key, val in self._api.items()]
+        apilist = [
+            key + (" (compatibility)" if hasattr(val, "_compat") else "")
+            for key, val in self._api.items()
+        ]
 
-        logger.debug("Initializing the MinimalKB with the following API: \n\t- " + \
-                "\n\t- ".join(apilist))
+        logger.debug(
+            "Initializing the MinimalKB with the following API: \n\t- "
+            + "\n\t- ".join(apilist)
+        )
 
         self.incomingrequests = Queue()
         self.requestresults = {}
@@ -161,16 +192,18 @@ class MinimalKB:
             logger.info("Trying to load RDF file %s..." % filename)
             g = rdflib.Graph()
             nsm = rdflib.namespace.NamespaceManager(g)
-            #namespace_manager.bind(DEFAULT_NAMESPACE[0], self.default_ns)
+            # namespace_manager.bind(DEFAULT_NAMESPACE[0], self.default_ns)
             g.parse(filename)
             triples = []
-            for s,p,o in g:
+            for s, p, o in g:
 
-                #skip blank nodes
-                if  isinstance(s, rdflib.term.BNode) or \
-                    isinstance(p, rdflib.term.BNode) or \
-                    isinstance(o, rdflib.term.BNode):
-                        continue
+                # skip blank nodes
+                if (
+                    isinstance(s, rdflib.term.BNode)
+                    or isinstance(p, rdflib.term.BNode)
+                    or isinstance(o, rdflib.term.BNode)
+                ):
+                    continue
                 try:
                     s = nsm.qname(s)
                 except:
@@ -186,19 +219,21 @@ class MinimalKB:
                         o = nsm.qname(o)
                 except:
                     pass
-                triples += [(s,p,o)]
+                triples += [(s, p, o)]
 
             logger.debug("Importing:\n%s" % triples)
             self.store.add(triples)
         else:
             if filename.endswith("owl") or filename.endswith("rdf"):
-                logger.error("Trying to load a RDF file, but RDFlib is not available"
-                             "Install first RDFlib for Python. Ignoring the file for "
-                             "now.")
+                logger.error(
+                    "Trying to load a RDF file, but RDFlib is not available"
+                    "Install first RDFlib for Python. Ignoring the file for "
+                    "now."
+                )
                 return
 
             logger.info("Trying to load raw triples from %s..." % filename)
-            with open(filename, 'r') as triples:
+            with open(filename, "r") as triples:
                 self.store.add([shlex.split(s.strip()) for s in triples.readlines()])
 
     @compat
@@ -227,20 +262,24 @@ class MinimalKB:
         return list(self._api.keys())
 
     @api
-    def about(self, resource, models = None):
+    def about(self, resource, models=None):
         return self.store.about(resource, self.normalize_models(models))
 
     @compat
     @api
     def lookupForAgent(self, agent, resource):
-        return self.lookup(resource, models = [agent])
+        return self.lookup(resource, models=[agent])
 
     @api
-    def lookup(self, resource, models = None):
-        logger.info("Lookup for " + str(resource) + \
-                    " in " + (str(models) if models else "default model."))
+    def lookup(self, resource, models=None):
+        logger.info(
+            "Lookup for "
+            + str(resource)
+            + " in "
+            + (str(models) if models else "default model.")
+        )
         models = self.normalize_models(models)
-        about =  self.store.about(resource, models)
+        about = self.store.about(resource, models)
         if not about:
             logger.info("'%s' not found." % str(resource))
             return []
@@ -248,20 +287,20 @@ class MinimalKB:
         matching_concepts = set()
 
         for s, p, o in about:
-            if s == resource or \
-               p == resource or \
-               o == resource:
+            if s == resource or p == resource or o == resource:
                 matching_concepts.add(resource)
-            if resource in o and \
-               p == "rdfs:label": # resource is the label -> add s
+            if resource in o and p == "rdfs:label":  # resource is the label -> add s
                 matching_concepts.add(s)
 
-        res = [(concept, self.store.typeof(concept, models) ) for concept in matching_concepts]
+        res = [
+            (concept, self.store.typeof(concept, models))
+            for concept in matching_concepts
+        ]
         logger.info("Found: " + str(res))
         return res
 
     @api
-    def details(self, resource, models = None):
+    def details(self, resource, models=None):
         """
         Returns a dictionary containing the following details on a given resource:
         - 'name': resource label, if any, literal value for literals, else resource ID.
@@ -287,33 +326,49 @@ class MinimalKB:
         if res["type"] == "class":
             res["attributes"] = []
             res["attributes"].append(
-                    {"name": "Parents",
-                     "id": "superClasses", 
-                     "values":
-                        [{"id":r, "name": self.store.label(r, models)}  for r in self.store.superclassesof(resource, True, models)]
-                    })
+                {
+                    "name": "Parents",
+                    "id": "superClasses",
+                    "values": [
+                        {"id": r, "name": self.store.label(r, models)}
+                        for r in self.store.superclassesof(resource, True, models)
+                    ],
+                }
+            )
 
             res["attributes"].append(
-                    {"name": "Children",
-                     "id": "subClasses", 
-                     "values":
-                        [{"id":r, "name": self.store.label(r, models)}  for r in self.store.subclassesof(resource, True, models)]
-                    })
+                {
+                    "name": "Children",
+                    "id": "subClasses",
+                    "values": [
+                        {"id": r, "name": self.store.label(r, models)}
+                        for r in self.store.subclassesof(resource, True, models)
+                    ],
+                }
+            )
 
             res["attributes"].append(
-                    {"name": "Instances",
-                     "id": "instances", 
-                     "values":
-                        [{"id":r, "name": self.store.label(r, models)}  for r in self.store.instancesof(resource, True, models)]
-                    })
+                {
+                    "name": "Instances",
+                    "id": "instances",
+                    "values": [
+                        {"id": r, "name": self.store.label(r, models)}
+                        for r in self.store.instancesof(resource, True, models)
+                    ],
+                }
+            )
 
         elif res["type"] == "instance":
             res["attributes"] = [
-                    {"name": "Classes",
-                     "id": "classes", 
-                     "values":
-                        [{"id":r, "name": self.store.label(r, models)}  for r in self.store.classesof(resource, True, models)]
-                    }]
+                {
+                    "name": "Classes",
+                    "id": "classes",
+                    "values": [
+                        {"id": r, "name": self.store.label(r, models)}
+                        for r in self.store.classesof(resource, True, models)
+                    ],
+                }
+            ]
         return res
 
     @compat
@@ -322,20 +377,25 @@ class MinimalKB:
         return self.details(concept)
 
     @api
-    def check(self, stmts, models = None):
-        logger.warn("'check' has been invoked, but no classification supported."
-                "Returning true if the statements are already asserted/inferred,"
-                "false otherwise (ie, calls 'exist' instead of 'check').")
+    def check(self, stmts, models=None):
+        logger.warn(
+            "'check' has been invoked, but no classification supported."
+            "Returning true if the statements are already asserted/inferred,"
+            "false otherwise (ie, calls 'exist' instead of 'check')."
+        )
         return self.exist(stmts, models)
 
     @api
-    def exist(self, stmts, models = None):
-        logger.info("Checking existence of " + str(stmts) + \
-                    " in " + (str(models) if models else "default model."))
+    def exist(self, stmts, models=None):
+        logger.info(
+            "Checking existence of "
+            + str(stmts)
+            + " in "
+            + (str(models) if models else "default model.")
+        )
         stmts = [parse_stmt(s) for s in stmts]
 
-        res = self.store.has(stmts,
-                              self.normalize_models(models))
+        res = self.store.has(stmts, self.normalize_models(models))
 
         logger.info("It exists" if res else "It does not exist.")
         return res
@@ -357,62 +417,71 @@ class MinimalKB:
 
         if type(policy) != dict:
             raise KbServerError("Expected a dictionary as policy")
-        models = self.normalize_models(policy.get('models', []))
+        models = self.normalize_models(policy.get("models", []))
 
         if policy["method"] in ["add", "safe_add"]:
 
-            lifespan = policy.get('lifespan', 0)
+            lifespan = policy.get("lifespan", 0)
 
-            logger.info("Adding to " + str(list(models)) + ":\n\t- " + "\n\t- ".join([str(s) for s in stmts]) + \
-                    (" (lifespan: %ssec)"%lifespan if lifespan else ""))
+            logger.info(
+                "Adding to "
+                + str(list(models))
+                + ":\n\t- "
+                + "\n\t- ".join([str(s) for s in stmts])
+                + (" (lifespan: %ssec)" % lifespan if lifespan else "")
+            )
             for model in models:
                 self.store.add(stmts, model, lifespan=lifespan)
 
         if policy["method"] == "retract":
-            logger.info("Deleting from " + str(list(models)) +":\n\t- " + "\n\t- ".join([str(s) for s in stmts]))
+            logger.info(
+                "Deleting from "
+                + str(list(models))
+                + ":\n\t- "
+                + "\n\t- ".join([str(s) for s in stmts])
+            )
             for model in models:
                 self.store.delete(stmts, model)
 
         if policy["method"] in ["update", "safe_update", "revision"]:
 
-            lifespan = policy.get('lifespan', 0)
-            
-            logger.info("Updating " + str(list(models)) + " with:\n\t- " + "\n\t- ".join([str(s) for s in stmts]) + \
-                    (" (lifespan: %ssec)"%lifespan if lifespan else ""))
+            lifespan = policy.get("lifespan", 0)
+
+            logger.info(
+                "Updating "
+                + str(list(models))
+                + " with:\n\t- "
+                + "\n\t- ".join([str(s) for s in stmts])
+                + (" (lifespan: %ssec)" % lifespan if lifespan else "")
+            )
             for model in models:
                 self.store.update(stmts, model, lifespan=lifespan)
-
 
         self.onupdate()
 
     @api
-    def add(self, stmts, models = None, lifespan = 0):
-        return self.revise(stmts,
-                           {"method": "add",
-                            "models": models,
-                            "lifespan": lifespan})
+    def add(self, stmts, models=None, lifespan=0):
+        return self.revise(
+            stmts, {"method": "add", "models": models, "lifespan": lifespan}
+        )
 
     @compat
     @api
-    def safeAdd(self, stmts, lifespan = 0):
-        return self.revise(stmts, {"method": "safe_add",
-                                   "lifespan": lifespan})
-
+    def safeAdd(self, stmts, lifespan=0):
+        return self.revise(stmts, {"method": "safe_add", "lifespan": lifespan})
 
     @compat
     @api
-    def addForAgent(self, agent, stmts, lifespan = 0):
+    def addForAgent(self, agent, stmts, lifespan=0):
         return self.add(stmts, [agent], lifespan)
 
     @api
-    def retract(self, stmts, models = None):
-        return self.revise(stmts,
-                           {"method": "retract",
-                            "models": models})
+    def retract(self, stmts, models=None):
+        return self.revise(stmts, {"method": "retract", "models": models})
 
     @compat
     @api
-    def remove(self, stmts, models = None):
+    def remove(self, stmts, models=None):
         return self.retract(stmts, models)
 
     @compat
@@ -420,14 +489,11 @@ class MinimalKB:
     def removeForAgent(self, agent, stmts):
         return self.retract(stmts, [agent])
 
-
     @api
-    def update(self, stmts, models = None, lifespan = 0):
-        return self.revise(stmts,
-                           {"method": "update",
-                            "models": models,
-                            "lifespan":  lifespan})
-
+    def update(self, stmts, models=None, lifespan=0):
+        return self.revise(
+            stmts, {"method": "update", "models": models, "lifespan": lifespan}
+        )
 
     @compat
     @api
@@ -435,8 +501,8 @@ class MinimalKB:
         return self.find([var], stmts, None, [agent])
 
     @api
-    def find(self, vars, patterns, constraints = None, models = None):
-        '''
+    def find(self, vars, patterns, constraints=None, models=None):
+        """
         Depending on the arguments, three differents
         behaviours are possible:
 
@@ -450,38 +516,47 @@ class MinimalKB:
             would return something like: [{"agent":"james", "action": "jumpHigh"}, {"agent": "laurel", "action":"jumpHigher"}]
 
         Note that 'constraints' is currently not supported.
-        '''
+        """
 
         models = self.normalize_models(models)
 
         patterns = [parse_stmt(p) for p in patterns]
 
-        logger.info("Searching " + str(vars) + \
-                    " in models " + str(models) + \
-                    " matching:\n\t- " + "\n\t- ".join([str(p) for p in patterns]))
+        logger.info(
+            "Searching "
+            + str(vars)
+            + " in models "
+            + str(models)
+            + " matching:\n\t- "
+            + "\n\t- ".join([str(p) for p in patterns])
+        )
 
         res = self.store.query(vars, patterns, models)
-        
+
         logger.info("Found: " + str(res))
         return res
 
     @api
-    def findmpe(self, vars, pattern, constraints = None, models = None):
-        """ Finds the most probable explanation. Strictly equivalent to
+    def findmpe(self, vars, pattern, constraints=None, models=None):
+        """Finds the most probable explanation. Strictly equivalent to
         'find' until we support probabilities.
         """
-        return find(self, vars, pattern, constraints = None, models = None)
+        return find(self, vars, pattern, constraints=None, models=None)
 
     @api
-    def subscribe(self, type, trigger, var, patterns, models = None):
+    def subscribe(self, type, trigger, var, patterns, models=None):
 
         models = self.normalize_models(models)
 
         if type not in [Event.NEW_CLASS_INSTANCE, Event.NEW_CLASS_INSTANCE_ONE_SHOT]:
             patterns = [parse_stmt(p) for p in patterns]
 
-        logger.info("Registering a new event: %s %s for %s on %s" % (type, trigger, var, patterns) + \
-                    " in " + (str(models) if models else "default model."))
+        logger.info(
+            "Registering a new event: %s %s for %s on %s"
+            % (type, trigger, var, patterns)
+            + " in "
+            + (str(models) if models else "default model.")
+        )
 
         event = Event(self, type, trigger, var, patterns, models)
 
@@ -494,11 +569,10 @@ class MinimalKB:
     def registerEvent(self, type, trigger, patterns):
         return self.subscribe(type, trigger, None, patterns)
 
-
     @compat
     @api
     def discriminateForAgent(self, *args):
-        raise NotImplementedError('discriminateForAgent not implemented in MinimalKB')
+        raise NotImplementedError("discriminateForAgent not implemented in MinimalKB")
 
     @compat
     @api
@@ -512,19 +586,19 @@ class MinimalKB:
 
     @compat
     @api
-    def getClassesOf(self, concept, direct = False):
+    def getClassesOf(self, concept, direct=False):
         classes = self.classesof(concept, direct)
 
-        return {cls : self.getLabel(cls) for cls in classes}
+        return {cls: self.getLabel(cls) for cls in classes}
 
     @api
-    def classesof(self, concept, direct = False, models = None):
+    def classesof(self, concept, direct=False, models=None):
         models = self.normalize_models(models)
         return self.store.classesof(concept, direct, models)
 
     @api
     def close(self):
-        """ This code should actually never be called: the 'close' request
+        """This code should actually never be called: the 'close' request
         is intercepted at the front-end level (eg, socket server) to close
         the connection.
         """
@@ -536,18 +610,20 @@ class MinimalKB:
         for e in self.active_evts:
             if e.evaluate():
                 clients = self.eventsubscriptions[e.id]
-                logger.info("Event %s triggered. Informing %s clients." % (e.id, len(clients)))
+                logger.info(
+                    "Event %s triggered. Informing %s clients." % (e.id, len(clients))
+                )
                 for client in clients:
                     msg = ("event", e)
-                    self.requestresults.setdefault(client,Queue()).put(msg)
+                    self.requestresults.setdefault(client, Queue()).put(msg)
                 if not e.valid:
                     self.active_evts.discard(e)
 
     def start_services(self, *args):
-        self._reasoner = Process(target = start_reasoner, args = ('kb.db',))
+        self._reasoner = Process(target=start_reasoner, args=("kb.db",))
         self._reasoner.start()
 
-        self._lifespan_manager = Process(target = lifespan.start_service, args = ('kb.db',))
+        self._lifespan_manager = Process(target=lifespan.start_service, args=("kb.db",))
         self._lifespan_manager.start()
 
     def stop_services(self):
@@ -558,7 +634,7 @@ class MinimalKB:
         self._lifespan_manager.join()
 
     def normalize_models(self, models):
-        """ If 'models' is None or [], returns the default model (ie, the
+        """If 'models' is None or [], returns the default model (ie, the
         base model of the robot). If 'models' is 'all', then
         returns the set of all models known to the KB.
         Else, add the models to the list of all models, and return
@@ -570,7 +646,7 @@ class MinimalKB:
             else:
                 if isinstance(models, str):
                     models = [models]
-                #add to the set of all models
+                # add to the set of all models
                 self.models = self.models | set(models)
                 return frozenset(models)
         else:
@@ -584,9 +660,11 @@ class MinimalKB:
 
         f = getattr(self, name)
         if hasattr(f, "_compat"):
-                logger.warn("Using non-standard method %s. This may be " % f.__name__ + \
-                        "removed in the future!")
-        
+            logger.warn(
+                "Using non-standard method %s. This may be " % f.__name__
+                + "removed in the future!"
+            )
+
         msg = None
         try:
             res = None
@@ -602,7 +680,7 @@ class MinimalKB:
             logger.error("request failed: %s" % e)
             msg = ("error", e)
 
-        self.requestresults.setdefault(client,Queue()).put(msg)
+        self.requestresults.setdefault(client, Queue()).put(msg)
 
     def submitrequest(self, client, name, *args, **kwargs):
         self.incomingrequests.put((client, name, args, kwargs))
@@ -610,10 +688,14 @@ class MinimalKB:
     def process(self):
         try:
             client, name, args, kwargs = self.incomingrequests.get(True, 0.05)
-            logger.debug("Processing <%s(%s,%s)>..." % \
-                            (name, 
-                             ", ".join([str(a) for a in args]),
-                             ", ".join(str(k)+"="+str(v) for k,v in kwargs.items())))
+            logger.debug(
+                "Processing <%s(%s,%s)>..."
+                % (
+                    name,
+                    ", ".join([str(a) for a in args]),
+                    ", ".join(str(k) + "=" + str(v) for k, v in kwargs.items()),
+                )
+            )
             self.execute(client, name, *args, **kwargs)
         except Empty:
             pass
@@ -621,4 +703,3 @@ class MinimalKB:
         for client, pendingmsg in self.requestresults.items():
             while not pendingmsg.empty():
                 client.sendmsg(pendingmsg.get())
-
