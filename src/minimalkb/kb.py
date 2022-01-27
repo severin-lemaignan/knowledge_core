@@ -147,7 +147,9 @@ class MinimalKB:
         _api = [
             getattr(self, fn) for fn in dir(self) if hasattr(getattr(self, fn), "_api")
         ]
-        self._api = {fn.__name__: fn for fn in _api}
+        import inspect
+
+        self._api = {fn.__name__ + str(inspect.signature(fn)): fn for fn in _api}
 
         self.store = SQLStore()
         # self.store = RDFlibStore()
