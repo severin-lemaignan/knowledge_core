@@ -1,5 +1,7 @@
-import logging; logger = logging.getLogger("minimalKB."+__name__);
-DEBUG_LEVEL=logging.DEBUG
+import logging
+
+logger = logging.getLogger("minimalKB." + __name__)
+DEBUG_LEVEL = logging.DEBUG
 
 import datetime
 import sqlite3
@@ -9,7 +11,7 @@ from minimalkb.kb import DEFAULT_MODEL
 from minimalkb.helpers import memoize
 
 TRIPLETABLENAME = "triples"
-TRIPLETABLE = '''CREATE TABLE IF NOT EXISTS %s
+TRIPLETABLE = """CREATE TABLE IF NOT EXISTS %s
                     ("hash" INTEGER PRIMARY KEY NOT NULL  UNIQUE , 
                     "subject" TEXT NOT NULL , 
                     "predicate" TEXT NOT NULL , 
@@ -17,21 +19,22 @@ TRIPLETABLE = '''CREATE TABLE IF NOT EXISTS %s
                     "model" TEXT NOT NULL ,
                     "timestamp" DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL ,
                     "expires" DATETIME ,
-                    "inferred" BOOLEAN DEFAULT 0 NOT NULL)'''
+                    "inferred" BOOLEAN DEFAULT 0 NOT NULL)"""
 
-def sqlhash(s,p,o,model):
-    return hash("%s%s%s%s"%(s,p,o, model))
+
+def sqlhash(s, p, o, model):
+    return hash("%s%s%s%s" % (s, p, o, model))
+
 
 class SQLStore:
-
     def __init__(self):
-        self.conn = sqlite3.connect('kb.db')
+        self.conn = sqlite3.connect("kb.db")
         self.create_kb()
 
         self._functionalproperties = frozenset()
 
     def create_kb(self):
-    
+
         with self.conn:
             self.conn.execute(TRIPLETABLE % TRIPLETABLENAME)
 
@@ -45,61 +48,83 @@ class SQLStore:
         self.onupdate()
 
     def clear_cache(self):
-        """ Clears all the memoize results (ie, clears the cache of all methods
+        """Clears all the memoize results (ie, clears the cache of all methods
         using the decorator @memoize)
         """
         for obj in [getattr(self, name) for name in dir(self)]:
             if hasattr(obj, "cache"):
                 obj.cache.clear()
 
-    def add(self, stmts, model = DEFAULT_MODEL, lifespan = 0, replace = False):
+    def add(self, stmts, model=DEFAULT_MODEL, lifespan=0, replace=False):
 
         timestamp = datetime.datetime.now()
         expires = None
         if lifespan > 0:
-            expires = (timestamp + datetime.timedelta(seconds = lifespan)).isoformat()
+            expires = (timestamp + datetime.timedelta(seconds=lifespan)).isoformat()
 
         timestamp = timestamp.isoformat()
 
         if replace:
             with self.conn:
-                self.conn.executemany("DELETE FROM %s WHERE subject=? AND predicate=? AND model=?" % TRIPLETABLENAME, [(s,p, model) for s,p,o in stmts])
+                self.conn.executemany(
+                    "DELETE FROM %s WHERE subject=? AND predicate=? AND model=?"
+                    % TRIPLETABLENAME,
+                    [(s, p, model) for s, p, o in stmts],
+                )
 
         if expires:
-            stmts = [[sqlhash(s,p,o, model), s, p, o, model, timestamp, expires] for s,p,o in stmts]
+            stmts = [
+                [sqlhash(s, p, o, model), s, p, o, model, timestamp, expires]
+                for s, p, o in stmts
+            ]
         else:
-            stmts = [[sqlhash(s,p,o, model), s, p, o, model, timestamp] for s,p,o in stmts]
+            stmts = [
+                [sqlhash(s, p, o, model), s, p, o, model, timestamp]
+                for s, p, o in stmts
+            ]
         with self.conn:
             if expires:
-                self.conn.executemany('''INSERT OR IGNORE INTO %s
+                self.conn.executemany(
+                    """INSERT OR IGNORE INTO %s
                         (hash, subject, predicate, object, model, timestamp, expires)
-                        VALUES (?, ?, ?, ?, ?, ?, ?)''' % TRIPLETABLENAME, stmts)
+                        VALUES (?, ?, ?, ?, ?, ?, ?)"""
+                    % TRIPLETABLENAME,
+                    stmts,
+                )
             else:
-                self.conn.executemany('''INSERT OR IGNORE INTO %s
+                self.conn.executemany(
+                    """INSERT OR IGNORE INTO %s
                         (hash, subject, predicate, object, model, timestamp)
-                        VALUES (?, ?, ?, ?, ?, ?)''' % TRIPLETABLENAME, stmts)
+                        VALUES (?, ?, ?, ?, ?, ?)"""
+                    % TRIPLETABLENAME,
+                    stmts,
+                )
 
         self.onupdate()
 
-    def delete(self, stmts, model = DEFAULT_MODEL):
+    def delete(self, stmts, model=DEFAULT_MODEL):
 
-        hashes = [[sqlhash(s,p,o, model)] for s,p,o in stmts]
+        hashes = [[sqlhash(s, p, o, model)] for s, p, o in stmts]
 
         with self.conn:
             # removal is non-monotonic. Remove all inferred statements
             self.conn.execute("DELETE FROM %s WHERE inferred=1" % TRIPLETABLENAME)
 
-            self.conn.executemany('''DELETE FROM %s 
-                        WHERE (hash=?)''' % TRIPLETABLENAME, hashes)
+            self.conn.executemany(
+                """DELETE FROM %s 
+                        WHERE (hash=?)"""
+                % TRIPLETABLENAME,
+                hashes,
+            )
 
         self.onupdate()
 
-    def update(self, stmts, model = DEFAULT_MODEL, lifespan = 0):
+    def update(self, stmts, model=DEFAULT_MODEL, lifespan=0):
 
         stmts_to_add = []
         stmts_to_replace = []
         for stmt in stmts:
-            s,p,o = stmt
+            s, p, o = stmt
             if p in self._functionalproperties:
                 stmts_to_replace.append(stmt)
             else:
@@ -113,19 +138,23 @@ class SQLStore:
 
     def about(self, resource, models):
 
-        params = {'res':resource}
+        params = {"res": resource}
 
         # workaround to feed a variable number of models
         models = list(models)
         for i in range(len(models)):
-            params["m%s"%i] = models[i]
+            params["m%s" % i] = models[i]
 
-        query = '''
+        query = """
                 SELECT subject, predicate, object 
                 FROM %s
                 WHERE ((subject=:res OR predicate=:res OR object IN ('"%s"',:res))
-                       AND model IN (%s))''' % (TRIPLETABLENAME, resource, ",".join([":m%s" % i for i in range(len(models))]))
-        
+                       AND model IN (%s))""" % (
+            TRIPLETABLENAME,
+            resource,
+            ",".join([":m%s" % i for i in range(len(models))]),
+        )
+
         with self.conn:
             res = self.conn.execute(query, params)
             return [[row[0], row[1], row[2]] for row in res]
@@ -141,12 +170,11 @@ class SQLStore:
 
         return len(candidates) > 0
 
-
     def query(self, vars, patterns, models):
         return query(self.conn, vars, patterns, models)
 
     @memoize
-    def label(self, concept, models = []):
+    def label(self, concept, models=[]):
         labels = simplequery(self.conn, (concept, "rdfs:label", "?label"), models)
         if labels:
             return labels.pop()
@@ -167,11 +195,13 @@ class SQLStore:
                 return "literal"
             else:
                 return "instance"
-        if self.instancesof(concept, False, models) or \
-           self.subclassesof(concept, False, models) or \
-           self.superclassesof(concept, False, models):
-               return "class"
-        
+        if (
+            self.instancesof(concept, False, models)
+            or self.subclassesof(concept, False, models)
+            or self.superclassesof(concept, False, models)
+        ):
+            return "class"
+
         stmts_if_predicate = matchingstmt(self.conn, ("?s", concept, "?o"), models)
         if stmts_if_predicate:
             if self.is_literal(stmts_if_predicate[0][3]):
@@ -182,78 +212,115 @@ class SQLStore:
         logger.warn("Concept <%s> has undecidable type." % concept)
         return "undecided"
 
-
-    def classesof(self, concept, direct, models = []):
+    def classesof(self, concept, direct, models=[]):
         if direct:
             logger.warn("Direct classes are assumed to be the asserted is-a relations")
-            return list(simplequery(self.conn, (concept, "rdf:type", "?class"), models, assertedonly = True))
+            return list(
+                simplequery(
+                    self.conn,
+                    (concept, "rdf:type", "?class"),
+                    models,
+                    assertedonly=True,
+                )
+            )
         return list(simplequery(self.conn, (concept, "rdf:type", "?class"), models))
 
-    def instancesof(self, concept, direct, models = []):
+    def instancesof(self, concept, direct, models=[]):
         if direct:
-            logger.warn("Direct instances are assumed to be the asserted is-a relations")
-            return list(simplequery(self.conn, ("?instances", "rdf:type", concept), models, assertedonly = True))
+            logger.warn(
+                "Direct instances are assumed to be the asserted is-a relations"
+            )
+            return list(
+                simplequery(
+                    self.conn,
+                    ("?instances", "rdf:type", concept),
+                    models,
+                    assertedonly=True,
+                )
+            )
         return list(simplequery(self.conn, ("?instances", "rdf:type", concept), models))
 
-
-    def superclassesof(self, concept, direct, models = []):
+    def superclassesof(self, concept, direct, models=[]):
         if direct:
-            logger.warn("Direct super-classes are assumed to be the asserted subClassOf relations")
-            return list(simplequery(self.conn, (concept, "rdfs:subClassOf", "?superclass"), models, assertedonly = True))
-        return list(simplequery(self.conn, (concept, "rdfs:subClassOf", "?superclass"), models))
+            logger.warn(
+                "Direct super-classes are assumed to be the asserted subClassOf relations"
+            )
+            return list(
+                simplequery(
+                    self.conn,
+                    (concept, "rdfs:subClassOf", "?superclass"),
+                    models,
+                    assertedonly=True,
+                )
+            )
+        return list(
+            simplequery(self.conn, (concept, "rdfs:subClassOf", "?superclass"), models)
+        )
 
-    def subclassesof(self, concept, direct, models = []):
+    def subclassesof(self, concept, direct, models=[]):
         if direct:
-            logger.warn("Direct sub-classes are assumed to be the asserted subClassOf relations")
-            return list(simplequery(self.conn, ("?subclass", "rdfs:subClassOf", concept), models, assertedonly = True))
-        return list(simplequery(self.conn, ("?subclass", "rdfs:subClassOf", concept), models))
-
+            logger.warn(
+                "Direct sub-classes are assumed to be the asserted subClassOf relations"
+            )
+            return list(
+                simplequery(
+                    self.conn,
+                    ("?subclass", "rdfs:subClassOf", concept),
+                    models,
+                    assertedonly=True,
+                )
+            )
+        return list(
+            simplequery(self.conn, ("?subclass", "rdfs:subClassOf", concept), models)
+        )
 
     ###################################################################################
 
     def onupdate(self):
-        self._functionalproperties = frozenset(self.instancesof('owl:FunctionalProperty', False))
+        self._functionalproperties = frozenset(
+            self.instancesof("owl:FunctionalProperty", False)
+        )
 
     def has_stmt(self, pattern, models):
-        """ Returns True if the given statment exist in
+        """Returns True if the given statment exist in
         *any* of the provided models.
         """
 
-        s,p,o = pattern
+        s, p, o = pattern
         query = "SELECT hash FROM %s WHERE hash=?" % TRIPLETABLENAME
         for m in models:
-            if self.conn.execute(query, (sqlhash(s, p ,o , m),)).fetchone():
+            if self.conn.execute(query, (sqlhash(s, p, o, m),)).fetchone():
                 return True
 
         return False
 
     @memoize
     def is_literal(self, atom):
-        """ The definition of a literal follows the Turtle grammar:
+        """The definition of a literal follows the Turtle grammar:
         http://www.w3.org/TeamSubmission/turtle/#literal
         """
-        if atom in ["true", "false"]: # only lower-case!
+        if atom in ["true", "false"]:  # only lower-case!
             return True
-        if atom[0] in ["\"", "'"] and atom[-1] in ["\"", "'"]:
+        if atom[0] in ['"', "'"] and atom[-1] in ['"', "'"]:
             return True
         try:
-            float(atom) # test for integer, double, decimal
+            float(atom)  # test for integer, double, decimal
             return True
         except ValueError:
             pass
 
-        if "@" in atom: # langague tag
+        if "@" in atom:  # langague tag
             return True
 
-        if "^^" in atom: # covers all XSD datatypes in Turtle syntax
+        if "^^" in atom:  # covers all XSD datatypes in Turtle syntax
             return True
 
         return False
 
 
 def get_vars(s):
-    return [x for x in s if x.startswith('?')]
+    return [x for x in s if x.startswith("?")]
+
 
 def nb_variables(s):
     return len(get_vars(s))
-
