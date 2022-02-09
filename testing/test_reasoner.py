@@ -27,6 +27,17 @@ class TestRDFSReasoner(unittest.TestCase):
     def tearDown(self):
         self.kb.close()
 
+    def test_basics(self):
+        self.assertTrue("owl:Thing rdf:type owl:Class" in self.kb)
+        self.assertTrue("owl:Nothing rdf:type owl:Class" in self.kb)
+
+        # create new models
+        self.kb.add(["s p o"], ["model1", "model2"])
+        # self.assertTrue(self.kb["owl:Thing rdf:type owl:Class", ["model1"]])
+        # self.assertTrue(self.kb["owl:Nothing rdf:type owl:Class", ["model1"]])
+        # self.assertTrue(self.kb["owl:Thing rdf:type owl:Class", ["model2"]])
+        # self.assertTrue(self.kb["owl:Nothing rdf:type owl:Class", ["model2"]])
+
     def test_complex_events_rdfs(self):
 
         evtid = self.kb.subscribe(["?a desires ?act", "?act rdf:type Action"], var="a")

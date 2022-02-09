@@ -172,6 +172,8 @@ class MinimalKB:
         self.active_evts = set()
         self.eventsubscriptions = {}
 
+        self.initialize_model(DEFAULT_MODEL)
+
         self.start_services()
 
         if filenames:
@@ -251,6 +253,9 @@ class MinimalKB:
         logger.warn("Clearing the knowledge base!")
         self.store.clear()
         self.active_evts.clear()
+
+        models = set(DEFAULT_MODEL)
+        self.initialize_model(DEFAULT_MODEL)
 
     @compat
     @api
@@ -638,6 +643,11 @@ class MinimalKB:
         self._reasoner.join()
         self._lifespan_manager.join()
 
+    def initialize_model(self, model):
+        self.add(
+            ["owl:Thing rdf:type owl:Class", "owl:Nothing rdf:type owl:Class"], model
+        )
+
     def normalize_models(self, models):
         """If 'models' is None or [], returns the default model (ie, the
         base model of the robot). If 'models' is 'all', then
@@ -651,8 +661,13 @@ class MinimalKB:
             else:
                 if isinstance(models, str):
                     models = [models]
-                # add to the set of all models
-                self.models = self.models | set(models)
+
+                # do we have a new model? initialise it.
+                for model in models:
+                    self.models.add(model)
+                    if model not in self.models:
+                        self.initialize_model(model)
+
                 return frozenset(models)
         else:
             return {DEFAULT_MODEL}
