@@ -115,7 +115,9 @@ true, etc.) and get notified back.
 
 ### Reasoning
 
-`minimalKB` only provides basic RDFS/OWL reasoning capabilities:
+`minimalKB` only provides very basic RDFS/OWL reasoning capabilities:
+
+The detail of supported OWL2 RL rules can [be found here](doc/reasoning.md).
 
 - it honors the transitive closure of the `rdfs:subClassOf` relation.
 - functional predicates (child of `owl:functionalProperty`) are properly

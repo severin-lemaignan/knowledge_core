@@ -47,6 +47,27 @@ class TestSequenceFunctions(unittest.TestCase):
 
         self.kb.revise(["toto likes tata"], {"method": "add"})
 
+    def test_basic_model_modifications(self):
+
+        # check no exception is raised
+        self.kb.add(
+            ["johnny rdf:type Human", 'johnny rdfs:label "A que Johnny"'], ["model1"]
+        )
+        self.kb.retract(["alfred rdf:type Human", "alfred likes icecream"], ["model1"])
+
+        self.kb.add(
+            ["johnny rdf:type Human", 'johnny rdfs:label "A que Johnny"'],
+            ["model1", "model2"],
+        )
+        self.kb.retract(
+            ["alfred rdf:type Human", "alfred likes icecream"], ["model1", "model2"]
+        )
+
+        self.kb.revise(["toto likes tata"], {"method": "add", "models": ["model1"]})
+        self.kb.revise(
+            ["toto likes tata"], {"method": "add", "models": ["model1", "model2"]}
+        )
+
     def test_basic_kwargs(self):
 
         self.kb.revise(["toto likes tata"], policy={"method": "add"})
@@ -54,18 +75,42 @@ class TestSequenceFunctions(unittest.TestCase):
 
     def test_modifications(self):
 
-        self.assertFalse(self.kb["* * *"])
+        self.assertCountEqual(
+            self.kb["* * *"],
+            [
+                ["owl:Thing", "rdf:type", "owl:Class"],
+                ["owl:Nothing", "rdf:type", "owl:Class"],
+            ],
+        )
 
         self.kb += ["alfred rdf:type Human"]
-        self.assertCountEqual(self.kb["* * *"], [["alfred", "rdf:type", "Human"]])
+        self.assertCountEqual(
+            self.kb["* * *"],
+            [
+                ["alfred", "rdf:type", "Human"],
+                ["owl:Thing", "rdf:type", "owl:Class"],
+                ["owl:Nothing", "rdf:type", "owl:Class"],
+            ],
+        )
 
         self.kb -= ["alfred rdf:type Human"]
-        self.assertFalse(self.kb["* * *"])
+        self.assertCountEqual(
+            self.kb["* * *"],
+            [
+                ["owl:Thing", "rdf:type", "owl:Class"],
+                ["owl:Nothing", "rdf:type", "owl:Class"],
+            ],
+        )
 
         self.kb += ["alfred rdf:type Human", "alfred likes icecream"]
         self.assertCountEqual(
             self.kb["* * *"],
-            [["alfred", "likes", "icecream"], ["alfred", "rdf:type", "Human"]],
+            [
+                ["alfred", "likes", "icecream"],
+                ["alfred", "rdf:type", "Human"],
+                ["owl:Thing", "rdf:type", "owl:Class"],
+                ["owl:Nothing", "rdf:type", "owl:Class"],
+            ],
         )
 
     def test_existence(self):
@@ -205,6 +250,18 @@ class TestSequenceFunctions(unittest.TestCase):
 
         self.assertCountEqual(self.kb["* rdf:type Human"], ["johnny"])
 
+        self.assertCountEqual(
+            self.kb["johnny rdf:type Human"], ["johnny rdf:type Human"]
+        )
+
+    def test_models_retrieval(self):
+
+        self.kb.add(["s p o", "s2 p2 o2"], ["model1", "model2"])
+
+        self.assertTrue(self.kb["s p o", ["model1"]])
+        self.assertTrue(self.kb["s2 p2 o2", ["model1"]])
+        self.assertTrue(self.kb["s p o", ["model2"]])
+
     def test_complex_queries(self):
         self.assertCountEqual(
             self.kb["?agent rdf:type Robot", "?agent desires ?obj"], []
@@ -213,7 +270,12 @@ class TestSequenceFunctions(unittest.TestCase):
         self.kb += ["nono rdf:type Human", "alfred rdf:type Robot"]
         self.assertCountEqual(
             self.kb["* * *"],
-            [["nono", "rdf:type", "Human"], ["alfred", "rdf:type", "Robot"]],
+            [
+                ["nono", "rdf:type", "Human"],
+                ["alfred", "rdf:type", "Robot"],
+                ["owl:Thing", "rdf:type", "owl:Class"],
+                ["owl:Nothing", "rdf:type", "owl:Class"],
+            ],
         )
 
         self.kb += ["nono desires jump", "alfred desires oil"]
@@ -224,6 +286,8 @@ class TestSequenceFunctions(unittest.TestCase):
                 ["alfred", "desires", "oil"],
                 ["nono", "rdf:type", "Human"],
                 ["alfred", "rdf:type", "Robot"],
+                ["owl:Thing", "rdf:type", "owl:Class"],
+                ["owl:Nothing", "rdf:type", "owl:Class"],
             ],
         )
 

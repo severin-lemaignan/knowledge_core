@@ -516,6 +516,7 @@ class MinimalKB:
         Depending on the arguments, three differents
         behaviours are possible:
 
+        - if len(vars) == 0, 'find' returns the statement/set of statements if they all exist in the model.
         - if len(vars) == 1, 'find' returns a set of resources matching the patterns.
         - if len(vars) > 1:
             - if len(patterns) == 1, a list of statements matching the pattern
@@ -527,6 +528,11 @@ class MinimalKB:
 
         Note that 'constraints' is currently not supported.
         """
+
+        if not vars:
+            if not self.exist(patterns, models):
+                return []
+            return patterns
 
         models = self.normalize_models(models)
 
@@ -664,8 +670,8 @@ class MinimalKB:
 
                 # do we have a new model? initialise it.
                 for model in models:
-                    self.models.add(model)
                     if model not in self.models:
+                        self.models.add(model)
                         self.initialize_model(model)
 
                 return frozenset(models)
