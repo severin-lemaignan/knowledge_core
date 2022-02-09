@@ -1,7 +1,10 @@
-import logging; logger = logging.getLogger("minimalKB."+__name__);
-DEBUG_LEVEL=logging.DEBUG
+import logging
+
+logger = logging.getLogger("minimalKB." + __name__)
+DEBUG_LEVEL = logging.DEBUG
 
 from minimalkb.exceptions import KbServerError
+
 
 def query(db, vars, patterns, models):
     """
@@ -21,7 +24,7 @@ def query(db, vars, patterns, models):
     if not allvars >= vars:
         logger.warn("Some requested vars are not present in the patterns. Returning []")
         return []
-    
+
     if len(patterns) == 1:
         return singlepattern(db, patterns[0], models)
 
@@ -36,7 +39,7 @@ def query(db, vars, patterns, models):
 
         # first, execute simple queries to determine potential candidates:
         # resolve patterns that contain *only* the desired output variable
-        for p in (independentpatterns & directpatterns[v]):
+        for p in independentpatterns & directpatterns[v]:
             if v not in candidates:
                 candidates[v] = simplequery(db, p, models)
             else:
@@ -52,7 +55,6 @@ def query(db, vars, patterns, models):
     if len(vars) == 1:
         var = vars.pop()
 
-
         # no dependent pattern? no need to filter!
         if not dependentpatterns:
             return list(candidates[var])
@@ -60,11 +62,13 @@ def query(db, vars, patterns, models):
         candidate = set()
         for pattern in dependentpatterns:
             if var not in pattern:
-                raise NotImplementedError("Can not handle pattern %s with requested variable %s." % (pattern, var))
-
+                raise NotImplementedError(
+                    "Can not handle pattern %s with requested variable %s."
+                    % (pattern, var)
+                )
 
             def prepare(tok):
-                if tok==var:
+                if tok == var:
                     return None
                 return candidates.get(tok, [tok])
 
@@ -78,9 +82,13 @@ def query(db, vars, patterns, models):
 
     else:
         if not dependentpatterns:
-                raise NotImplementedError("Multiple variable in independent patterns not yet supported.")
+            raise NotImplementedError(
+                "Multiple variable in independent patterns not yet supported."
+            )
 
-        raise NotImplementedError("Only a single variable in queries can be currently requested.")
+        raise NotImplementedError(
+            "Only a single variable in queries can be currently requested."
+        )
         ### TODO !!! ###
         while dependentpatterns:
             pattern = dependentpatterns.pop()
@@ -92,7 +100,7 @@ def query(db, vars, patterns, models):
 
 
 def singlepattern(db, pattern, models):
-    """ Returns the list of statements that match
+    """Returns the list of statements that match
     a single pattern (like "* likes ?toto").
 
     If only one unbound variable is present, it returns
@@ -109,33 +117,35 @@ def singlepattern(db, pattern, models):
 
 
 def get_vars(s):
-    return [x for x in s if x.startswith('?')]
-    
+    return [x for x in s if x.startswith("?")]
+
 
 def nb_variables(s):
     return len(get_vars(s))
 
+
 def is_variable(tok):
-    return tok and tok.startswith('?')
+    return tok and tok.startswith("?")
 
 
-def matchingstmt(db, pattern, models = [], assertedonly = False):
+def matchingstmt(db, pattern, models=[], assertedonly=False):
     """Returns the list of statements matching a given pattern.
 
-    If assertedonly is True, statements infered by reasoning are 
+    If assertedonly is True, statements infered by reasoning are
     excluded.
     """
 
-    s,p,o = pattern
-    params = {'s':s,
-                'p':p,
-                'o':o,
-             }
+    s, p, o = pattern
+    params = {
+        "s": s,
+        "p": p,
+        "o": o,
+    }
 
     # workaround to feed a variable number of models
     models = list(models)
     for i in range(len(models)):
-        params["m%s"%i] = models[i]
+        params["m%s" % i] = models[i]
 
     query = "SELECT * FROM triples "
     conditions = []
@@ -149,30 +159,40 @@ def matchingstmt(db, pattern, models = [], assertedonly = False):
     if assertedonly:
         conditions += ["inferred=0"]
     if models:
-        conditions += ["model IN (%s)" % (",".join([":m%s" % i for i in range(len(models))]))]
+        conditions += [
+            "model IN (%s)" % (",".join([":m%s" % i for i in range(len(models))]))
+        ]
 
     if conditions:
         query += "WHERE (" + " AND ".join(conditions) + ")"
 
     return [row for row in db.execute(query, params)]
 
-def selectfromset(db, subject = None, predicate = None, object = None, models = [], assertedonly = False):
 
-    if (not subject and not predicate) or \
-       (not subject and not object) or \
-       (not predicate and not object) or \
-       (subject and predicate and object):
-           import pdb;pdb.set_trace()
-           raise KbServerError("Exactly one of subject, predicate or object must be None")
+def selectfromset(
+    db, subject=None, predicate=None, object=None, models=[], assertedonly=False
+):
+
+    if (
+        (not subject and not predicate)
+        or (not subject and not object)
+        or (not predicate and not object)
+        or (subject and predicate and object)
+    ):
+        import pdb
+
+        pdb.set_trace()
+        raise KbServerError("Exactly one of subject, predicate or object must be None")
     params = {}
 
     # workaround to feed a variable number of models
     models = list(models)
     for i in range(len(models)):
-        params["m%s"%i] = models[i]
+        params["m%s" % i] = models[i]
 
-
-    selectedcolumn = "subject" if not subject else ("predicate" if not predicate else "object")
+    selectedcolumn = (
+        "subject" if not subject else ("predicate" if not predicate else "object")
+    )
 
     query = "SELECT %s FROM triples " % selectedcolumn
 
@@ -187,7 +207,9 @@ def selectfromset(db, subject = None, predicate = None, object = None, models = 
     if assertedonly:
         conditions += ["inferred=0"]
     if models:
-        conditions += ["model IN (%s)" % (",".join([":m%s" % i for i in range(len(models))]))]
+        conditions += [
+            "model IN (%s)" % (",".join([":m%s" % i for i in range(len(models))]))
+        ]
 
     if conditions:
         query += "WHERE (" + " AND ".join(conditions) + ")"
@@ -195,23 +217,23 @@ def selectfromset(db, subject = None, predicate = None, object = None, models = 
     return {row[0] for row in db.execute(query, params)}
 
 
+def simplequery(db, pattern, models=[], assertedonly=False):
+    """A 'simple query' is a query with only *one* unbound variable.
 
-def simplequery(db, pattern, models = [], assertedonly = False):
-    """ A 'simple query' is a query with only *one* unbound variable.
-    
     Return the list of possible values for this variable
     """
 
-    s,p,o = pattern
-    params = {'s':s,
-                'p':p,
-                'o':o,
-             }
+    s, p, o = pattern
+    params = {
+        "s": s,
+        "p": p,
+        "o": o,
+    }
 
     # workaround to feed a variable number of models
     models = list(models)
     for i in range(len(models)):
-        params["m%s"%i] = models[i]
+        params["m%s" % i] = models[i]
 
     query = "SELECT "
     if is_variable(s):
@@ -226,7 +248,8 @@ def simplequery(db, pattern, models = [], assertedonly = False):
     if assertedonly:
         query += " AND inferred=0"
     if models:
-        query += " AND model IN (%s)" % (",".join([":m%s" % i for i in range(len(models))]))
+        query += " AND model IN (%s)" % (
+            ",".join([":m%s" % i for i in range(len(models))])
+        )
 
     return {row[0] for row in db.execute(query, params)}
-
