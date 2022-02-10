@@ -3,6 +3,8 @@ import logging
 logger = logging.getLogger("minimalKB." + __name__)
 DEBUG_LEVEL = logging.DEBUG
 
+import hashlib
+
 import datetime
 import sqlite3
 
@@ -12,7 +14,7 @@ from minimalkb.helpers import memoize
 
 TRIPLETABLENAME = "triples"
 TRIPLETABLE = """CREATE TABLE IF NOT EXISTS %s
-                    ("hash" INTEGER PRIMARY KEY NOT NULL  UNIQUE , 
+                    ("hash" TEXT PRIMARY KEY NOT NULL  UNIQUE , 
                     "subject" TEXT NOT NULL , 
                     "predicate" TEXT NOT NULL , 
                     "object" TEXT NOT NULL , 
@@ -23,7 +25,7 @@ TRIPLETABLE = """CREATE TABLE IF NOT EXISTS %s
 
 
 def sqlhash(s, p, o, model):
-    return hash("%s%s%s%s" % (s, p, o, model))
+    return hashlib.md5(("%s%s%s%s" % (s, p, o, model)).encode("utf-8")).hexdigest()
 
 
 class SQLStore:
