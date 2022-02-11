@@ -10,7 +10,7 @@ with open("src/minimalkb/__init__.py") as fp:
 
 
 def readme():
-    with open("README.md") as f:
+    with open("README-pypi.rst") as f:
         return f.read()
 
 
@@ -20,7 +20,6 @@ setup(
     license="BSD",
     description="A SQLite-backed minimalistic knowledge based for robotic application",
     long_description=readme(),
-    long_description_content_type="text/markdown",
     classifiers=[
         "License :: OSI Approved :: BSD License",
         "Programming Language :: Python :: 3",

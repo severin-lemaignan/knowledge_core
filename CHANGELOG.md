@@ -1,6 +1,13 @@
 Changelog
 =========
 
+minimalkb 1.1.2
+-------------------------------
+
+Main changes since 1.1.2:
+
+- create custom readme to please pypi
+
 minimalkb 1.1.1
 -------------------------------
 
