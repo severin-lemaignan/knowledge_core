@@ -227,7 +227,8 @@ class MinimalKB:
                 triples += [(s, p, o)]
 
             logger.debug("Importing:\n%s" % triples)
-            self.store.add(triples, models)
+            for model in models:
+                self.store.add(triples, model)
         else:
             if filename.endswith("owl") or filename.endswith("rdf"):
                 logger.error(
@@ -239,9 +240,10 @@ class MinimalKB:
 
             logger.info("Trying to load raw triples from %s..." % filename)
             with open(filename, "r") as triples:
-                self.store.add(
-                    [shlex.split(s.strip()) for s in triples.readlines()], models
-                )
+                for model in models:
+                    self.store.add(
+                        [shlex.split(s.strip()) for s in triples.readlines()], models
+                    )
 
     @compat
     @api

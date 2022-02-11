@@ -85,21 +85,41 @@ class SQLStore:
                 for s, p, o in stmts
             ]
         with self.conn:
-            if expires:
-                self.conn.executemany(
-                    """INSERT OR IGNORE INTO %s
-                        (hash, subject, predicate, object, model, timestamp, expires)
-                        VALUES (?, ?, ?, ?, ?, ?, ?)"""
-                    % TRIPLETABLENAME,
-                    stmts,
+            try:
+                if expires:
+                    self.conn.executemany(
+                        """INSERT OR IGNORE INTO %s
+                            (hash, subject, predicate, object, model, timestamp, expires)
+                            VALUES (?, ?, ?, ?, ?, ?, ?)"""
+                        % TRIPLETABLENAME,
+                        stmts,
+                    )
+                else:
+                    self.conn.executemany(
+                        """INSERT OR IGNORE INTO %s
+                            (hash, subject, predicate, object, model, timestamp)
+                            VALUES (?, ?, ?, ?, ?, ?)"""
+                        % TRIPLETABLENAME,
+                        stmts,
+                    )
+            except sqlite3.InterfaceError as err:
+                logger.error(
+                    "Interface error while inserting statements in the SQLite backend.\nError: %s\nStatements: %s"
+                    % (err, stmts)
                 )
-            else:
-                self.conn.executemany(
-                    """INSERT OR IGNORE INTO %s
-                        (hash, subject, predicate, object, model, timestamp)
-                        VALUES (?, ?, ?, ?, ?, ?)"""
-                    % TRIPLETABLENAME,
-                    stmts,
+                for s in stmts:
+                    logger.warn("Re-try to insert statement %s..." % s)
+                    self.conn.executemany(
+                        """INSERT OR IGNORE INTO %s
+                            (hash, subject, predicate, object, model, timestamp)
+                            VALUES (?, ?, ?, ?, ?, ?)"""
+                        % TRIPLETABLENAME,
+                        [s],
+                    )
+            except sqlite3.IntegrityError as err:
+                logger.error(
+                    "Integrity error while inserting statements in the SQLite backend.\nError: %s\nStatements: %s"
+                    % (err, stmts)
                 )
 
         self.onupdate()
