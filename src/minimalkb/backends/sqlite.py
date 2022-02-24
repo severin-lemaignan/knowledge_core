@@ -179,7 +179,7 @@ class SQLStore:
 
         with self.conn:
             res = self.conn.execute(query, params)
-            return [[row[0], row[1], row[2]] for row in res]
+            return [[row[0], row[1], self.literal_to_python(row[2])] for row in res]
 
     def has(self, stmts, models):
 
@@ -193,7 +193,11 @@ class SQLStore:
         return len(candidates) > 0
 
     def query(self, vars, patterns, models):
-        return query(self.conn, vars, patterns, models)
+        res = query(self.conn, vars, patterns, models)
+        if res and isinstance(res[0], list):
+            return [[s, p, self.literal_to_python(o)] for s, p, o in res]
+        else:
+            return [self.literal_to_python(o) for o in res]
 
     @memoize
     def label(self, concept, models=[]):
@@ -338,6 +342,30 @@ class SQLStore:
             return True
 
         return False
+
+    def literal_to_python(self, literal):
+
+        if not literal:
+            return None
+
+        if not self.is_literal(literal):
+            return literal
+
+        if literal == "true":
+            return True
+        if literal == "false":
+            return False
+
+        if "@" in literal:  # langague tag
+            return literal
+
+        # TODO: parsing of XSD datatype to python objects not done yet!!
+        if "^^" in literal:  # covers all XSD datatypes in Turtle syntax
+            return literal
+
+        import ast
+
+        return ast.literal_eval(literal)
 
 
 def get_vars(s):

@@ -1,6 +1,12 @@
 Changelog
 =========
 
+minimalkb 1.2.0
+---------------
+
+- literal are now converted to their respective Python type (not yet done for
+  XSD literal like "10^^xsd:integer")
+
 minimalkb 1.1.2
 -------------------------------
 

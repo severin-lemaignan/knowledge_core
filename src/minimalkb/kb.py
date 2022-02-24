@@ -301,7 +301,9 @@ class MinimalKB:
         for s, p, o in about:
             if s == resource or p == resource or o == resource:
                 matching_concepts.add(resource)
-            if resource in o and p == "rdfs:label":  # resource is the label -> add s
+            if (
+                isinstance(o, str) and resource in o and p == "rdfs:label"
+            ):  # resource is the label -> add s
                 matching_concepts.add(s)
 
         res = [
