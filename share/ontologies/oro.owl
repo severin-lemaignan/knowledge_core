@@ -1,0 +1,2879 @@
+<?xml version="1.0"?>
+
+
+<!DOCTYPE rdf:RDF [
+    <!ENTITY oro "http://kb.openrobots.org#" >
+    <!ENTITY owl "http://www.w3.org/2002/07/owl#" >
+    <!ENTITY concept "http://sw.opencyc.org/concept/" >
+    <!ENTITY swrl "http://www.w3.org/2003/11/swrl#" >
+    <!ENTITY dc "http://purl.org/dc/elements/1.1/" >
+    <!ENTITY swrlb "http://www.w3.org/2003/11/swrlb#" >
+    <!ENTITY xsd "http://www.w3.org/2001/XMLSchema#" >
+    <!ENTITY owl2xml "http://www.w3.org/2006/12/owl2-xml#" >
+    <!ENTITY rdfs "http://www.w3.org/2000/01/rdf-schema#" >
+    <!ENTITY rdf "http://www.w3.org/1999/02/22-rdf-syntax-ns#" >
+]>
+
+
+<rdf:RDF xmlns="http://kb.openrobots.org#"
+     xml:base="http://kb.openrobots.org"
+     xmlns:dc="http://purl.org/dc/elements/1.1/"
+     xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+     xmlns:swrl="http://www.w3.org/2003/11/swrl#"
+     xmlns:concept="http://sw.opencyc.org/concept/"
+     xmlns:owl2xml="http://www.w3.org/2006/12/owl2-xml#"
+     xmlns:oro="http://kb.openrobots.org#"
+     xmlns:owl="http://www.w3.org/2002/07/owl#"
+     xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+     xmlns:swrlb="http://www.w3.org/2003/11/swrlb#"
+     xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+    <owl:Ontology rdf:about="http://kb.openrobots.org">
+        <dc:date>2008-2011</dc:date>
+        <dc:creator>CNRS-LAAS</dc:creator>
+        <dc:rights>Creative Commons 3.0 by</dc:rights>
+        <dc:title xml:lang="en">OpenRobots Ontology - Common Sense</dc:title>
+        <rdfs:comment xml:lang="en">This ontology is a part of the OpenRobots Ontology (ORO) project.
+It covers the &quot;common sense&quot; knowledge and rules, independantly of robotic application (however, only a small subset of common sense, relevant for robotic use cases, is represented).</rdfs:comment>
+    </owl:Ontology>
+    
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Annotation properties
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    <owl:AnnotationProperty rdf:about="&dc;creator"/>
+    <owl:AnnotationProperty rdf:about="&oro;question"/>
+    <owl:AnnotationProperty rdf:about="&oro;openCycUri"/>
+    <owl:AnnotationProperty rdf:about="&dc;date"/>
+    <owl:AnnotationProperty rdf:about="&rdfs;label"/>
+    <owl:AnnotationProperty rdf:about="&oro;interrogative"/>
+    <owl:AnnotationProperty rdf:about="&rdfs;comment"/>
+    <owl:AnnotationProperty rdf:about="&dc;title"/>
+    <owl:AnnotationProperty rdf:about="&dc;rights"/>
+    
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Datatypes
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Object Properties
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    
+
+
+    <!-- http://kb.openrobots.org#actionInvolves -->
+
+    <owl:ObjectProperty rdf:about="&oro;actionInvolves">
+        <rdfs:subPropertyOf rdf:resource="&oro;involves"/>
+        <rdfs:domain rdf:resource="&concept;Action"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#actsOnObject -->
+
+    <owl:ObjectProperty rdf:about="&oro;actsOnObject">
+        <rdfs:label xml:lang="en">acts on</rdfs:label>
+        <rdfs:label xml:lang="fr">agit sur</rdfs:label>
+        <rdfs:comment>Theme (or Patient) of an action: Entity undergoing the effect of some action
+
+Example: &gt;Mary&lt; fell over.</rdfs:comment>
+        <rdfs:subPropertyOf rdf:resource="&oro;hasThematicRoleRelationWith"/>
+        <rdfs:range rdf:resource="&concept;PartiallyTangible"/>
+        <rdfs:domain rdf:resource="&concept;PurposefulAction"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#after -->
+
+    <owl:ObjectProperty rdf:about="&oro;after">
+        <rdfs:domain rdf:resource="&oro;TimePoint"/>
+        <rdfs:range rdf:resource="&oro;TimePoint"/>
+        <rdfs:subPropertyOf rdf:resource="&oro;after-Underspecified"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#after-Underspecified -->
+
+    <owl:ObjectProperty rdf:about="&oro;after-Underspecified">
+        <rdfs:subPropertyOf rdf:resource="&oro;temporallyRelated"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#agentRelativeProperty -->
+
+    <owl:ObjectProperty rdf:about="&oro;agentRelativeProperty">
+        <rdfs:comment xml:lang="en">An &quot;agent relative property&quot; is always relative to the point of view of the agent &quot;myself&quot;</rdfs:comment>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#behind -->
+
+    <owl:ObjectProperty rdf:about="&oro;behind">
+        <rdf:type rdf:resource="&owl;TransitiveProperty"/>
+        <rdfs:label>is behind</rdfs:label>
+        <rdfs:subPropertyOf rdf:resource="&oro;hasRelativePosition"/>
+        <owl:inverseOf rdf:resource="&oro;inFrontOf"/>
+        <owl:equivalentProperty rdf:resource="&concept;behind-Generally"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#belongsTo -->
+
+    <owl:ObjectProperty rdf:about="&oro;belongsTo">
+        <rdfs:label xml:lang="en">belongs to</rdfs:label>
+        <rdfs:label xml:lang="fr">appartient à</rdfs:label>
+        <rdfs:range rdf:resource="&oro;Agent"/>
+        <rdfs:domain rdf:resource="&oro;Artifact"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#bringsToStaticSituation -->
+
+    <owl:ObjectProperty rdf:about="&oro;bringsToStaticSituation">
+        <rdfs:label>leads to the static situation</rdfs:label>
+        <rdfs:domain rdf:resource="&concept;Action"/>
+        <rdfs:range rdf:resource="&concept;StaticSituation"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#canBePerformedBy -->
+
+    <owl:ObjectProperty rdf:about="&oro;canBePerformedBy">
+        <rdfs:label>can be performed by</rdfs:label>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#canPerform -->
+
+    <owl:ObjectProperty rdf:about="&oro;canPerform">
+        <rdfs:domain rdf:resource="&oro;Agent"/>
+        <owl:inverseOf rdf:resource="&oro;canBePerformedBy"/>
+        <rdfs:range rdf:resource="&concept;PurposefulAction"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#canUndertakeNow -->
+
+    <owl:ObjectProperty rdf:about="&oro;canUndertakeNow">
+        <rdfs:label>can undertake now</rdfs:label>
+        <rdfs:comment>Links an agent to an action it can starts now. When required, this relationship is to be computed by a planner (or inferred from a model of the human).</rdfs:comment>
+        <rdfs:domain rdf:resource="&oro;Agent"/>
+        <rdfs:range rdf:resource="&concept;PurposefulAction"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#contains -->
+
+    <owl:ObjectProperty rdf:about="&oro;contains">
+        <rdfs:comment xml:lang="en">Links a (physical) container to its (physical) content.</rdfs:comment>
+        <rdfs:domain rdf:resource="&oro;Container"/>
+        <owl:inverseOf rdf:resource="&oro;isContainedIn"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#currentlyBodilyDoes -->
+
+    <owl:ObjectProperty rdf:about="&oro;currentlyBodilyDoes">
+        <rdfs:comment>(currentlyBodilyDoes AGENT ACTION) means that the (embodied) AGENT is currently performing a non-intentional action ACTION.</rdfs:comment>
+        <rdfs:domain rdf:resource="&oro;EmbodiedAgent"/>
+        <rdfs:subPropertyOf rdf:resource="&oro;currentlyDoes"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#currentlyDoes -->
+
+    <owl:ObjectProperty rdf:about="&oro;currentlyDoes">
+        <owl:inverseOf rdf:resource="&oro;currentlyDoneBy"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#currentlyDoneBy -->
+
+    <owl:ObjectProperty rdf:about="&oro;currentlyDoneBy">
+        <rdfs:comment xml:lang="en">Denotes that the DOES of the EVENT is currently doing it. It&#39;s a temporaly bound version of doneBy.</rdfs:comment>
+        <rdfs:subPropertyOf rdf:resource="&concept;doneBy"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#currentlyPerforms -->
+
+    <owl:ObjectProperty rdf:about="&oro;currentlyPerforms">
+        <rdfs:label>currently performs</rdfs:label>
+        <rdfs:comment>(currentlyPerforms AGENT ACTION) means that the AGENT is currently performing the intentional ACTION.</rdfs:comment>
+        <rdfs:seeAlso xml:lang="en">performedBy is the non-temporaly bound inverse property.
+
+currentlyBodilyDo is another specialization of currentlyDo, for non intentional actions.</rdfs:seeAlso>
+        <rdfs:domain rdf:resource="&oro;Agent"/>
+        <rdfs:subPropertyOf rdf:resource="&oro;currentlyDoes"/>
+        <rdfs:range rdf:resource="&concept;Action"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#desires -->
+
+    <owl:ObjectProperty rdf:about="&oro;desires">
+        <rdfs:label xml:lang="en">desire</rdfs:label>
+        <rdfs:label xml:lang="en">desires</rdfs:label>
+        <rdfs:domain rdf:resource="&oro;Agent"/>
+        <rdfs:range rdf:resource="&concept;Situation"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#duration -->
+
+    <owl:ObjectProperty rdf:about="&oro;duration">
+        <rdfs:label>lasts</rdfs:label>
+        <rdfs:range rdf:resource="&oro;TimeInterval"/>
+        <rdfs:subPropertyOf rdf:resource="&oro;temporallyRelated"/>
+        <rdfs:domain rdf:resource="&concept;TemporalThing"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#endingPoint -->
+
+    <owl:ObjectProperty rdf:about="&oro;endingPoint">
+        <rdfs:range rdf:resource="&oro;TimePoint"/>
+        <rdfs:subPropertyOf rdf:resource="&oro;temporallyRelated"/>
+        <rdfs:domain rdf:resource="&concept;Plan-ExpectedSituationType"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#experiences -->
+
+    <owl:ObjectProperty rdf:about="&oro;experiences">
+        <rdfs:label xml:lang="en">experiences</rdfs:label>
+        <rdfs:label xml:lang="fr">vit</rdfs:label>
+        <rdfs:comment xml:lang="en">describes a agent that currently *is* in a specific (static) situation</rdfs:comment>
+        <rdfs:domain rdf:resource="&oro;Agent"/>
+        <owl:inverseOf rdf:resource="&oro;isExperienced"/>
+        <rdfs:range rdf:resource="&concept;StaticSituation"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#focusesOn -->
+
+    <owl:ObjectProperty rdf:about="&oro;focusesOn">
+        <rdfs:label>focuses on</rdfs:label>
+        <rdfs:comment xml:lang="en">An agent is said to focus on an object if and only if it looksAt it AND pointsAt it.</rdfs:comment>
+        <rdfs:domain rdf:resource="&oro;Agent"/>
+        <owl:inverseOf rdf:resource="&oro;isFocusOf"/>
+        <rdfs:range rdf:resource="&concept;EnduringThing-Localized"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#hasBodyPart -->
+
+    <owl:ObjectProperty rdf:about="&oro;hasBodyPart">
+        <rdfs:domain rdf:resource="&oro;Agent"/>
+        <rdfs:range rdf:resource="&oro;BodyPart"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#hasCharacteristicLocation -->
+
+    <owl:ObjectProperty rdf:about="&oro;hasCharacteristicLocation">
+        <rdfs:range rdf:resource="&oro;Location"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#hasColor -->
+
+    <owl:ObjectProperty rdf:about="&oro;hasColor">
+        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
+        <rdfs:comment>describe the main, significant color of the object.</rdfs:comment>
+        <question xml:lang="en">What is the color?</question>
+        <rdfs:range rdf:resource="&oro;Color"/>
+        <rdfs:subPropertyOf rdf:resource="&oro;hasFeature"/>
+        <owl:equivalentProperty rdf:resource="&oro;mainColorOfObject"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#hasFeature -->
+
+    <owl:ObjectProperty rdf:about="&oro;hasFeature"/>
+    
+
+
+    <!-- http://kb.openrobots.org#hasGoal -->
+
+    <owl:ObjectProperty rdf:about="&oro;hasGoal">
+        <rdfs:label xml:lang="en">aims to</rdfs:label>
+        <rdfs:label xml:lang="fr">vise à</rdfs:label>
+        <rdfs:comment>Goal: Entity towards which something moves.
+
+Example: John went &gt;home&lt;</rdfs:comment>
+        <rdfs:subPropertyOf rdf:resource="&oro;hasThematicRoleRelationWith"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#hasInHand -->
+
+    <owl:ObjectProperty rdf:about="&oro;hasInHand">
+        <rdfs:domain rdf:resource="&oro;Agent"/>
+        <rdfs:range rdf:resource="&oro;GraspableObject"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#hasInLeftHand -->
+
+    <owl:ObjectProperty rdf:about="&oro;hasInLeftHand">
+        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
+        <rdfs:subPropertyOf rdf:resource="&oro;hasInHand"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#hasInRightHand -->
+
+    <owl:ObjectProperty rdf:about="&oro;hasInRightHand">
+        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
+        <rdfs:subPropertyOf rdf:resource="&oro;hasInHand"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#hasPosture -->
+
+    <owl:ObjectProperty rdf:about="&oro;hasPosture">
+        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
+        <rdfs:domain rdf:resource="&oro;Agent"/>
+        <rdfs:range rdf:resource="&oro;Posture"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#hasRelativePosition -->
+
+    <owl:ObjectProperty rdf:about="&oro;hasRelativePosition">
+        <rdfs:label>has relative position</rdfs:label>
+        <rdfs:domain rdf:resource="&oro;Location"/>
+        <rdfs:range rdf:resource="&oro;Location"/>
+        <rdfs:subPropertyOf rdf:resource="&oro;agentRelativeProperty"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#hasShape -->
+
+    <owl:ObjectProperty rdf:about="&oro;hasShape">
+        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
+        <rdfs:range rdf:resource="&oro;Shape"/>
+        <rdfs:subPropertyOf rdf:resource="&oro;hasFeature"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#hasSize -->
+
+    <owl:ObjectProperty rdf:about="&oro;hasSize">
+        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
+        <rdfs:subPropertyOf rdf:resource="&oro;hasFeature"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#hasThematicRoleRelationWith -->
+
+    <owl:ObjectProperty rdf:about="&oro;hasThematicRoleRelationWith">
+        <rdfs:label xml:lang="fr">a une relation thématique avec</rdfs:label>
+        <rdfs:label>has a role relation with</rdfs:label>
+        <rdfs:subPropertyOf rdf:resource="&owl;topObjectProperty"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#holds -->
+
+    <owl:ObjectProperty rdf:about="&oro;holds">
+        <rdfs:range rdf:resource="&concept;PartiallyTangible"/>
+        <rdfs:subPropertyOf rdf:resource="&concept;holds-Underspecified"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#inFrontOf -->
+
+    <owl:ObjectProperty rdf:about="&oro;inFrontOf">
+        <rdf:type rdf:resource="&owl;TransitiveProperty"/>
+        <rdfs:label>is in front of</rdfs:label>
+        <rdfs:subPropertyOf rdf:resource="&oro;hasRelativePosition"/>
+        <owl:equivalentProperty rdf:resource="&concept;inFrontOf-Generally"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#involves -->
+
+    <owl:ObjectProperty rdf:about="&oro;involves">
+        <rdfs:label xml:lang="en">involves</rdfs:label>
+        <rdfs:label xml:lang="fr">implique</rdfs:label>
+        <rdfs:domain rdf:resource="&concept;Situation"/>
+        <rdfs:range rdf:resource="&owl;Thing"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#isAbleTo -->
+
+    <owl:ObjectProperty rdf:about="&oro;isAbleTo">
+        <rdfs:label xml:lang="en">am able to</rdfs:label>
+        <rdfs:label xml:lang="en">are able to</rdfs:label>
+        <rdfs:label xml:lang="en">can</rdfs:label>
+        <rdfs:label xml:lang="en">is able to</rdfs:label>
+        <rdfs:comment>(isAbleTo AGENT ACTION) says that AGENT it technically/physically able to achieve the ACTION. It does not mean that the agent can do it right now (see canUndertakeNow for this meaning). The ACTION is constrainted to purposeful actions: isAbleTo does not intend to express a fact like &quot;a stone is able to sink into the water&quot;.</rdfs:comment>
+        <rdfs:domain rdf:resource="&oro;Agent"/>
+        <rdfs:range rdf:resource="&concept;PurposefulAction"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#isAbove -->
+
+    <owl:ObjectProperty rdf:about="&oro;isAbove">
+        <owl:equivalentProperty rdf:resource="&concept;above-Generally"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#isAt -->
+
+    <owl:ObjectProperty rdf:about="&oro;isAt">
+        <rdfs:label xml:lang="en">am at</rdfs:label>
+        <rdfs:label xml:lang="en">are at</rdfs:label>
+        <rdfs:label xml:lang="en">is at</rdfs:label>
+        <rdfs:range rdf:resource="&oro;Location"/>
+        <rdfs:domain rdf:resource="&oro;Location"/>
+        <owl:inverseOf rdf:resource="&oro;placeOf"/>
+        <owl:equivalentProperty rdf:resource="&concept;objectFoundInLocation"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#isBelow -->
+
+    <owl:ObjectProperty rdf:about="&oro;isBelow">
+        <rdfs:label xml:lang="en">is under</rdfs:label>
+        <rdfs:label xml:lang="fr">est sous</rdfs:label>
+        <rdfs:domain rdf:resource="&oro;Location"/>
+        <rdfs:range rdf:resource="&oro;Location"/>
+        <owl:inverseOf rdf:resource="&oro;isAbove"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#isContainedIn -->
+
+    <owl:ObjectProperty rdf:about="&oro;isContainedIn"/>
+    
+
+
+    <!-- http://kb.openrobots.org#isExperienced -->
+
+    <owl:ObjectProperty rdf:about="&oro;isExperienced">
+        <rdfs:subPropertyOf rdf:resource="&oro;staticSituationInvolves"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#isFocusOf -->
+
+    <owl:ObjectProperty rdf:about="&oro;isFocusOf">
+        <rdfs:label>is in the focus of</rdfs:label>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#isIn -->
+
+    <owl:ObjectProperty rdf:about="&oro;isIn">
+        <rdfs:label xml:lang="en">am in</rdfs:label>
+        <rdfs:label xml:lang="en">are in</rdfs:label>
+        <rdfs:label xml:lang="en">is in</rdfs:label>
+        <rdfs:label xml:lang="fr">est dans</rdfs:label>
+        <rdfs:subPropertyOf rdf:resource="&oro;isAt"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#isLocated -->
+
+    <owl:ObjectProperty rdf:about="&oro;isLocated">
+        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
+        <rdfs:label>has relative location</rdfs:label>
+        <rdfs:comment>describe the symbolic position on an object relative to &#39;myself&#39;.
+Values can be:
+{NEAR_FAR}_{FRONT LEFT RIGHT BACK}</rdfs:comment>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#isNextTo -->
+
+    <owl:ObjectProperty rdf:about="&oro;isNextTo">
+        <rdf:type rdf:resource="&owl;SymmetricProperty"/>
+        <rdfs:label xml:lang="en">am next to</rdfs:label>
+        <rdfs:label xml:lang="en">are next to</rdfs:label>
+        <rdfs:label xml:lang="en">is next to</rdfs:label>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#isOn -->
+
+    <owl:ObjectProperty rdf:about="&oro;isOn">
+        <rdfs:label xml:lang="en">is on</rdfs:label>
+        <rdfs:label xml:lang="fr">est sur</rdfs:label>
+        <rdfs:subPropertyOf rdf:resource="&oro;isAt"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#leftOf -->
+
+    <owl:ObjectProperty rdf:about="&oro;leftOf">
+        <rdf:type rdf:resource="&owl;TransitiveProperty"/>
+        <rdfs:label>is left of</rdfs:label>
+        <rdfs:subPropertyOf rdf:resource="&oro;hasRelativePosition"/>
+        <owl:inverseOf rdf:resource="&oro;rightOf"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#looksAt -->
+
+    <owl:ObjectProperty rdf:about="&oro;looksAt">
+        <rdfs:label xml:lang="en">looks at</rdfs:label>
+        <rdfs:label xml:lang="fr">regarde</rdfs:label>
+        <rdfs:comment xml:lang="en">Describes the status of an agent actively looking at an object (&#39;sees&#39; doesn&#39;t imply the agent is actively looking at the object, but only that the object is in the field of view of the agent).</rdfs:comment>
+        <rdfs:domain rdf:resource="&oro;Agent"/>
+        <rdfs:range rdf:resource="&concept;EnduringThing-Localized"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#mainColorOfObject -->
+
+    <owl:ObjectProperty rdf:about="&oro;mainColorOfObject">
+        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
+        <rdfs:label>has main color</rdfs:label>
+        <openCycUri>http://sw.opencyc.org/concept/Mx4r45WD6H7_EdaAAAABAjVgzA</openCycUri>
+        <interrogative xml:lang="en">What is the color?</interrogative>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#objectOfAction -->
+
+    <owl:ObjectProperty rdf:about="&oro;objectOfAction">
+        <rdfs:comment>Binds an action to one or several objects which are targetted by the action.
+For instance, in the assertion, &quot;I take a cup&quot;, &quot;cup&quot; is the ObjectOfAction of &quot;to take&quot;.
+
+In the sentence &quot;Jido shows the Eiffel tower to the tourist&quot;, the object of action is the Eiffel tower and the receiver is the tourist, as specified by the &quot;receiverOfAction&quot; property.</rdfs:comment>
+        <rdfs:subPropertyOf rdf:resource="&oro;actionInvolves"/>
+        <rdfs:range rdf:resource="&owl;Thing"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#placeOf -->
+
+    <owl:ObjectProperty rdf:about="&oro;placeOf"/>
+    
+
+
+    <!-- http://kb.openrobots.org#pointsAt -->
+
+    <owl:ObjectProperty rdf:about="&oro;pointsAt">
+        <rdfs:label>points at</rdfs:label>
+        <rdfs:comment xml:lang="en">Describes the status of an agent physically pointing at a physical location with a hand.</rdfs:comment>
+        <rdfs:domain rdf:resource="&oro;Agent"/>
+        <rdfs:range rdf:resource="&concept;EnduringThing-Localized"/>
+        <owl:equivalentProperty rdf:resource="&concept;pointingToward"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#purposeOfAction -->
+
+    <owl:ObjectProperty rdf:about="&oro;purposeOfAction">
+        <rdfs:comment>binds an action to a state of the world (a Situation) which is desired as a result (at short or long term) of this action.</rdfs:comment>
+        <rdfs:subPropertyOf rdf:resource="&oro;actionInvolves"/>
+        <rdfs:range rdf:resource="&concept;Situation"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#reaches -->
+
+    <owl:ObjectProperty rdf:about="&oro;reaches">
+        <rdfs:comment>This property represent the &quot;active form&quot; of the &quot;isReachable&quot; predicate.
+?o isReachable true &lt;=&gt; myself reaches ?o
+
+It is meant to be only use through rule inference, and is added to this &quot;ROMAN&quot; scenario specific ontology to ensure fluid interaction with the Natural Language module.</rdfs:comment>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#receivedBy -->
+
+    <owl:ObjectProperty rdf:about="&oro;receivedBy">
+        <rdfs:label xml:lang="en">received by</rdfs:label>
+        <rdfs:label xml:lang="fr">reçu par</rdfs:label>
+        <rdfs:comment>Link an action to the object or agent that is a recipient of the action result.
+Not to be confused with actionOnObject that denote that the object is the main concern of the action.
+
+Example: John got &gt;Mary&lt; a present.</rdfs:comment>
+        <rdfs:subPropertyOf rdf:resource="&oro;hasThematicRoleRelationWith"/>
+        <rdfs:domain rdf:resource="&concept;PurposefulAction"/>
+        <rdfs:range rdf:resource="&concept;SpatialThing-Localized"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#recipientOfAction -->
+
+    <owl:ObjectProperty rdf:about="&oro;recipientOfAction">
+        <rdfs:comment>When relevant for the considered action, this property specify the agent or object whose state is eventually modified as a *result* of an action. It is not be the object of action itself (specified by the &quot;objectOfAction&quot; property).
+
+For instance, in the sentence &quot;The robot gives the cup to the human&quot;, the human is the final recipient of the cup and hence the recipientOfAction. In the sentence &quot;I place the robot on the chair&quot;, the chair is the recipient of action while the robot is the object of the action. In the sentence &quot;Jido shows the Eiffel tower to the tourist&quot;, the recipient is the tourist and the object of action is the Eiffel tower.</rdfs:comment>
+        <rdfs:subPropertyOf rdf:resource="&oro;actionInvolves"/>
+        <rdfs:range rdf:resource="&concept;PartiallyTangible"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#rightOf -->
+
+    <owl:ObjectProperty rdf:about="&oro;rightOf">
+        <rdf:type rdf:resource="&owl;TransitiveProperty"/>
+        <rdfs:label>is right of</rdfs:label>
+        <rdfs:subPropertyOf rdf:resource="&oro;hasRelativePosition"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#sees -->
+
+    <owl:ObjectProperty rdf:about="&oro;sees">
+        <rdfs:label xml:lang="en">see</rdfs:label>
+        <rdfs:label xml:lang="en">sees</rdfs:label>
+        <rdfs:label xml:lang="fr">voit</rdfs:label>
+        <rdfs:domain rdf:resource="&oro;Agent"/>
+        <rdfs:range rdf:resource="&concept;EnduringThing-Localized"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#startingPoint -->
+
+    <owl:ObjectProperty rdf:about="&oro;startingPoint">
+        <rdfs:range rdf:resource="&oro;TimePoint"/>
+        <rdfs:subPropertyOf rdf:resource="&oro;temporallyRelated"/>
+        <rdfs:domain rdf:resource="&concept;Plan-ExpectedSituationType"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#startsAfterEndingOf -->
+
+    <owl:ObjectProperty rdf:about="&oro;startsAfterEndingOf">
+        <rdfs:comment xml:lang="en">A ComplexTemporalPredicate (q.v.) that relates any pair of temporal things such that the first starts after the second ends. (startsAfterEndingOf AFTER BEFORE) means that the time point (see TimePoint) at which AFTER first starts to exist or occur is temporally later than (see after) the time point at which BEFORE finally ceases to exist or occur. Thus it is equivalent to the form (after (StartFn AFTER) (EndFn BEFORE)). That is, the startingPoint of AFTER is later than the endingPoint of BEFORE.</rdfs:comment>
+        <rdfs:subPropertyOf rdf:resource="&oro;after-Underspecified"/>
+        <rdfs:domain rdf:resource="&concept;TemporalThing"/>
+        <rdfs:range rdf:resource="&concept;TemporalThing"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#staticSituationInvolves -->
+
+    <owl:ObjectProperty rdf:about="&oro;staticSituationInvolves">
+        <rdfs:comment>Binds a static situation (a state of the world) to the agents involved in the situation.</rdfs:comment>
+        <rdfs:range rdf:resource="&oro;Agent"/>
+        <rdfs:subPropertyOf rdf:resource="&oro;involves"/>
+        <rdfs:domain rdf:resource="&concept;StaticSituation"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#taskOfPlan -->
+
+    <owl:ObjectProperty rdf:about="&oro;taskOfPlan">
+        <rdfs:label>is a task of plan</rdfs:label>
+        <rdfs:domain rdf:resource="&oro;Task"/>
+        <rdfs:range rdf:resource="&concept;Plan-ExpectedSituationType"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#temporallyRelated -->
+
+    <owl:ObjectProperty rdf:about="&oro;temporallyRelated"/>
+    
+
+
+    <!-- http://sw.opencyc.org/concept/above-Generally -->
+
+    <owl:ObjectProperty rdf:about="&concept;above-Generally"/>
+    
+
+
+    <!-- http://sw.opencyc.org/concept/above_Touching -->
+
+    <owl:ObjectProperty rdf:about="&concept;above_Touching"/>
+    
+
+
+    <!-- http://sw.opencyc.org/concept/behind-Generally -->
+
+    <owl:ObjectProperty rdf:about="&concept;behind-Generally"/>
+    
+
+
+    <!-- http://sw.opencyc.org/concept/bodilyDoer -->
+
+    <owl:ObjectProperty rdf:about="&concept;bodilyDoer">
+        <rdfs:comment xml:lang="en">The predicate bodilyDoer relates a given physical event to any organism that is a non-deliberate &quot;doer&quot; of the event (i.e. the organism acts without conscious intention or volition).</rdfs:comment>
+        <rdfs:subPropertyOf rdf:resource="&concept;doneBy"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://sw.opencyc.org/concept/doneBy -->
+
+    <owl:ObjectProperty rdf:about="&concept;doneBy">
+        <rdfs:comment xml:lang="en">A very general predicate that relates events to the things that &quot;do&quot; them. (doneBy EVENT DOER) means that DOER is a &quot;doer&quot; in the event EVENT: some activity on the part of DOER causes or carries out EVENT. This predicate is agnostic as to whether DOER does EVENT intentionally or not. Note that DOER need not even be animate or an agent; e.g. the famous vocanic eruption that buried Pompeii was doneBy Mt. Vesuvius. Note also that an event might have more than one doer; consider a chess game.</rdfs:comment>
+        <rdfs:domain rdf:resource="&concept;Event"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://sw.opencyc.org/concept/farFrom -->
+
+    <owl:ObjectProperty rdf:about="&concept;farFrom">
+        <rdf:type rdf:resource="&owl;SymmetricProperty"/>
+        <rdfs:label>is far from</rdfs:label>
+        <rdfs:domain rdf:resource="&oro;Location"/>
+        <owl:propertyDisjointWith rdf:resource="&concept;near"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://sw.opencyc.org/concept/holds-Underspecified -->
+
+    <owl:ObjectProperty rdf:about="&concept;holds-Underspecified">
+        <openCycUri>http://sw.opencyc.org/concept/Mx4rWdwvdL9_EdaAAAACs6MxSQ</openCycUri>
+        <rdfs:domain rdf:resource="&owl;Thing"/>
+        <rdfs:range rdf:resource="&owl;Thing"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://sw.opencyc.org/concept/inFrontOf-Generally -->
+
+    <owl:ObjectProperty rdf:about="&concept;inFrontOf-Generally"/>
+    
+
+
+    <!-- http://sw.opencyc.org/concept/near -->
+
+    <owl:ObjectProperty rdf:about="&concept;near">
+        <rdf:type rdf:resource="&owl;SymmetricProperty"/>
+        <rdfs:label>is near of</rdfs:label>
+        <rdfs:comment xml:lang="en">Relates an agent to some object: a &quot;near&quot; object is closer than 1m from the agent.</rdfs:comment>
+        <rdfs:domain rdf:resource="&oro;Location"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://sw.opencyc.org/concept/objectFoundInLocation -->
+
+    <owl:ObjectProperty rdf:about="&concept;objectFoundInLocation">
+        <rdfs:label>is at</rdfs:label>
+        <openCycUri>http://sw.opencyc.org/concept/Mx4rvVjQ5JwpEbGdrcN5Y29ycA</openCycUri>
+        <rdfs:comment>Links a localizable thing to its location.</rdfs:comment>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://sw.opencyc.org/concept/performedBy -->
+
+    <owl:ObjectProperty rdf:about="&concept;performedBy">
+        <rdfs:label xml:lang="en">performed by</rdfs:label>
+        <rdfs:label xml:lang="fr">effectué par</rdfs:label>
+        <rdfs:comment>Instigator of some action.
+
+Example: &gt;John&lt; killed Harry.</rdfs:comment>
+        <rdfs:range rdf:resource="&oro;Agent"/>
+        <rdfs:subPropertyOf rdf:resource="&oro;hasThematicRoleRelationWith"/>
+        <rdfs:domain rdf:resource="&concept;PurposefulAction"/>
+        <rdfs:subPropertyOf rdf:resource="&concept;doneBy"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://sw.opencyc.org/concept/pointingToward -->
+
+    <owl:ObjectProperty rdf:about="&concept;pointingToward"/>
+    
+
+
+    <!-- http://www.w3.org/2002/07/owl#topObjectProperty -->
+
+    <owl:ObjectProperty rdf:about="&owl;topObjectProperty"/>
+    
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Data properties
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    
+
+
+    <!-- http://kb.openrobots.org#canBeManipulated -->
+
+    <owl:DatatypeProperty rdf:about="&oro;canBeManipulated">
+        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
+        <rdfs:comment>Indicates if an object can be manipulated (knows a grasping point for the object) by the agent myself. Thus, if the object can be manipulated, it is movable as well.</rdfs:comment>
+        <rdfs:domain rdf:resource="&concept;PartiallyTangible"/>
+        <rdfs:range rdf:resource="&xsd;boolean"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#hasCharacteristicDimension -->
+
+    <owl:DatatypeProperty rdf:about="&oro;hasCharacteristicDimension">
+        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
+        <rdfs:comment>Characteristic entity dimension, in centimeters</rdfs:comment>
+        <rdfs:domain rdf:resource="&concept;PartiallyTangible"/>
+        <rdfs:range rdf:resource="&xsd;integer"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#hasCharacteristicWeight -->
+
+    <owl:DatatypeProperty rdf:about="&oro;hasCharacteristicWeight">
+        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
+        <rdfs:comment>The characteristic weight of the tangible facet of the object, in grammes</rdfs:comment>
+        <rdfs:domain rdf:resource="&concept;PartiallyTangible"/>
+        <rdfs:range rdf:resource="&xsd;integer"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#isDesired -->
+
+    <owl:DatatypeProperty rdf:about="&oro;isDesired">
+        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
+        <openCycUri>http://sw.opencyc.org/concept/Mx4rvViA0JwpEbGdrcN5Y29ycA</openCycUri>
+        <rdfs:comment>IsDesired is equivalent to (desires MYSELF PROP). 
+(desire AGT PROP) means that the Agent_PartiallyTangible AGT desires that the world be as the proposition PROP (represented by a CycLSentence_Assertible) describes it to be. desires is implied by goals, but is weaker: PROP might be some desirable state of affairs that the agent is not actively working, or planning, to make/keep true; e.g., world peace.</rdfs:comment>
+        <rdfs:domain rdf:resource="&concept;Situation"/>
+        <rdfs:range rdf:resource="&xsd;boolean"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#isHolder -->
+
+    <owl:DatatypeProperty rdf:about="&oro;isHolder">
+        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
+        <rdfs:comment>True if one of the object primary function is to hold other objects.
+See the temporalProperty holds-Underspecified for a relationship between a holder and a holded object.</rdfs:comment>
+        <rdfs:domain rdf:resource="&concept;PartiallyTangible"/>
+        <rdfs:range rdf:resource="&xsd;boolean"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#isInFieldOfView -->
+
+    <owl:DatatypeProperty rdf:about="&oro;isInFieldOfView">
+        <rdfs:comment>Indicates if an enduring thing-localized is directly (ie, without moving) visible for the agent (myself).</rdfs:comment>
+        <rdfs:seeAlso>sees: X isInFieldOfView true &lt;=&gt; myself sees X</rdfs:seeAlso>
+        <rdfs:subPropertyOf rdf:resource="&owl;topDataProperty"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#isMovable -->
+
+    <owl:DatatypeProperty rdf:about="&oro;isMovable">
+        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
+        <rdfs:comment xml:lang="en">States if a given artifact is movable by someone (not specifying who).</rdfs:comment>
+        <rdfs:domain rdf:resource="&concept;PartiallyTangible"/>
+        <rdfs:range rdf:resource="&xsd;boolean"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#isMoving -->
+
+    <owl:DatatypeProperty rdf:about="&oro;isMoving">
+        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
+        <rdfs:domain rdf:resource="&concept;EnduringThing-Localized"/>
+        <rdfs:range rdf:resource="&xsd;boolean"/>
+        <rdfs:subPropertyOf rdf:resource="&owl;topDataProperty"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#isReachable -->
+
+    <owl:DatatypeProperty rdf:about="&oro;isReachable">
+        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
+        <rdfs:comment xml:lang="en">True if the object is currently reachable by agent myself.
+Thus an object can not be said to be generally reachable or not.</rdfs:comment>
+        <rdfs:domain rdf:resource="&concept;PartiallyTangible"/>
+        <rdfs:range rdf:resource="&xsd;boolean"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#isSitting -->
+
+    <owl:DatatypeProperty rdf:about="&oro;isSitting">
+        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
+        <rdfs:domain rdf:resource="&oro;Agent"/>
+        <rdfs:range rdf:resource="&xsd;boolean"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#isTraversable -->
+
+    <owl:DatatypeProperty rdf:about="&oro;isTraversable">
+        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
+        <rdfs:domain rdf:resource="&concept;EnduringThing-Localized"/>
+        <rdfs:range rdf:resource="&xsd;boolean"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://kb.openrobots.org#isVisible -->
+
+    <owl:DatatypeProperty rdf:about="&oro;isVisible">
+        <rdf:type rdf:resource="&owl;FunctionalProperty"/>
+        <rdfs:comment>Indicates if an enduring thing-localized is visible (modulo a head movement) for the agent (myself).
+
+This means that the object may not be currently in the field of view of the agent, but only requires the agent to turn the head to see it.</rdfs:comment>
+        <rdfs:domain rdf:resource="&concept;EnduringThing-Localized"/>
+        <rdfs:range rdf:resource="&xsd;boolean"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://www.w3.org/2002/07/owl#topDataProperty -->
+
+    <owl:DatatypeProperty rdf:about="&owl;topDataProperty"/>
+    
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Classes
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    
+
+
+    <!-- http://kb.openrobots.org#ActiveConcept -->
+
+    <owl:Class rdf:about="&oro;ActiveConcept">
+        <rdfs:comment>An &quot;active concept&quot; is a concept (class or instance) which is considered by the robot to be active at a given time.
+
+&quot;Active&quot; may have several meaning, like &quot;relevant in the current context&quot; or &quot;recently accessed&quot;.</rdfs:comment>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#Agent -->
+
+    <owl:Class rdf:about="&oro;Agent">
+        <rdfs:label xml:lang="en">agent</rdfs:label>
+        <rdfs:label xml:lang="fr">agent</rdfs:label>
+        <owl:equivalentClass>
+            <owl:Class>
+                <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="&oro;Human"/>
+                    <rdf:Description rdf:about="&oro;Robot"/>
+                </owl:unionOf>
+            </owl:Class>
+        </owl:equivalentClass>
+        <rdfs:subClassOf rdf:resource="&concept;SolidTangibleThing"/>
+        <owl:disjointWith rdf:resource="&oro;BodyPart"/>
+        <rdfs:comment>Groups both humans and robots</rdfs:comment>
+        <openCycUri>http://sw.opencyc.org/concept/Mx4rvViAB5wpEbGdrcN5Y29ycA</openCycUri>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#Artifact -->
+
+    <owl:Class rdf:about="&oro;Artifact">
+        <rdfs:label xml:lang="en">artifact</rdfs:label>
+        <rdfs:label xml:lang="en">object</rdfs:label>
+        <rdfs:label xml:lang="fr">artefact</rdfs:label>
+        <rdfs:label xml:lang="fr">objet</rdfs:label>
+        <rdfs:subClassOf rdf:resource="&concept;PartiallyTangible"/>
+        <rdfs:comment>A specialization of InanimateObject. Each instance of Artifact is an at least partially tangible thing which was intentionally created by an Agent_PartiallyTangible (or a group of Agent_PartiallyTangibles working together) to serve some purpose or perform some function. In order to create an instance of Artifact, it is not necessary that an Agent_PartiallyTangible create the matter out of which the Artifact is composed; rather, an Agent_PartiallyTangible can create an instance of Artifact by assembling or modifying existing matter. Examples of Artifacts include a wooden flute that&#39;s been whittled from a tree branch, a sawhorse that&#39;s been put together out of boards and nails, and a coin that&#39;s been minted by embossing or by melting liquid silver into a mold. In addition to the obvious human artifacts (buildings, tools, textiles, power lines), the collection Artifact also includes certain sorts of things made by Animals, such as bird nests, termite mounds, and beaver dams. Artifacts without any tangible parts are excluded from the collection Artifact; they are included in the collection Artifact_Intangible.</rdfs:comment>
+        <openCycUri>http://sw.opencyc.org/concept/Mx4rvVkH_ZwpEbGdrcN5Y29ycA</openCycUri>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#AudioTape -->
+
+    <owl:Class rdf:about="&oro;AudioTape">
+        <rdfs:label>audiotape</rdfs:label>
+        <rdfs:label>audio tape</rdfs:label>
+        <rdfs:subClassOf rdf:resource="&oro;Tape"/>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="&oro;hasCharacteristicDimension"/>
+                <owl:someValuesFrom>
+                    <rdfs:Datatype>
+                        <owl:onDatatype rdf:resource="&xsd;integer"/>
+                        <owl:withRestrictions rdf:parseType="Collection">
+                            <rdf:Description>
+                                <xsd:maxInclusive rdf:datatype="&xsd;integer">12</xsd:maxInclusive>
+                            </rdf:Description>
+                            <rdf:Description>
+                                <xsd:minInclusive rdf:datatype="&xsd;integer">7</xsd:minInclusive>
+                            </rdf:Description>
+                        </owl:withRestrictions>
+                    </rdfs:Datatype>
+                </owl:someValuesFrom>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#BodyPart -->
+
+    <owl:Class rdf:about="&oro;BodyPart">
+        <rdfs:label xml:lang="en">body part</rdfs:label>
+        <rdfs:label xml:lang="fr">partie du corps</rdfs:label>
+        <rdfs:subClassOf rdf:resource="&concept;PartiallyTangible"/>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#Book -->
+
+    <owl:Class rdf:about="&oro;Book">
+        <rdfs:subClassOf rdf:resource="&concept;SolidTangibleThing"/>
+        <rdfs:subClassOf>
+            <owl:Class>
+                <owl:intersectionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="&oro;Artifact"/>
+                    <owl:Restriction>
+                        <owl:onProperty rdf:resource="&oro;hasCharacteristicDimension"/>
+                        <owl:someValuesFrom>
+                            <rdfs:Datatype>
+                                <owl:onDatatype rdf:resource="&xsd;integer"/>
+                                <owl:withRestrictions rdf:parseType="Collection">
+                                    <rdf:Description>
+                                        <xsd:maxInclusive rdf:datatype="&xsd;integer">50</xsd:maxInclusive>
+                                    </rdf:Description>
+                                    <rdf:Description>
+                                        <xsd:minInclusive rdf:datatype="&xsd;integer">5</xsd:minInclusive>
+                                    </rdf:Description>
+                                </owl:withRestrictions>
+                            </rdfs:Datatype>
+                        </owl:someValuesFrom>
+                    </owl:Restriction>
+                    <owl:Restriction>
+                        <owl:onProperty rdf:resource="&oro;hasCharacteristicWeight"/>
+                        <owl:someValuesFrom>
+                            <rdfs:Datatype>
+                                <owl:onDatatype rdf:resource="&xsd;integer"/>
+                                <owl:withRestrictions rdf:parseType="Collection">
+                                    <rdf:Description>
+                                        <xsd:minInclusive rdf:datatype="&xsd;integer">50</xsd:minInclusive>
+                                    </rdf:Description>
+                                    <rdf:Description>
+                                        <xsd:maxInclusive rdf:datatype="&xsd;integer">2000</xsd:maxInclusive>
+                                    </rdf:Description>
+                                </owl:withRestrictions>
+                            </rdfs:Datatype>
+                        </owl:someValuesFrom>
+                    </owl:Restriction>
+                    <owl:Restriction>
+                        <owl:onProperty rdf:resource="&oro;isMovable"/>
+                        <owl:hasValue rdf:datatype="&xsd;boolean">true</owl:hasValue>
+                    </owl:Restriction>
+                </owl:intersectionOf>
+            </owl:Class>
+        </rdfs:subClassOf>
+        <openCycUri>http://sw.opencyc.org/concept/Mx4rwJaXepwpEbGdrcN5Y29ycA</openCycUri>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#Bottle -->
+
+    <owl:Class rdf:about="&oro;Bottle">
+        <rdfs:label xml:lang="de">Flasche</rdfs:label>
+        <rdfs:label xml:lang="en">bottle</rdfs:label>
+        <rdfs:label xml:lang="fr">bouteille</rdfs:label>
+        <rdfs:subClassOf rdf:resource="&oro;Container"/>
+        <rdfs:subClassOf rdf:resource="&oro;Tableware"/>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="&oro;hasCharacteristicDimension"/>
+                <owl:allValuesFrom>
+                    <rdfs:Datatype>
+                        <owl:onDatatype rdf:resource="&xsd;float"/>
+                        <owl:withRestrictions rdf:parseType="Collection">
+                            <rdf:Description>
+                                <xsd:minInclusive rdf:datatype="&xsd;float">0.1</xsd:minInclusive>
+                            </rdf:Description>
+                            <rdf:Description>
+                                <xsd:maxInclusive rdf:datatype="&xsd;float">0.3</xsd:maxInclusive>
+                            </rdf:Description>
+                        </owl:withRestrictions>
+                    </rdfs:Datatype>
+                </owl:allValuesFrom>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="&oro;hasShape"/>
+                <owl:hasValue rdf:resource="&oro;cylinderShape"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#Box -->
+
+    <owl:Class rdf:about="&oro;Box">
+        <rdfs:subClassOf rdf:resource="&oro;Artifact"/>
+        <rdfs:subClassOf rdf:resource="&oro;Container"/>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="&oro;hasShape"/>
+                <owl:hasValue rdf:resource="&oro;boxShape"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#Cardboardbox -->
+
+    <owl:Class rdf:about="&oro;Cardboardbox">
+        <rdfs:label>cardboard box</rdfs:label>
+        <rdfs:subClassOf rdf:resource="&oro;Box"/>
+        <rdfs:subClassOf rdf:resource="&concept;SolidTangibleThing"/>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#Ceilling -->
+
+    <owl:Class rdf:about="&oro;Ceilling">
+        <rdfs:label xml:lang="en">ceilling</rdfs:label>
+        <rdfs:label xml:lang="fr">plafond</rdfs:label>
+        <rdfs:subClassOf rdf:resource="&oro;PhysicalSupport"/>
+        <openCycUri>http://sw.opencyc.org/concept/Mx4rvVj3Q5wpEbGdrcN5Y29ycA</openCycUri>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#Cloth -->
+
+    <owl:Class rdf:about="&oro;Cloth">
+        <rdfs:label xml:lang="en">cloth</rdfs:label>
+        <rdfs:label xml:lang="fr">vêtement</rdfs:label>
+        <rdfs:subClassOf rdf:resource="&oro;Artifact"/>
+        <rdfs:subClassOf rdf:resource="&concept;SolidTangibleThing"/>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#Color -->
+
+    <owl:Class rdf:about="&oro;Color">
+        <rdfs:label xml:lang="en">colour</rdfs:label>
+        <rdfs:label xml:lang="fr">couleur</rdfs:label>
+        <rdfs:subClassOf rdf:resource="&owl;Thing"/>
+        <openCycUri>http://sw.opencyc.org/concept/Mx4rr19QJHStEdaAAACgyZzFrg</openCycUri>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#Container -->
+
+    <owl:Class rdf:about="&oro;Container">
+        <rdfs:label xml:lang="en">container</rdfs:label>
+        <rdfs:label xml:lang="fr">conteneur</rdfs:label>
+        <rdfs:subClassOf rdf:resource="&concept;PartiallyTangible"/>
+        <openCycUri>http://sw.opencyc.org/concept/Mx4rvVjOGJwpEbGdrcN5Y29ycA</openCycUri>
+        <rdfs:comment xml:lang="en">The collection of tangible objects whose primary function is to contain something.</rdfs:comment>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#ContinuousTimeInterval -->
+
+    <owl:Class rdf:about="&oro;ContinuousTimeInterval">
+        <rdfs:subClassOf rdf:resource="&oro;TimeInterval"/>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#Cover -->
+
+    <owl:Class rdf:about="&oro;Cover">
+        <rdfs:label xml:lang="en">cover</rdfs:label>
+        <rdfs:label xml:lang="fr">couvrir</rdfs:label>
+        <rdfs:subClassOf rdf:resource="&oro;Manipulation"/>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#Cup -->
+
+    <owl:Class rdf:about="&oro;Cup">
+        <rdfs:subClassOf rdf:resource="&oro;Tableware"/>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="&oro;hasCharacteristicDimension"/>
+                <owl:someValuesFrom>
+                    <rdfs:Datatype>
+                        <owl:onDatatype rdf:resource="&xsd;integer"/>
+                        <owl:withRestrictions rdf:parseType="Collection">
+                            <rdf:Description>
+                                <xsd:maxInclusive rdf:datatype="&xsd;integer">10</xsd:maxInclusive>
+                            </rdf:Description>
+                            <rdf:Description>
+                                <xsd:minInclusive rdf:datatype="&xsd;integer">5</xsd:minInclusive>
+                            </rdf:Description>
+                        </owl:withRestrictions>
+                    </rdfs:Datatype>
+                </owl:someValuesFrom>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#EligibleAction -->
+
+    <owl:Class rdf:about="&oro;EligibleAction">
+        <rdfs:subClassOf rdf:resource="&concept;Action"/>
+        <rdfs:comment xml:lang="en">An instance of EligibleAction is an action whose pre-conditions are currently fullfit, thus could possible be started.</rdfs:comment>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#EmbodiedAgent -->
+
+    <owl:Class rdf:about="&oro;EmbodiedAgent">
+        <rdfs:label xml:lang="en">embodied agent</rdfs:label>
+        <rdfs:label xml:lang="fr">agent incarné</rdfs:label>
+        <rdfs:subClassOf rdf:resource="&oro;Agent"/>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#EmotionalState -->
+
+    <owl:Class rdf:about="&oro;EmotionalState">
+        <rdfs:subClassOf rdf:resource="&concept;StaticSituation"/>
+        <rdfs:comment xml:lang="en">Describes the emotional state of an agent, like being happy, confused, sad...</rdfs:comment>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#Eyes -->
+
+    <owl:Class rdf:about="&oro;Eyes">
+        <rdfs:label xml:lang="en">eye</rdfs:label>
+        <rdfs:label xml:lang="fr">œil</rdfs:label>
+        <rdfs:subClassOf rdf:resource="&oro;BodyPart"/>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#Floor -->
+
+    <owl:Class rdf:about="&oro;Floor">
+        <rdfs:label xml:lang="en">floor</rdfs:label>
+        <rdfs:label xml:lang="fr">sol</rdfs:label>
+        <rdfs:subClassOf rdf:resource="&oro;PhysicalSupport"/>
+        <openCycUri>http://sw.opencyc.org/concept/Mx4rvVj4k5wpEbGdrcN5Y29ycA</openCycUri>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#GameArtifact -->
+
+    <owl:Class rdf:about="&oro;GameArtifact">
+        <rdfs:subClassOf rdf:resource="&oro;Artifact"/>
+        <rdfs:subClassOf rdf:resource="&concept;SolidTangibleThing"/>
+        <rdfs:comment>Artifact used to play with. One notable subclass is &#39;Toy&#39;.</rdfs:comment>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#Give -->
+
+    <owl:Class rdf:about="&oro;Give">
+        <rdfs:label xml:lang="en">donner</rdfs:label>
+        <rdfs:label xml:lang="en">give</rdfs:label>
+        <rdfs:subClassOf rdf:resource="&oro;Manipulation"/>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#Glass -->
+
+    <owl:Class rdf:about="&oro;Glass">
+        <rdfs:subClassOf rdf:resource="&oro;Tableware"/>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="&oro;hasCharacteristicDimension"/>
+                <owl:someValuesFrom>
+                    <rdfs:Datatype>
+                        <owl:onDatatype rdf:resource="&xsd;integer"/>
+                        <owl:withRestrictions rdf:parseType="Collection">
+                            <rdf:Description>
+                                <xsd:maxInclusive rdf:datatype="&xsd;integer">10</xsd:maxInclusive>
+                            </rdf:Description>
+                            <rdf:Description>
+                                <xsd:minInclusive rdf:datatype="&xsd;integer">5</xsd:minInclusive>
+                            </rdf:Description>
+                        </owl:withRestrictions>
+                    </rdfs:Datatype>
+                </owl:someValuesFrom>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="&oro;hasShape"/>
+                <owl:hasValue rdf:resource="&oro;cylinderShape"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#GraspableObject -->
+
+    <owl:Class rdf:about="&oro;GraspableObject">
+        <rdfs:label xml:lang="en">graspable object</rdfs:label>
+        <rdfs:label xml:lang="fr">objet attrapable</rdfs:label>
+        <rdfs:subClassOf rdf:resource="&concept;SolidTangibleThing"/>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#Hand -->
+
+    <owl:Class rdf:about="&oro;Hand">
+        <owl:equivalentClass rdf:resource="&concept;Hand"/>
+        <rdfs:subClassOf rdf:resource="&oro;BodyPart"/>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#Head -->
+
+    <owl:Class rdf:about="&oro;Head">
+        <rdfs:label xml:lang="en">head</rdfs:label>
+        <rdfs:label xml:lang="fr">tête</rdfs:label>
+        <rdfs:subClassOf rdf:resource="&oro;BodyPart"/>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#Human -->
+
+    <owl:Class rdf:about="&oro;Human">
+        <rdfs:label xml:lang="en">human</rdfs:label>
+        <rdfs:label xml:lang="fr">humain</rdfs:label>
+        <rdfs:subClassOf rdf:resource="&oro;EmbodiedAgent"/>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="&oro;hasCharacteristicDimension"/>
+                <owl:someValuesFrom>
+                    <rdfs:Datatype>
+                        <owl:onDatatype rdf:resource="&xsd;integer"/>
+                        <owl:withRestrictions rdf:parseType="Collection">
+                            <rdf:Description>
+                                <xsd:maxInclusive rdf:datatype="&xsd;integer">200</xsd:maxInclusive>
+                            </rdf:Description>
+                            <rdf:Description>
+                                <xsd:minInclusive rdf:datatype="&xsd;integer">140</xsd:minInclusive>
+                            </rdf:Description>
+                        </owl:withRestrictions>
+                    </rdfs:Datatype>
+                </owl:someValuesFrom>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <owl:disjointWith rdf:resource="&oro;Robot"/>
+        <openCycUri>http://sw.opencyc.org/concept/Mx4rvViAkpwpEbGdrcN5Y29ycA</openCycUri>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#Jacket -->
+
+    <owl:Class rdf:about="&oro;Jacket">
+        <rdfs:label xml:lang="en">jacket</rdfs:label>
+        <rdfs:label xml:lang="fr">veste</rdfs:label>
+        <rdfs:subClassOf rdf:resource="&oro;Cloth"/>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#JointAttentionSituation -->
+
+    <owl:Class rdf:about="&oro;JointAttentionSituation">
+        <owl:equivalentClass>
+            <owl:Class>
+                <owl:intersectionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="&concept;Situation"/>
+                    <owl:Restriction>
+                        <owl:onProperty rdf:resource="&oro;involves"/>
+                        <owl:someValuesFrom>
+                            <owl:Restriction>
+                                <owl:onProperty rdf:resource="&oro;isFocusOf"/>
+                                <owl:onClass rdf:resource="&oro;Agent"/>
+                                <owl:minQualifiedCardinality rdf:datatype="&xsd;nonNegativeInteger">2</owl:minQualifiedCardinality>
+                            </owl:Restriction>
+                        </owl:someValuesFrom>
+                    </owl:Restriction>
+                </owl:intersectionOf>
+            </owl:Class>
+        </owl:equivalentClass>
+        <rdfs:subClassOf rdf:resource="&concept;StaticSituation"/>
+        <rdfs:comment>A joint attention situation is a situation where an object is the focus of attention of more than one agent.</rdfs:comment>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#LeftHand -->
+
+    <owl:Class rdf:about="&oro;LeftHand">
+        <rdfs:subClassOf rdf:resource="&concept;Hand"/>
+        <owl:disjointWith rdf:resource="&oro;RightHand"/>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#Location -->
+
+    <owl:Class rdf:about="&oro;Location">
+        <owl:equivalentClass rdf:resource="&concept;SpatialThing-Localized"/>
+        <rdfs:comment>Location is use in its very broad meaning of &quot;a spatial-localized thing&quot;. Hence an object is a location, an agent is a location, etc.</rdfs:comment>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#Manipulation -->
+
+    <owl:Class rdf:about="&oro;Manipulation">
+        <rdfs:label xml:lang="en">manipulation</rdfs:label>
+        <rdfs:label xml:lang="fr">manipulation</rdfs:label>
+        <rdfs:subClassOf rdf:resource="&concept;Action"/>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#NonAlcoholicBeverage -->
+
+    <owl:Class rdf:about="&oro;NonAlcoholicBeverage">
+        <rdfs:subClassOf rdf:resource="&concept;Drink"/>
+        <owl:disjointWith rdf:resource="&concept;AlcoholicBeverage"/>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#Obstacle -->
+
+    <owl:Class rdf:about="&oro;Obstacle">
+        <rdfs:label xml:lang="en">obstacle</rdfs:label>
+        <rdfs:label xml:lang="fr">obstacle</rdfs:label>
+        <owl:equivalentClass>
+            <owl:Class>
+                <owl:intersectionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="&concept;EnduringThing-Localized"/>
+                    <owl:Restriction>
+                        <owl:onProperty rdf:resource="&oro;isTraversable"/>
+                        <owl:hasValue rdf:datatype="&xsd;boolean">false</owl:hasValue>
+                    </owl:Restriction>
+                </owl:intersectionOf>
+            </owl:Class>
+        </owl:equivalentClass>
+        <owl:disjointWith rdf:resource="&oro;Opening"/>
+        <openCycUri>http://sw.opencyc.org/concept/Mx4rwJJMaZwpEbGdrcN5Y29ycA</openCycUri>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#Opening -->
+
+    <owl:Class rdf:about="&oro;Opening">
+        <rdfs:label xml:lang="en">opening</rdfs:label>
+        <rdfs:label xml:lang="fr">ouverture</rdfs:label>
+        <rdfs:subClassOf rdf:resource="&concept;EnduringThing-Localized"/>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#PhysicalSupport -->
+
+    <owl:Class rdf:about="&oro;PhysicalSupport">
+        <rdfs:label xml:lang="en">physical support</rdfs:label>
+        <rdfs:label xml:lang="fr">support physique</rdfs:label>
+        <owl:equivalentClass>
+            <owl:Class>
+                <owl:intersectionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="&concept;PartiallyTangible"/>
+                    <owl:Restriction>
+                        <owl:onProperty rdf:resource="&oro;isHolder"/>
+                        <owl:hasValue rdf:datatype="&xsd;boolean">true</owl:hasValue>
+                    </owl:Restriction>
+                </owl:intersectionOf>
+            </owl:Class>
+        </owl:equivalentClass>
+        <rdfs:subClassOf rdf:resource="&oro;Place"/>
+        <rdfs:comment>A PhysicalSupport is a special kind of tangible object which main feature is to hold other tangible objects. It includes walls, floors, tables, shelves...</rdfs:comment>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#Pick -->
+
+    <owl:Class rdf:about="&oro;Pick">
+        <rdfs:label xml:lang="en">pick</rdfs:label>
+        <rdfs:label xml:lang="fr">prendre</rdfs:label>
+        <rdfs:subClassOf rdf:resource="&oro;Manipulation"/>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#Place -->
+
+    <owl:Class rdf:about="&oro;Place">
+        <rdfs:label xml:lang="en">place</rdfs:label>
+        <rdfs:label xml:lang="fr">endroit</rdfs:label>
+        <rdfs:subClassOf rdf:resource="&concept;EnduringThing-Localized"/>
+        <openCycUri>http://sw.opencyc.org/concept/Mx4rvVjTtJwpEbGdrcN5Y29ycA</openCycUri>
+        <rdfs:comment>A specialization of EnduringThing_Localized (q.v). Each instance of Place is a spatial thing which has a relatively permanent location.</rdfs:comment>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#Placemat -->
+
+    <owl:Class rdf:about="&oro;Placemat">
+        <rdfs:subClassOf rdf:resource="&oro;Tableware"/>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="&oro;isHolder"/>
+                <owl:hasValue rdf:datatype="&xsd;boolean">true</owl:hasValue>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#Plan -->
+
+    <owl:Class rdf:about="&oro;Plan">
+        <owl:equivalentClass rdf:resource="&concept;Plan-ExpectedSituationType"/>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#Point -->
+
+    <owl:Class rdf:about="&oro;Point">
+        <rdfs:label xml:lang="en">point</rdfs:label>
+        <rdfs:label xml:lang="fr">point</rdfs:label>
+        <rdfs:subClassOf rdf:resource="&oro;SpaceRegion"/>
+        <rdfs:comment>A specialization of both Point and SpaceRegion_Empirical (qq.v.). Each instance of Point_Empirical is a zero-dimensional object that belongs to, and thus has a fixed location in, the embedding space of the empirical universe (see #$TheSpatialUniverse-Empirical).
+
+Examples include the location of the center of mass of the Milky Way galaxy at the beginning of the 20th Century. Note that empirical space points are embedded in time; if time is not a significant parameter (i.e. if in an atemporal or temporally agnostic context) consider using Point instead.</rdfs:comment>
+        <rdfs:comment>For ease of use, we use here &quot;Point&quot; as &quot;Point-Empirical&quot; in the Open Cyc ontology. The OpenCyc URI refers to the correct one (&quot;Point-Empirical&quot;)</rdfs:comment>
+        <openCycUri>http://sw.opencyc.org/2008/06/10/concept/Mx4rwH1QOJwpEbGdrcN5Y29ycA</openCycUri>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#Posture -->
+
+    <owl:Class rdf:about="&oro;Posture">
+        <rdfs:label xml:lang="en">posture</rdfs:label>
+        <rdfs:label xml:lang="fr">posture</rdfs:label>
+        <owl:equivalentClass>
+            <owl:Class>
+                <owl:oneOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="&oro;sitting"/>
+                    <rdf:Description rdf:about="&oro;standing"/>
+                </owl:oneOf>
+            </owl:Class>
+        </owl:equivalentClass>
+        <rdfs:subClassOf rdf:resource="&concept;SpatialThing"/>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#Put -->
+
+    <owl:Class rdf:about="&oro;Put">
+        <rdfs:label xml:lang="en">put</rdfs:label>
+        <rdfs:label xml:lang="fr">poser</rdfs:label>
+        <rdfs:subClassOf rdf:resource="&oro;Manipulation"/>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#Release -->
+
+    <owl:Class rdf:about="&oro;Release">
+        <rdfs:label xml:lang="en">release</rdfs:label>
+        <rdfs:label xml:lang="fr">lâcher</rdfs:label>
+        <rdfs:subClassOf rdf:resource="&oro;Manipulation"/>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#Remote -->
+
+    <owl:Class rdf:about="&oro;Remote">
+        <rdfs:subClassOf rdf:resource="&oro;Artifact"/>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="&oro;hasShape"/>
+                <owl:hasValue rdf:resource="&oro;boxShape"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#Rest -->
+
+    <owl:Class rdf:about="&oro;Rest">
+        <owl:equivalentClass rdf:resource="&concept;Resting-Relaxing"/>
+        <rdfs:subClassOf rdf:resource="&concept;Action"/>
+        <rdfs:comment></rdfs:comment>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#RightHand -->
+
+    <owl:Class rdf:about="&oro;RightHand">
+        <rdfs:subClassOf rdf:resource="&concept;Hand"/>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#Robot -->
+
+    <owl:Class rdf:about="&oro;Robot">
+        <rdfs:label xml:lang="en">robot</rdfs:label>
+        <rdfs:label xml:lang="fr">robot</rdfs:label>
+        <rdfs:subClassOf rdf:resource="&oro;EmbodiedAgent"/>
+        <openCycUri>http://sw.opencyc.org/concept/Mx4rwQr1pJwpEbGdrcN5Y29ycA</openCycUri>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#Shape -->
+
+    <owl:Class rdf:about="&oro;Shape">
+        <rdfs:label xml:lang="en">shape</rdfs:label>
+        <rdfs:label xml:lang="fr">forme</rdfs:label>
+        <rdfs:subClassOf rdf:resource="&concept;SpatialThing"/>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#Shelf -->
+
+    <owl:Class rdf:about="&oro;Shelf">
+        <rdfs:subClassOf rdf:resource="&concept;Object-SupportingFurniture"/>
+        <openCycUri>http://sw.opencyc.org/concept/Mx4rvVjY_5wpEbGdrcN5Y29ycA</openCycUri>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#Situation -->
+
+    <owl:Class rdf:about="&oro;Situation"/>
+    
+
+
+    <!-- http://kb.openrobots.org#Size -->
+
+    <owl:Class rdf:about="&oro;Size">
+        <rdfs:subClassOf rdf:resource="&concept;SpatialThing"/>
+        <rdfs:comment xml:lang="en">A symbolic size like large or small has NO absolute meaning. It is always relative to a context.</rdfs:comment>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#SpaceRegion -->
+
+    <owl:Class rdf:about="&oro;SpaceRegion">
+        <rdfs:label xml:lang="en">zone</rdfs:label>
+        <rdfs:label xml:lang="fr">zone</rdfs:label>
+        <owl:equivalentClass rdf:resource="&oro;Zone"/>
+        <rdfs:subClassOf rdf:resource="&concept;SpatialThing-Localized"/>
+        <openCycUri>http://sw.opencyc.org/concept/Mx4rvlxdi5wpEbGdrcN5Y29ycA</openCycUri>
+        <rdfs:comment>A specialization of both SpatialThing and IntangibleIndividual (qq.v.) whose instances are regions of space that exclusively act as possible locations for other spatial objects, and thus are immobile. A space region might be three-, two-, one-, or zero-dimensional; and spatial objects &quot;occupy&quot; such regions accordingly. Three-dimensional space regions (see SpaceChunk) can be occupied by solid objects. Two-dimensional space regions (or Surfaces) can be occupied by a purely two-dimensional objects. And similarly for one-dimensional space regions (Lines) and zero-dimensional space regions (Points).
+
+Another important specialization of SpaceRegion is SpaceRegion_Empirical, whose instances are pieces of the embedding space for spatio-temporal objects (see SpatialThing_Localized).
+
+For more on spatial location and occupancy, see AbsoluteLocationalPredicate and its instances.</rdfs:comment>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#StorageBox -->
+
+    <owl:Class rdf:about="&oro;StorageBox">
+        <rdfs:subClassOf rdf:resource="&oro;Box"/>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#Tableware -->
+
+    <owl:Class rdf:about="&oro;Tableware">
+        <rdfs:subClassOf rdf:resource="&oro;Artifact"/>
+        <rdfs:subClassOf rdf:resource="&concept;SolidTangibleThing"/>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="&oro;isMovable"/>
+                <owl:hasValue rdf:datatype="&xsd;boolean">true</owl:hasValue>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#Tape -->
+
+    <owl:Class rdf:about="&oro;Tape">
+        <rdfs:subClassOf rdf:resource="&concept;SolidTangibleThing"/>
+        <rdfs:subClassOf>
+            <owl:Class>
+                <owl:intersectionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="&oro;Artifact"/>
+                    <owl:Restriction>
+                        <owl:onProperty rdf:resource="&oro;hasShape"/>
+                        <owl:hasValue rdf:resource="&oro;boxShape"/>
+                    </owl:Restriction>
+                    <owl:Restriction>
+                        <owl:onProperty rdf:resource="&oro;isMovable"/>
+                        <owl:hasValue rdf:datatype="&xsd;boolean">true</owl:hasValue>
+                    </owl:Restriction>
+                </owl:intersectionOf>
+            </owl:Class>
+        </rdfs:subClassOf>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#Task -->
+
+    <owl:Class rdf:about="&oro;Task">
+        <rdfs:label xml:lang="en">task</rdfs:label>
+        <rdfs:label xml:lang="fr">tâche</rdfs:label>
+        <rdfs:subClassOf rdf:resource="&concept;PurposefulAction"/>
+        <rdfs:comment>An action considered in the specific context of robotics.</rdfs:comment>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#TimeInterval -->
+
+    <owl:Class rdf:about="&oro;TimeInterval">
+        <rdfs:label xml:lang="en">time interval</rdfs:label>
+        <rdfs:label xml:lang="fr">intervalle de temps</rdfs:label>
+        <rdfs:subClassOf rdf:resource="&concept;Plan-ExpectedSituationType"/>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#TimePoint -->
+
+    <owl:Class rdf:about="&oro;TimePoint">
+        <rdfs:label>time point</rdfs:label>
+        <rdfs:subClassOf rdf:resource="&oro;ContinuousTimeInterval"/>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#Toolbox -->
+
+    <owl:Class rdf:about="&oro;Toolbox">
+        <rdfs:subClassOf rdf:resource="&oro;Box"/>
+        <rdfs:subClassOf rdf:resource="&concept;SolidTangibleThing"/>
+        <rdfs:comment>A specialization of box used to carry tools.</rdfs:comment>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#Torso -->
+
+    <owl:Class rdf:about="&oro;Torso">
+        <rdfs:label xml:lang="en">torso</rdfs:label>
+        <rdfs:label xml:lang="fr">torse</rdfs:label>
+        <rdfs:subClassOf rdf:resource="&oro;BodyPart"/>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#Toy -->
+
+    <owl:Class rdf:about="&oro;Toy">
+        <rdfs:subClassOf rdf:resource="&oro;GameArtifact"/>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="&oro;isMovable"/>
+                <owl:hasValue rdf:datatype="&xsd;boolean">true</owl:hasValue>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#ToyCube -->
+
+    <owl:Class rdf:about="&oro;ToyCube">
+        <rdfs:subClassOf rdf:resource="&oro;Toy"/>
+        <rdfs:comment>A cube, traditionnaly made of wood, meant for children to play with.</rdfs:comment>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#Trashbin -->
+
+    <owl:Class rdf:about="&oro;Trashbin">
+        <rdfs:subClassOf rdf:resource="&oro;Artifact"/>
+        <rdfs:subClassOf rdf:resource="&concept;SolidTangibleThing"/>
+        <openCycUri>http://sw.opencyc.org/concept/Mx4rvVjUTpwpEbGdrcN5Y29ycA</openCycUri>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#Uncover -->
+
+    <owl:Class rdf:about="&oro;Uncover">
+        <rdfs:label xml:lang="en">uncover</rdfs:label>
+        <rdfs:label xml:lang="fr">découvrir</rdfs:label>
+        <rdfs:subClassOf rdf:resource="&oro;Manipulation"/>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#VideoTape -->
+
+    <owl:Class rdf:about="&oro;VideoTape">
+        <rdfs:label>video tape</rdfs:label>
+        <rdfs:label>videotape</rdfs:label>
+        <rdfs:subClassOf rdf:resource="&oro;Tape"/>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="&oro;hasCharacteristicDimension"/>
+                <owl:someValuesFrom>
+                    <rdfs:Datatype>
+                        <owl:onDatatype rdf:resource="&xsd;integer"/>
+                        <owl:withRestrictions rdf:parseType="Collection">
+                            <rdf:Description>
+                                <xsd:maxInclusive rdf:datatype="&xsd;integer">20</xsd:maxInclusive>
+                            </rdf:Description>
+                            <rdf:Description>
+                                <xsd:minInclusive rdf:datatype="&xsd;integer">10</xsd:minInclusive>
+                            </rdf:Description>
+                        </owl:withRestrictions>
+                    </rdfs:Datatype>
+                </owl:someValuesFrom>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:comment>A magnetic video support</rdfs:comment>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#VisualMark -->
+
+    <owl:Class rdf:about="&oro;VisualMark">
+        <rdfs:label xml:lang="en">marker</rdfs:label>
+        <rdfs:label xml:lang="en">visual mark</rdfs:label>
+        <rdfs:label xml:lang="fr">marqueur visuel</rdfs:label>
+        <rdfs:subClassOf rdf:resource="&concept;PartiallyTangible"/>
+        <openCycUri>http://sw.opencyc.org/concept/Mx4rvVkLmJwpEbGdrcN5Y29ycA</openCycUri>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#Wall -->
+
+    <owl:Class rdf:about="&oro;Wall">
+        <rdfs:label xml:lang="en">wall</rdfs:label>
+        <rdfs:label xml:lang="fr">mur</rdfs:label>
+        <rdfs:subClassOf rdf:resource="&oro;PhysicalSupport"/>
+        <openCycUri>http://sw.opencyc.org/concept/Mx4rvVjfapwpEbGdrcN5Y29ycA</openCycUri>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#Window -->
+
+    <owl:Class rdf:about="&oro;Window">
+        <rdfs:subClassOf rdf:resource="&oro;Artifact"/>
+        <rdfs:subClassOf rdf:resource="&concept;SolidTangibleThing"/>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="&oro;isTraversable"/>
+                <owl:hasValue rdf:datatype="&xsd;boolean">true</owl:hasValue>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <openCycUri>http://sw.opencyc.org/concept/Mx4rvVj5V5wpEbGdrcN5Y29ycA</openCycUri>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#Zone -->
+
+    <owl:Class rdf:about="&oro;Zone"/>
+    
+
+
+    <!-- http://kb.openrobots.org#ZoneOfAction -->
+
+    <owl:Class rdf:about="&oro;ZoneOfAction">
+        <rdfs:subClassOf rdf:resource="&oro;SpaceRegion"/>
+        <rdfs:comment>Defines the portion of space in which an agent can act. It primary relates to actions like taking something.</rdfs:comment>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#ZoneOfInteraction -->
+
+    <owl:Class rdf:about="&oro;ZoneOfInteraction">
+        <rdfs:subClassOf rdf:resource="&oro;SpaceRegion"/>
+    </owl:Class>
+    
+
+
+    <!-- http://kb.openrobots.org#ZoneOfInterest -->
+
+    <owl:Class rdf:about="&oro;ZoneOfInterest">
+        <rdfs:label xml:lang="en">zone of interest</rdfs:label>
+        <rdfs:label xml:lang="fr">zone d&#39;intérêt</rdfs:label>
+        <rdfs:subClassOf rdf:resource="&oro;SpaceRegion"/>
+        <rdfs:comment>A specific region of space which has an interest for some purpose.
+For instance, a table can have several zone of interests describing parts of the table interessant for the robot (plates, zons in front of chairs,etc.)</rdfs:comment>
+    </owl:Class>
+    
+
+
+    <!-- http://sw.opencyc.org/concept/Action -->
+
+    <owl:Class rdf:about="&concept;Action">
+        <rdfs:label xml:lang="en">action</rdfs:label>
+        <rdfs:label xml:lang="fr">action</rdfs:label>
+        <rdfs:subClassOf rdf:resource="&concept;Event"/>
+        <openCycUri>http://sw.opencyc.org/concept/Mx4rvVioQZwpEbGdrcN5Y29ycA</openCycUri>
+        <rdfs:comment>An action implies several thematic roles (or semantic roles):
+
+We use this list of roles (Aarts 1997: 88), which are mapped to specific predicates :
+Agent: The ‘doer’ or instigator of the action denoted by the predicate.
+Patient: The ‘undergoer’ of the action or event denoted by the predicate.
+Theme: The entity that is moved by the action or event denoted by the predicate.
+Experiencer: The living entity that experiences the action or event denoted by the predicate.
+Goal: The location or entity in the direction of which something moves.
+Benefactive: The entity that benefits from the action or event denoted by the predicate.
+Source: The location or entity from which something moves
+Instrument: The medium by which the action or event denoted by the predicate is carried out.
+Locative: The specification of the place where the action or event denoted by the predicate in situated.</rdfs:comment>
+        <rdfs:comment>The collection of Events (q.v.) that are carried out by some &quot;doer&quot;. Instances of Action include any event in which one or more agents effect some change in the (tangible or intangible) state of the world, typically by an expenditure of effort or energy. Note that it is not required that any tangible object be moved, changed, produced, or destroyed for an action to occur; the effects of an action might be intangible. In the context of the OpenRobotOntology, doers of an action are as a matter of fact instances to Agent_PartiallyTangible (q.v.), even if they may not be in a broader context (e.g. a falling rock that dents a car&#39;s roof). Depending upon the context, doers of actions might be animate or inanimate, conscious or nonconscious. For actions that are intentional, see PurposefulAction and performedBy.
+
+The object of an action is asserted through the properties objectOfAction and recipientOfAction.</rdfs:comment>
+    </owl:Class>
+    
+
+
+    <!-- http://sw.opencyc.org/concept/AlcoholicBeverage -->
+
+    <owl:Class rdf:about="&concept;AlcoholicBeverage">
+        <rdfs:subClassOf rdf:resource="&concept;Drink"/>
+    </owl:Class>
+    
+
+
+    <!-- http://sw.opencyc.org/concept/AppleJuice -->
+
+    <owl:Class rdf:about="&concept;AppleJuice">
+        <rdfs:label xml:lang="en">apple juice</rdfs:label>
+        <rdfs:label xml:lang="fr">jus de pomme</rdfs:label>
+        <rdfs:subClassOf rdf:resource="&oro;NonAlcoholicBeverage"/>
+        <owl:disjointWith rdf:resource="&concept;OrangeJuice"/>
+    </owl:Class>
+    
+
+
+    <!-- http://sw.opencyc.org/concept/ArmChair -->
+
+    <owl:Class rdf:about="&concept;ArmChair">
+        <rdfs:label xml:lang="en">armchair</rdfs:label>
+        <rdfs:label xml:lang="fr">fauteuil</rdfs:label>
+        <rdfs:subClassOf rdf:resource="&concept;FurniturePiece"/>
+    </owl:Class>
+    
+
+
+    <!-- http://sw.opencyc.org/concept/Beer -->
+
+    <owl:Class rdf:about="&concept;Beer">
+        <rdfs:label xml:lang="en">beer</rdfs:label>
+        <rdfs:subClassOf rdf:resource="&concept;AlcoholicBeverage"/>
+        <owl:disjointWith rdf:resource="&concept;Wine"/>
+    </owl:Class>
+    
+
+
+    <!-- http://sw.opencyc.org/concept/Can -->
+
+    <owl:Class rdf:about="&concept;Can">
+        <rdfs:label xml:lang="de">Dose</rdfs:label>
+        <rdfs:label xml:lang="en">can</rdfs:label>
+        <rdfs:label xml:lang="fr">cannette</rdfs:label>
+        <rdfs:subClassOf rdf:resource="&oro;Artifact"/>
+        <rdfs:subClassOf rdf:resource="&oro;Container"/>
+        <rdfs:subClassOf rdf:resource="&concept;SolidTangibleThing"/>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="&oro;hasCharacteristicDimension"/>
+                <owl:allValuesFrom>
+                    <rdfs:Datatype>
+                        <owl:onDatatype rdf:resource="&xsd;float"/>
+                        <owl:withRestrictions rdf:parseType="Collection">
+                            <rdf:Description>
+                                <xsd:minInclusive rdf:datatype="&xsd;float">0.05</xsd:minInclusive>
+                            </rdf:Description>
+                            <rdf:Description>
+                                <xsd:maxInclusive rdf:datatype="&xsd;float">0.12</xsd:maxInclusive>
+                            </rdf:Description>
+                        </owl:withRestrictions>
+                    </rdfs:Datatype>
+                </owl:allValuesFrom>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="&oro;hasShape"/>
+                <owl:hasValue rdf:resource="&oro;cylinderShape"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <openCycUri>http://sw.opencyc.org/concept/Mx4rvVj-85wpEbGdrcN5Y29ycA</openCycUri>
+    </owl:Class>
+    
+
+
+    <!-- http://sw.opencyc.org/concept/Chair-PieceOfFurniture -->
+
+    <owl:Class rdf:about="&concept;Chair-PieceOfFurniture">
+        <rdfs:label xml:lang="en">chair</rdfs:label>
+        <rdfs:label xml:lang="fr">chaise</rdfs:label>
+        <rdfs:subClassOf rdf:resource="&concept;FurniturePiece"/>
+    </owl:Class>
+    
+
+
+    <!-- http://sw.opencyc.org/concept/Drink -->
+
+    <owl:Class rdf:about="&concept;Drink">
+        <rdfs:label xml:lang="en">beverage</rdfs:label>
+        <rdfs:label xml:lang="en">drink</rdfs:label>
+        <rdfs:label xml:lang="fr">boisson</rdfs:label>
+        <owl:equivalentClass>
+            <owl:Class>
+                <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="&oro;NonAlcoholicBeverage"/>
+                    <rdf:Description rdf:about="&concept;AlcoholicBeverage"/>
+                </owl:unionOf>
+            </owl:Class>
+        </owl:equivalentClass>
+        <rdfs:subClassOf rdf:resource="&concept;FoodOrDrink"/>
+        <rdfs:subClassOf rdf:resource="&concept;LiquidTangibleThing"/>
+        <owl:disjointWith rdf:resource="&concept;Food"/>
+    </owl:Class>
+    
+
+
+    <!-- http://sw.opencyc.org/concept/EdibleStuff -->
+
+    <owl:Class rdf:about="&concept;EdibleStuff">
+        <rdfs:subClassOf rdf:resource="&concept;PartiallyTangible"/>
+    </owl:Class>
+    
+
+
+    <!-- http://sw.opencyc.org/concept/EnduringThing-Localized -->
+
+    <owl:Class rdf:about="&concept;EnduringThing-Localized">
+        <rdfs:label xml:lang="en">spatial enduring thing</rdfs:label>
+        <rdfs:label xml:lang="fr">lieu physique</rdfs:label>
+        <rdfs:subClassOf rdf:resource="&concept;SpatialThing-Localized"/>
+        <openCycUri>http://sw.opencyc.org/concept/Mx4ro3lluGJHQdiVxrZReHS-jQ</openCycUri>
+        <rdfs:comment>A specialization of both SpatialThing_Localized and SomethingExisting (qq.v.). Each instance of EnduringThing_Localized is a spatial enduring thing at which an event can occur or a situation can obtain. Positive examples include planets, the borders between countries, human beings, rocks, and atoms. Negative example include situations, events, abstract objects, and regions of space that exclusively act as possible locations for other spatial objects (see SpaceRegion). An important specialization of EnduringThing_Localized is Place (q.v.). The salient distinction between places (instances of Place) and locations (instances of EnduringThing_Localized) is that places are assumed to have relatively permanent locations, whereas locations need not have permanent locations. Thus, from the perspective of someone standing on a beach, the crest of a breaking wave can be a location at which foaming is occuring (thus an EnduringThing_Localized), but it cannot be such a place (i.e. it cannot be an instance of Place).</rdfs:comment>
+    </owl:Class>
+    
+
+
+    <!-- http://sw.opencyc.org/concept/Event -->
+
+    <owl:Class rdf:about="&concept;Event">
+        <rdfs:label xml:lang="en">event</rdfs:label>
+        <rdfs:label xml:lang="fr">évènement</rdfs:label>
+        <rdfs:subClassOf rdf:resource="&concept;Situation"/>
+        <owl:disjointWith rdf:resource="&concept;StaticSituation"/>
+        <openCycUri>http://sw.opencyc.org/concept/Mx4rvViADZwpEbGdrcN5Y29ycA</openCycUri>
+    </owl:Class>
+    
+
+
+    <!-- http://sw.opencyc.org/concept/FluidTangibleThing -->
+
+    <owl:Class rdf:about="&concept;FluidTangibleThing">
+        <rdfs:label xml:lang="en">fluid</rdfs:label>
+        <rdfs:label xml:lang="fr">fluide</rdfs:label>
+        <rdfs:subClassOf rdf:resource="&concept;PartiallyTangible"/>
+        <owl:disjointWith rdf:resource="&concept;SolidTangibleThing"/>
+    </owl:Class>
+    
+
+
+    <!-- http://sw.opencyc.org/concept/Food -->
+
+    <owl:Class rdf:about="&concept;Food">
+        <rdfs:subClassOf rdf:resource="&concept;FoodOrDrink"/>
+    </owl:Class>
+    
+
+
+    <!-- http://sw.opencyc.org/concept/FoodOrDrink -->
+
+    <owl:Class rdf:about="&concept;FoodOrDrink">
+        <owl:equivalentClass>
+            <owl:Class>
+                <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="&concept;Drink"/>
+                    <rdf:Description rdf:about="&concept;Food"/>
+                </owl:unionOf>
+            </owl:Class>
+        </owl:equivalentClass>
+        <rdfs:subClassOf rdf:resource="&concept;EdibleStuff"/>
+        <rdfs:comment xml:lang="en">A specialization of EdibleStuff (q.v.). Each instance of FoodOrDrink is a substance which instances of some type of organism (that is, some sub-collection of Organism_Whole) normally consume a significant part of. Important specializations of FoodOrDrink include Food (instances of which require chewing in order to be consumed) and Drink (instances of which are liquids that can be consumed without chewing).</rdfs:comment>
+    </owl:Class>
+    
+
+
+    <!-- http://sw.opencyc.org/concept/FurniturePiece -->
+
+    <owl:Class rdf:about="&concept;FurniturePiece">
+        <rdfs:label xml:lang="en">furniture</rdfs:label>
+        <rdfs:label xml:lang="fr">meuble</rdfs:label>
+        <rdfs:subClassOf rdf:resource="&oro;Artifact"/>
+        <rdfs:subClassOf rdf:resource="&concept;SolidTangibleThing"/>
+    </owl:Class>
+    
+
+
+    <!-- http://sw.opencyc.org/concept/Hand -->
+
+    <owl:Class rdf:about="&concept;Hand">
+        <rdfs:label xml:lang="en">hand</rdfs:label>
+        <rdfs:label xml:lang="fr">main</rdfs:label>
+        <owl:equivalentClass>
+            <owl:Class>
+                <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="&oro;LeftHand"/>
+                    <rdf:Description rdf:about="&oro;RightHand"/>
+                </owl:unionOf>
+            </owl:Class>
+        </owl:equivalentClass>
+        <rdfs:subClassOf rdf:resource="&oro;BodyPart"/>
+    </owl:Class>
+    
+
+
+    <!-- http://sw.opencyc.org/concept/LiquidTangibleThing -->
+
+    <owl:Class rdf:about="&concept;LiquidTangibleThing">
+        <rdfs:label xml:lang="en">liquid</rdfs:label>
+        <rdfs:label xml:lang="fr">liquide</rdfs:label>
+        <rdfs:subClassOf rdf:resource="&concept;FluidTangibleThing"/>
+    </owl:Class>
+    
+
+
+    <!-- http://sw.opencyc.org/concept/Object-SupportingFurniture -->
+
+    <owl:Class rdf:about="&concept;Object-SupportingFurniture">
+        <owl:equivalentClass>
+            <owl:Class>
+                <owl:intersectionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="&concept;FurniturePiece"/>
+                    <owl:Restriction>
+                        <owl:onProperty rdf:resource="&oro;isHolder"/>
+                        <owl:hasValue rdf:datatype="&xsd;boolean">true</owl:hasValue>
+                    </owl:Restriction>
+                </owl:intersectionOf>
+            </owl:Class>
+        </owl:equivalentClass>
+    </owl:Class>
+    
+
+
+    <!-- http://sw.opencyc.org/concept/OrangeJuice -->
+
+    <owl:Class rdf:about="&concept;OrangeJuice">
+        <rdfs:label xml:lang="en">orange juice</rdfs:label>
+        <rdfs:label xml:lang="fr">jus d&#39;orange</rdfs:label>
+        <rdfs:subClassOf rdf:resource="&oro;NonAlcoholicBeverage"/>
+    </owl:Class>
+    
+
+
+    <!-- http://sw.opencyc.org/concept/PartiallyTangible -->
+
+    <owl:Class rdf:about="&concept;PartiallyTangible">
+        <rdfs:subClassOf rdf:resource="&concept;EnduringThing-Localized"/>
+        <openCycUri>http://sw.opencyc.org/concept/Mx4rvVj27ZwpEbGdrcN5Y29ycA</openCycUri>
+        <rdfs:comment>A subcollection of EnduringThing_Localized and TemporalThing. Each instance of PartiallyTangible has a tangible (i.e. material) part and a temporal extent (i.e. it exists in time). It might or might not also have an intangible part. For example, a particular copy of a book is made of matter, has temporal extent, and also has an intangible part: the information content of the text markings on its pages.</rdfs:comment>
+    </owl:Class>
+    
+
+
+    <!-- http://sw.opencyc.org/concept/Plan-ExpectedSituationType -->
+
+    <owl:Class rdf:about="&concept;Plan-ExpectedSituationType">
+        <rdfs:label xml:lang="en">plan</rdfs:label>
+        <rdfs:label xml:lang="en">thing with a temporal extend</rdfs:label>
+        <rdfs:label xml:lang="fr">plan</rdfs:label>
+        <rdfs:subClassOf rdf:resource="&concept;TemporalThing"/>
+    </owl:Class>
+    
+
+
+    <!-- http://sw.opencyc.org/concept/PurposefulAction -->
+
+    <owl:Class rdf:about="&concept;PurposefulAction">
+        <rdfs:label xml:lang="en">purposeful action</rdfs:label>
+        <rdfs:label xml:lang="fr">action volontaire</rdfs:label>
+        <rdfs:subClassOf rdf:resource="&concept;Action"/>
+        <openCycUri>http://sw.opencyc.org/concept/Mx4rvVieP5wpEbGdrcN5Y29ycA</openCycUri>
+        <rdfs:comment>A specialization of both Action and AtLeastPartiallyMentalEvent. Each instance of PurposefulAction is an action consciously, volitionally, and purposefully done by (see performedBy) at least one actor.</rdfs:comment>
+    </owl:Class>
+    
+
+
+    <!-- http://sw.opencyc.org/concept/Resting-Relaxing -->
+
+    <owl:Class rdf:about="&concept;Resting-Relaxing">
+        <rdfs:label xml:lang="en">rest</rdfs:label>
+        <rdfs:label xml:lang="fr">repos</rdfs:label>
+        <rdfs:comment>The collection of events in which an animal abstains from strenuous physical activity.</rdfs:comment>
+    </owl:Class>
+    
+
+
+    <!-- http://sw.opencyc.org/concept/Situation -->
+
+    <owl:Class rdf:about="&concept;Situation">
+        <rdfs:label xml:lang="en">situation</rdfs:label>
+        <rdfs:label xml:lang="fr">situation</rdfs:label>
+        <rdfs:subClassOf rdf:resource="&concept;Plan-ExpectedSituationType"/>
+        <openCycUri>http://sw.opencyc.org/concept/Mx4rvYjIS5wpEbGdrcN5Y29ycA</openCycUri>
+        <rdfs:comment>Each instance of Situation is a state or event consisting of one or more objects having certain properties or bearing certain relations to each other. Notable specializations of Situation are Event and StaticSituation; it is disjoint with SomethingExisting.</rdfs:comment>
+    </owl:Class>
+    
+
+
+    <!-- http://sw.opencyc.org/concept/Sofa-PieceOfFurniture -->
+
+    <owl:Class rdf:about="&concept;Sofa-PieceOfFurniture">
+        <rdfs:label xml:lang="en">couch</rdfs:label>
+        <rdfs:label xml:lang="en">sofa</rdfs:label>
+        <rdfs:label xml:lang="fr">canapé</rdfs:label>
+        <rdfs:subClassOf rdf:resource="&concept;FurniturePiece"/>
+    </owl:Class>
+    
+
+
+    <!-- http://sw.opencyc.org/concept/SoftDrink -->
+
+    <owl:Class rdf:about="&concept;SoftDrink">
+        <rdfs:label xml:lang="en">soda</rdfs:label>
+        <rdfs:label xml:lang="en">soft drink</rdfs:label>
+        <rdfs:subClassOf rdf:resource="&oro;NonAlcoholicBeverage"/>
+    </owl:Class>
+    
+
+
+    <!-- http://sw.opencyc.org/concept/SolidTangibleThing -->
+
+    <owl:Class rdf:about="&concept;SolidTangibleThing">
+        <rdfs:subClassOf rdf:resource="&concept;PartiallyTangible"/>
+    </owl:Class>
+    
+
+
+    <!-- http://sw.opencyc.org/concept/SpatialThing -->
+
+    <owl:Class rdf:about="&concept;SpatialThing">
+        <rdfs:label xml:lang="en">spatial thing</rdfs:label>
+        <rdfs:label xml:lang="fr">chose spatiale</rdfs:label>
+        <rdfs:subClassOf rdf:resource="&owl;Thing"/>
+        <rdfs:comment>A specialization of Individual. The collection of all things that have a spatial extent or location relative to some other SpatialThing or in some embedding space. Note that to say that an entity is a member of this collection is to remain agnostic about two issues. First, a SpatialThing may be PartiallyTangible (e.g. Texas-State) or wholly Intangible (e.g. ArcticCircle or a line mentioned in a geometric theorem). Second, although we do insist on location relative to another spatial thing or in some embedding space, a SpatialThing might or might not be located in the actual physical universe. It is far from clear that all SpatialThings are so located: an ideal platonic circle or a trajectory through the phase space of some physical system (e.g.) might not be. If the intent is to imply location in the empirically observable cosmos, the user should employ this collection&#39;s specialization, SpatialThing-Localized.</rdfs:comment>
+        <openCycUri>http://sw.opencyc.org/concept/Mx4rvVjpUZwpEbGdrcN5Y29ycA</openCycUri>
+    </owl:Class>
+    
+
+
+    <!-- http://sw.opencyc.org/concept/SpatialThing-Localized -->
+
+    <owl:Class rdf:about="&concept;SpatialThing-Localized">
+        <rdfs:label xml:lang="en">location</rdfs:label>
+        <rdfs:label xml:lang="fr">lieu</rdfs:label>
+        <rdfs:subClassOf rdf:resource="&concept;SpatialThing"/>
+        <openCycUri>http://sw.opencyc.org/concept/Mx4rwS68M5wpEbGdrcN5Y29ycA</openCycUri>
+        <rdfs:comment>A specialization of both SpatialThing and TemporalThing. This is the collection of all spatial things, tangible or intangible, that can meaningfully be said to have location or position in the empirical universe.
+
+Examples of spatially-localized things include all PartiallyTangible things, such as trees and ships, as well as certain Intangible spatial things, like the EarthsEquator. Also included are those events that can be pinned-down to specific places (see Event-Localized), and thus all PhysicalEvents. Excluded from this collection are any SpatialThings that are not localized, such as -- arguably -- purely abstract geometrical figures (e.g. a Platonic sphere).
+
+Note that a fictional or imaginary object (such as Frodo, Captain Queeg, or HAL9000-TheComputer) is typically localized with respect to the universe of the fictional/imagnary context in which it is found, and so is an instance of SpatialThing-Localized with respect to that context.</rdfs:comment>
+    </owl:Class>
+    
+
+
+    <!-- http://sw.opencyc.org/concept/StaticSituation -->
+
+    <owl:Class rdf:about="&concept;StaticSituation">
+        <rdfs:label xml:lang="en">static situation</rdfs:label>
+        <rdfs:label xml:lang="fr">situation statique</rdfs:label>
+        <rdfs:subClassOf rdf:resource="&concept;Situation"/>
+        <rdfs:comment>A specialization of Situation. Each instance of StaticSituation is a state of affairs between two or more things, persisting statically over some time interval. IE, a state of the world.</rdfs:comment>
+        <openCycUri>http://sw.opencyc.org/concept/Mx4rvh5TfJwpEbGdrcN5Y29ycA</openCycUri>
+    </owl:Class>
+    
+
+
+    <!-- http://sw.opencyc.org/concept/Table-PieceOfFurniture -->
+
+    <owl:Class rdf:about="&concept;Table-PieceOfFurniture">
+        <rdfs:label xml:lang="en">table</rdfs:label>
+        <rdfs:label xml:lang="fr">table</rdfs:label>
+        <rdfs:subClassOf rdf:resource="&concept;Object-SupportingFurniture"/>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="&oro;hasCharacteristicDimension"/>
+                <owl:someValuesFrom>
+                    <rdfs:Datatype>
+                        <owl:onDatatype rdf:resource="&xsd;integer"/>
+                        <owl:withRestrictions rdf:parseType="Collection">
+                            <rdf:Description>
+                                <xsd:minInclusive rdf:datatype="&xsd;integer">50</xsd:minInclusive>
+                            </rdf:Description>
+                            <rdf:Description>
+                                <xsd:maxInclusive rdf:datatype="&xsd;integer">300</xsd:maxInclusive>
+                            </rdf:Description>
+                        </owl:withRestrictions>
+                    </rdfs:Datatype>
+                </owl:someValuesFrom>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+    </owl:Class>
+    
+
+
+    <!-- http://sw.opencyc.org/concept/TemporalThing -->
+
+    <owl:Class rdf:about="&concept;TemporalThing">
+        <rdfs:label xml:lang="en">temporal thing</rdfs:label>
+        <rdfs:label xml:lang="fr">chose temporelle</rdfs:label>
+    </owl:Class>
+    
+
+
+    <!-- http://sw.opencyc.org/concept/Tray -->
+
+    <owl:Class rdf:about="&concept;Tray">
+        <rdfs:subClassOf rdf:resource="&oro;Artifact"/>
+        <rdfs:subClassOf rdf:resource="&oro;Container"/>
+    </owl:Class>
+    
+
+
+    <!-- http://sw.opencyc.org/concept/Wine -->
+
+    <owl:Class rdf:about="&concept;Wine">
+        <rdfs:label xml:lang="en">wine</rdfs:label>
+        <rdfs:subClassOf rdf:resource="&concept;AlcoholicBeverage"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.w3.org/2002/07/owl#Thing -->
+
+    <owl:Class rdf:about="&owl;Thing">
+        <rdfs:label xml:lang="en">thing</rdfs:label>
+        <rdfs:label xml:lang="fr">chose</rdfs:label>
+    </owl:Class>
+    
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Individuals
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    
+
+
+    <!-- http://kb.openrobots.org#black -->
+
+    <owl:Thing rdf:about="&oro;black">
+        <rdf:type rdf:resource="&oro;Color"/>
+        <rdf:type rdf:resource="&owl;NamedIndividual"/>
+        <rdfs:label xml:lang="en">black</rdfs:label>
+        <rdfs:label xml:lang="fr">noir</rdfs:label>
+        <rdfs:comment xml:lang="en">A proto-black: a generic instance of the colour black.</rdfs:comment>
+    </owl:Thing>
+    
+
+
+    <!-- http://kb.openrobots.org#blue -->
+
+    <owl:Thing rdf:about="&oro;blue">
+        <rdf:type rdf:resource="&oro;Color"/>
+        <rdf:type rdf:resource="&owl;NamedIndividual"/>
+        <rdfs:label xml:lang="en">blue</rdfs:label>
+        <rdfs:label xml:lang="fr">bleu</rdfs:label>
+        <rdfs:comment xml:lang="en">A proto-blue: a generic instance of the colour blue.</rdfs:comment>
+    </owl:Thing>
+    
+
+
+    <!-- http://kb.openrobots.org#boxShape -->
+
+    <owl:Thing rdf:about="&oro;boxShape">
+        <rdf:type rdf:resource="&oro;Shape"/>
+        <rdf:type rdf:resource="&owl;NamedIndividual"/>
+        <rdfs:label xml:lang="en">box shaped</rdfs:label>
+        <rdfs:label xml:lang="fr">parallélipédique</rdfs:label>
+        <rdfs:comment xml:lang="en">A proto-cube: the most generic instance of the class of shapes &quot;cube&quot;.</rdfs:comment>
+    </owl:Thing>
+    
+
+
+    <!-- http://kb.openrobots.org#current_world_state -->
+
+    <owl:Thing rdf:about="&oro;current_world_state">
+        <rdf:type rdf:resource="&concept;StaticSituation"/>
+        <rdf:type rdf:resource="&owl;NamedIndividual"/>
+        <rdfs:label xml:lang="en">current world state</rdfs:label>
+        <rdfs:label xml:lang="fr">état courant du monde</rdfs:label>
+        <rdfs:comment>By convention, the current static situation representing the state of the world as understood by &#39;myself&#39;.</rdfs:comment>
+    </owl:Thing>
+    
+
+
+    <!-- http://kb.openrobots.org#cylinderShape -->
+
+    <owl:Thing rdf:about="&oro;cylinderShape">
+        <rdf:type rdf:resource="&oro;Shape"/>
+        <rdf:type rdf:resource="&owl;NamedIndividual"/>
+        <rdfs:label xml:lang="en">cylindrical</rdfs:label>
+        <rdfs:label xml:lang="fr">cylindrique</rdfs:label>
+        <rdfs:comment xml:lang="en">A proto-cylinder: the most generic instance of the class of shapes &quot;cylinder&quot;.</rdfs:comment>
+    </owl:Thing>
+    
+
+
+    <!-- http://kb.openrobots.org#gray -->
+
+    <owl:Thing rdf:about="&oro;gray">
+        <rdf:type rdf:resource="&oro;Color"/>
+        <rdf:type rdf:resource="&owl;NamedIndividual"/>
+        <rdfs:label xml:lang="en">gray</rdfs:label>
+        <rdfs:label xml:lang="en">grey</rdfs:label>
+        <rdfs:label xml:lang="fr">gris</rdfs:label>
+        <rdfs:comment xml:lang="en">A proto-grey: a generic instance of the colour grey.</rdfs:comment>
+    </owl:Thing>
+    
+
+
+    <!-- http://kb.openrobots.org#green -->
+
+    <owl:Thing rdf:about="&oro;green">
+        <rdf:type rdf:resource="&oro;Color"/>
+        <rdf:type rdf:resource="&owl;NamedIndividual"/>
+        <rdfs:label xml:lang="en">green</rdfs:label>
+        <rdfs:label xml:lang="fr">vert</rdfs:label>
+        <rdfs:comment xml:lang="en">A proto-green: a generic instance of the colour green.</rdfs:comment>
+    </owl:Thing>
+    
+
+
+    <!-- http://kb.openrobots.org#large -->
+
+    <owl:NamedIndividual rdf:about="&oro;large"/>
+    
+
+
+    <!-- http://kb.openrobots.org#medium -->
+
+    <owl:NamedIndividual rdf:about="&oro;medium"/>
+    
+
+
+    <!-- http://kb.openrobots.org#myself -->
+
+    <owl:Thing rdf:about="&oro;myself">
+        <rdf:type rdf:resource="&oro;Agent"/>
+        <rdf:type rdf:resource="&owl;NamedIndividual"/>
+        <rdfs:label xml:lang="en">myself</rdfs:label>
+        <rdfs:label xml:lang="fr">moi-même</rdfs:label>
+        <rdfs:comment xml:lang="en">&quot;Myself&quot; is always the cognitive agent who owns the current instance of the ontology.</rdfs:comment>
+    </owl:Thing>
+    
+
+
+    <!-- http://kb.openrobots.org#orange -->
+
+    <owl:Thing rdf:about="&oro;orange">
+        <rdf:type rdf:resource="&oro;Color"/>
+        <rdf:type rdf:resource="&owl;NamedIndividual"/>
+        <rdfs:label xml:lang="en">orange</rdfs:label>
+        <rdfs:label xml:lang="fr">orange</rdfs:label>
+        <rdfs:comment xml:lang="en">A proto-orange: a generic instance of the colour orange.</rdfs:comment>
+    </owl:Thing>
+    
+
+
+    <!-- http://kb.openrobots.org#pink -->
+
+    <owl:Thing rdf:about="&oro;pink">
+        <rdf:type rdf:resource="&oro;Color"/>
+        <rdf:type rdf:resource="&owl;NamedIndividual"/>
+        <rdfs:label xml:lang="en">pink</rdfs:label>
+        <rdfs:label xml:lang="en">rose</rdfs:label>
+        <rdfs:label xml:lang="fr">rose</rdfs:label>
+        <rdfs:comment xml:lang="en">A proto-pink: a generic instance of the colour pink.</rdfs:comment>
+    </owl:Thing>
+    
+
+
+    <!-- http://kb.openrobots.org#red -->
+
+    <owl:Thing rdf:about="&oro;red">
+        <rdf:type rdf:resource="&oro;Color"/>
+        <rdf:type rdf:resource="&owl;NamedIndividual"/>
+        <rdfs:label xml:lang="en">red</rdfs:label>
+        <rdfs:label xml:lang="fr">rouge</rdfs:label>
+        <rdfs:comment xml:lang="en">A proto-red: a generic instance of the colour red.</rdfs:comment>
+    </owl:Thing>
+    
+
+
+    <!-- http://kb.openrobots.org#sitting -->
+
+    <owl:Thing rdf:about="&oro;sitting">
+        <rdf:type rdf:resource="&oro;Posture"/>
+        <rdf:type rdf:resource="&owl;NamedIndividual"/>
+        <rdfs:label xml:lang="en">sitting</rdfs:label>
+        <rdfs:label xml:lang="fr">assi</rdfs:label>
+    </owl:Thing>
+    
+
+
+    <!-- http://kb.openrobots.org#small -->
+
+    <owl:NamedIndividual rdf:about="&oro;small"/>
+    
+
+
+    <!-- http://kb.openrobots.org#sphereShape -->
+
+    <owl:Thing rdf:about="&oro;sphereShape">
+        <rdf:type rdf:resource="&oro;Shape"/>
+        <rdf:type rdf:resource="&owl;NamedIndividual"/>
+        <rdfs:label xml:lang="en">spherical</rdfs:label>
+        <rdfs:label xml:lang="fr">sphérique</rdfs:label>
+        <rdfs:comment xml:lang="en">A proto-sphere: the most generic instance of the class of shapes &quot;sphere&quot;.</rdfs:comment>
+    </owl:Thing>
+    
+
+
+    <!-- http://kb.openrobots.org#standing -->
+
+    <owl:Thing rdf:about="&oro;standing">
+        <rdf:type rdf:resource="&oro;Posture"/>
+        <rdf:type rdf:resource="&owl;NamedIndividual"/>
+        <rdfs:label xml:lang="en">standing</rdfs:label>
+        <rdfs:label xml:lang="fr">debout</rdfs:label>
+    </owl:Thing>
+    
+
+
+    <!-- http://kb.openrobots.org#unknownLocation -->
+
+    <owl:Thing rdf:about="&oro;unknownLocation">
+        <rdf:type rdf:resource="&concept;SpatialThing"/>
+        <rdf:type rdf:resource="&owl;NamedIndividual"/>
+        <rdfs:label xml:lang="en">unknown location</rdfs:label>
+        <rdfs:label xml:lang="fr">position inconnue</rdfs:label>
+        <rdfs:comment xml:lang="en">This special location denote an unknown spatial location. The typical use case is when an object is expected to be found somewhere, but is not actually there, it is in an UnknownLocation.</rdfs:comment>
+    </owl:Thing>
+    
+
+
+    <!-- http://kb.openrobots.org#violet -->
+
+    <owl:Thing rdf:about="&oro;violet">
+        <rdf:type rdf:resource="&oro;Color"/>
+        <rdf:type rdf:resource="&owl;NamedIndividual"/>
+        <rdfs:label xml:lang="en">violet</rdfs:label>
+        <rdfs:label xml:lang="fr">violet</rdfs:label>
+        <rdfs:comment xml:lang="en">A proto-violet: a generic instance of the colour violet.</rdfs:comment>
+    </owl:Thing>
+    
+
+
+    <!-- http://kb.openrobots.org#white -->
+
+    <owl:Thing rdf:about="&oro;white">
+        <rdf:type rdf:resource="&oro;Color"/>
+        <rdf:type rdf:resource="&owl;NamedIndividual"/>
+        <rdfs:label xml:lang="en">white</rdfs:label>
+        <rdfs:label xml:lang="fr">blanc</rdfs:label>
+        <rdfs:comment xml:lang="en">A proto-white: a generic instance of the colour white.</rdfs:comment>
+    </owl:Thing>
+    
+
+
+    <!-- http://kb.openrobots.org#yellow -->
+
+    <owl:Thing rdf:about="&oro;yellow">
+        <rdf:type rdf:resource="&oro;Color"/>
+        <rdf:type rdf:resource="&owl;NamedIndividual"/>
+        <rdfs:label xml:lang="en">yellow</rdfs:label>
+        <rdfs:label xml:lang="fr">jaune</rdfs:label>
+        <rdfs:comment xml:lang="en">A proto-yellow: a generic instance of the colour yellow.</rdfs:comment>
+    </owl:Thing>
+    
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // General axioms
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    <rdf:Description>
+        <rdf:type rdf:resource="&owl;AllDisjointClasses"/>
+        <owl:members rdf:parseType="Collection">
+            <rdf:Description rdf:about="&oro;Color"/>
+            <rdf:Description rdf:about="&oro;Situation"/>
+            <rdf:Description rdf:about="&concept;SpatialThing"/>
+        </owl:members>
+    </rdf:Description>
+    <rdf:Description>
+        <rdf:type rdf:resource="&owl;AllDisjointClasses"/>
+        <owl:members rdf:parseType="Collection">
+            <rdf:Description rdf:about="&oro;Agent"/>
+            <rdf:Description rdf:about="&oro;Artifact"/>
+            <rdf:Description rdf:about="&oro;VisualMark"/>
+        </owl:members>
+    </rdf:Description>
+    <rdf:Description>
+        <rdf:type rdf:resource="&owl;AllDifferent"/>
+        <owl:distinctMembers rdf:parseType="Collection">
+            <rdf:Description rdf:about="&oro;boxShape"/>
+            <rdf:Description rdf:about="&oro;cylinderShape"/>
+            <rdf:Description rdf:about="&oro;sphereShape"/>
+        </owl:distinctMembers>
+    </rdf:Description>
+    <rdf:Description>
+        <rdf:type rdf:resource="&owl;AllDifferent"/>
+        <owl:distinctMembers rdf:parseType="Collection">
+            <rdf:Description rdf:about="&oro;black"/>
+            <rdf:Description rdf:about="&oro;blue"/>
+            <rdf:Description rdf:about="&oro;gray"/>
+            <rdf:Description rdf:about="&oro;green"/>
+            <rdf:Description rdf:about="&oro;orange"/>
+            <rdf:Description rdf:about="&oro;pink"/>
+            <rdf:Description rdf:about="&oro;red"/>
+            <rdf:Description rdf:about="&oro;violet"/>
+            <rdf:Description rdf:about="&oro;white"/>
+            <rdf:Description rdf:about="&oro;yellow"/>
+        </owl:distinctMembers>
+    </rdf:Description>
+    <rdf:Description>
+        <rdf:type rdf:resource="&owl;AllDifferent"/>
+        <owl:distinctMembers rdf:parseType="Collection">
+            <rdf:Description rdf:about="&oro;sitting"/>
+            <rdf:Description rdf:about="&oro;standing"/>
+        </owl:distinctMembers>
+    </rdf:Description>
+    <rdf:Description>
+        <rdf:type rdf:resource="&owl;AllDisjointClasses"/>
+        <owl:members rdf:parseType="Collection">
+            <rdf:Description rdf:about="&oro;Artifact"/>
+            <rdf:Description rdf:about="&oro;Ceilling"/>
+            <rdf:Description rdf:about="&oro;Floor"/>
+            <rdf:Description rdf:about="&oro;Wall"/>
+        </owl:members>
+    </rdf:Description>
+    <rdf:Description>
+        <rdf:type rdf:resource="&owl;AllDisjointClasses"/>
+        <owl:members rdf:parseType="Collection">
+            <rdf:Description rdf:about="&oro;Bottle"/>
+            <rdf:Description rdf:about="&oro;Cup"/>
+            <rdf:Description rdf:about="&oro;Glass"/>
+        </owl:members>
+    </rdf:Description>
+    
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Rules
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    <swrl:Variable rdf:about="urn:swrl#a1"/>
+    <swrl:Variable rdf:about="urn:swrl#b"/>
+    <swrl:Variable rdf:about="urn:swrl#a2"/>
+    <swrl:Variable rdf:about="urn:swrl#c"/>
+    <swrl:Imp>
+        <swrl:head>
+            <swrl:AtomList>
+                <rdf:rest rdf:resource="&rdf;nil"/>
+                <rdf:first>
+                    <swrl:DifferentIndividualsAtom>
+                        <swrl:argument1 rdf:resource="urn:swrl#a1"/>
+                        <swrl:argument2 rdf:resource="urn:swrl#a2"/>
+                    </swrl:DifferentIndividualsAtom>
+                </rdf:first>
+            </swrl:AtomList>
+        </swrl:head>
+        <swrl:body>
+            <swrl:AtomList>
+                <rdf:first>
+                    <swrl:IndividualPropertyAtom>
+                        <swrl:propertyPredicate rdf:resource="&oro;contains"/>
+                        <swrl:argument1 rdf:resource="urn:swrl#a1"/>
+                        <swrl:argument2 rdf:resource="urn:swrl#b"/>
+                    </swrl:IndividualPropertyAtom>
+                </rdf:first>
+                <rdf:rest>
+                    <swrl:AtomList>
+                        <rdf:rest>
+                            <swrl:AtomList>
+                                <rdf:rest rdf:resource="&rdf;nil"/>
+                                <rdf:first>
+                                    <swrl:DifferentIndividualsAtom>
+                                        <swrl:argument1 rdf:resource="urn:swrl#b"/>
+                                        <swrl:argument2 rdf:resource="urn:swrl#c"/>
+                                    </swrl:DifferentIndividualsAtom>
+                                </rdf:first>
+                            </swrl:AtomList>
+                        </rdf:rest>
+                        <rdf:first>
+                            <swrl:IndividualPropertyAtom>
+                                <swrl:propertyPredicate rdf:resource="&oro;contains"/>
+                                <swrl:argument1 rdf:resource="urn:swrl#a2"/>
+                                <swrl:argument2 rdf:resource="urn:swrl#c"/>
+                            </swrl:IndividualPropertyAtom>
+                        </rdf:first>
+                    </swrl:AtomList>
+                </rdf:rest>
+            </swrl:AtomList>
+        </swrl:body>
+    </swrl:Imp>
+</rdf:RDF>
+
+
+
+<!-- Generated by the OWL API (version 3.2.2.1785) http://owlapi.sourceforge.net -->
+
