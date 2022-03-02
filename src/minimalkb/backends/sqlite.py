@@ -194,10 +194,14 @@ class SQLStore:
 
     def query(self, vars, patterns, models):
         res = query(self.conn, vars, patterns, models)
+
         if res and isinstance(res[0], list):
             return [[s, p, self.literal_to_python(o)] for s, p, o in res]
         else:
-            return [self.literal_to_python(o) for o in res]
+            if patterns[0].index(vars[0]) == 2:  # the variable is an *object*
+                return [self.literal_to_python(o) for o in res]
+            else:
+                return res
 
     @memoize
     def label(self, concept, models=[]):
