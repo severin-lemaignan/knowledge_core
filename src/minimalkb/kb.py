@@ -1,9 +1,10 @@
 import logging
 
+from minimalkb.backends.owlready2 import OwlReady2Store
+
 logger = logging.getLogger("minimalKB." + __name__)
 
 from queue import Queue, Empty
-import json
 import traceback
 
 DEFAULT_MODEL = "default"
@@ -24,9 +25,9 @@ except ImportError:
 from .exceptions import KbServerError
 from minimalkb import __version__
 
-from .backends.sqlite import SQLStore
-
+# from .backends.sqlite import SQLStore
 # from backends.rdflib_backend import RDFlibStore
+from .backends.owlready2 import OwlReady2Store
 
 from .services.simple_rdfs_reasoner import start_reasoner, stop_reasoner
 from .services import lifespan
@@ -151,8 +152,9 @@ class MinimalKB:
 
         self._api = {fn.__name__ + str(inspect.signature(fn)): fn for fn in _api}
 
-        self.store = SQLStore()
+        # self.store = SQLStore()
         # self.store = RDFlibStore()
+        self.store = OwlReady2Store()
 
         self.models = {DEFAULT_MODEL}
 
@@ -174,7 +176,7 @@ class MinimalKB:
 
         self.initialize_model(DEFAULT_MODEL)
 
-        self.start_services()
+        # self.start_services()
 
         if filenames:
             for filename in filenames:
