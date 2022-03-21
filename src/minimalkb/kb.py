@@ -563,7 +563,7 @@ class MinimalKB:
         """Finds the most probable explanation. Strictly equivalent to
         'find' until we support probabilities.
         """
-        return find(self, vars, pattern, constraints=None, models=None)
+        return self.find(vars, pattern, constraints=None, models=None)
 
     @api
     def subscribe(self, type, trigger, var, patterns, models=None):
@@ -656,9 +656,10 @@ class MinimalKB:
         self._lifespan_manager.join()
 
     def initialize_model(self, model):
-        self.add(
-            ["owl:Thing rdf:type owl:Class", "owl:Nothing rdf:type owl:Class"], model
-        )
+        # self.add(
+        #    ["owl:Thing rdf:type owl:Class", "owl:Nothing rdf:type owl:Class"], model
+        # )
+        pass
 
     def normalize_models(self, models):
         """If 'models' is None or [], returns the default model (ie, the

@@ -77,10 +77,7 @@ class TestSequenceFunctions(unittest.TestCase):
 
         self.assertCountEqual(
             self.kb["* * *"],
-            [
-                ["owl:Thing", "rdf:type", "owl:Class"],
-                ["owl:Nothing", "rdf:type", "owl:Class"],
-            ],
+            [],
         )
 
         self.kb += ["alfred rdf:type Human"]
@@ -88,18 +85,13 @@ class TestSequenceFunctions(unittest.TestCase):
             self.kb["* * *"],
             [
                 ["alfred", "rdf:type", "Human"],
-                ["owl:Thing", "rdf:type", "owl:Class"],
-                ["owl:Nothing", "rdf:type", "owl:Class"],
             ],
         )
 
         self.kb -= ["alfred rdf:type Human"]
         self.assertCountEqual(
             self.kb["* * *"],
-            [
-                ["owl:Thing", "rdf:type", "owl:Class"],
-                ["owl:Nothing", "rdf:type", "owl:Class"],
-            ],
+            [],
         )
 
         self.kb += ["alfred rdf:type Human", "alfred likes icecream"]
@@ -108,8 +100,6 @@ class TestSequenceFunctions(unittest.TestCase):
             [
                 ["alfred", "likes", "icecream"],
                 ["alfred", "rdf:type", "Human"],
-                ["owl:Thing", "rdf:type", "owl:Class"],
-                ["owl:Nothing", "rdf:type", "owl:Class"],
             ],
         )
 
@@ -270,12 +260,7 @@ class TestSequenceFunctions(unittest.TestCase):
         self.kb += ["nono rdf:type Human", "alfred rdf:type Robot"]
         self.assertCountEqual(
             self.kb["* * *"],
-            [
-                ["nono", "rdf:type", "Human"],
-                ["alfred", "rdf:type", "Robot"],
-                ["owl:Thing", "rdf:type", "owl:Class"],
-                ["owl:Nothing", "rdf:type", "owl:Class"],
-            ],
+            [["nono", "rdf:type", "Human"], ["alfred", "rdf:type", "Robot"]],
         )
 
         self.kb += ["nono desires jump", "alfred desires oil"]
@@ -286,8 +271,6 @@ class TestSequenceFunctions(unittest.TestCase):
                 ["alfred", "desires", "oil"],
                 ["nono", "rdf:type", "Human"],
                 ["alfred", "rdf:type", "Robot"],
-                ["owl:Thing", "rdf:type", "owl:Class"],
-                ["owl:Nothing", "rdf:type", "owl:Class"],
             ],
         )
 
@@ -519,3 +502,4 @@ if __name__ == "__main__":
     kblogger.addHandler(console)
 
     unittest.main(failfast=args.failfast)
+    # unittest.main(failfast=True)

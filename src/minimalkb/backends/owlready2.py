@@ -98,7 +98,9 @@ class OwlReady2Store:
             return iri.split("#")[-1]
 
         for p, p_iri in PREFIXES.items():
-            iri.replace(p_iri, p + ":")
+            s = iri.split(p_iri)
+            if len(s) == 2:
+                return p + ":" + s[1]
 
         return iri
 
@@ -154,6 +156,7 @@ class OwlReady2Store:
         q += query
 
         logger.debug("Executing SPARQL query in model: %s\n%s" % (model, q))
+
         return self.ontologies[model].world.sparql(
             q, params=params, error_on_undefined_entities=False
         )
@@ -258,6 +261,15 @@ class OwlReady2Store:
                 s, p, o = self.fix_prefixes(p)
                 q += "%s %s %s .\n" % (s, p, o)
             q += "}"
+
+            #            raw = self.sparql(model, q)
+            #            result = []
+            #            for stmt in raw:
+            #                s, p, o = stmt
+            #                if s == "http://anonymous":
+            #                    continue
+            #                result.append(stmt)
+            #
 
             res += self.format_sparql_result(self.sparql(model, q))
 
