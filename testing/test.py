@@ -453,13 +453,31 @@ class TestSequenceFunctions(unittest.TestCase):
 
     def test_taxonomy_walking(self):
 
-        self.assertFalse(self.kb.classesof("john"))
+        # self.assertFalse(self.kb.classesof("john"))
         self.kb += ["john rdf:type Human"]
         self.assertCountEqual(self.kb.classesof("john"), [u"Human"])
         self.kb += ["john rdf:type Genius"]
         self.assertCountEqual(self.kb.classesof("john"), [u"Human", u"Genius"])
         self.kb -= ["john rdf:type Human"]
         self.assertCountEqual(self.kb.classesof("john"), [u"Genius"])
+        self.kb -= ["john rdf:type Genius"]
+        self.kb += ["john rdf:type Human", "Human rdfs:subClassOf Animal"]
+        self.assertCountEqual(self.kb.classesof("john"), [u"Human", u"Animal"])
+        self.assertCountEqual(self.kb.classesof("john", direct=True), [u"Human"])
+
+        self.assertCountEqual(self.kb.instancesof("Human"), [u"john"])
+        self.assertCountEqual(self.kb.instancesof("Human", direct=True), [u"john"])
+        self.assertCountEqual(self.kb.instancesof("Animal"), [u"john"])
+        self.assertCountEqual(self.kb.instancesof("Animal", direct=True), [])
+
+        self.assertCountEqual(self.kb.superclassesof("Human"), [u"Animal"])
+        self.assertCountEqual(self.kb.superclassesof("Human", direct=True), [u"Animal"])
+        self.assertCountEqual(self.kb.superclassesof("Animal"), [])
+
+        self.assertCountEqual(self.kb.subclassesof("Animal"), [u"Human"])
+        self.assertCountEqual(self.kb.subclassesof("Animal", direct=True), [u"Human"])
+        self.assertCountEqual(self.kb.subclassesof("Human"), [])
+        self.assertCountEqual(self.kb.subclassesof("Human", direct=True), [])
 
     def test_memory(self):
 

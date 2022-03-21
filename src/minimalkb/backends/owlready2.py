@@ -41,6 +41,8 @@ class OwlReady2Store:
         #    ["owl:Thing rdf:type owl:Class", "owl:Nothing rdf:type owl:Class"], model
         # )
 
+        self.delete([["<http://anonymous>", "rdf:type", "owl:Ontology"]], model)
+
     def expand_prefix(self, entity):
 
         if not ":" in entity:
@@ -262,15 +264,6 @@ class OwlReady2Store:
                 q += "%s %s %s .\n" % (s, p, o)
             q += "}"
 
-            #            raw = self.sparql(model, q)
-            #            result = []
-            #            for stmt in raw:
-            #                s, p, o = stmt
-            #                if s == "http://anonymous":
-            #                    continue
-            #                result.append(stmt)
-            #
-
             res += self.format_sparql_result(self.sparql(model, q))
 
         # if a single variable is requested, 'unpack' the result
@@ -278,14 +271,6 @@ class OwlReady2Store:
             res = [r[0] for r in res]
 
         return res
-
-    #        if res and isinstance(res[0], list):
-    #            return [[s, p, self.literal_to_python(o)] for s, p, o in res]
-    #        else:
-    #            if patterns[0].index(vars[0]) == 2:  # the variable is an *object*
-    #                return [self.literal_to_python(o) for o in res]
-    #            else:
-    #                return res
 
     @memoize
     def label(self, concept, models=[]):
@@ -329,70 +314,63 @@ class OwlReady2Store:
         return "undecided"
 
     def classesof(self, concept, direct, models=[]):
-        raise NotImplementedError("not implemented")
-        if direct:
-            logger.warn("Direct classes are assumed to be the asserted is-a relations")
-            return list(
-                simplequery(
-                    self.conn,
-                    (concept, "rdf:type", "?class"),
-                    models,
-                    assertedonly=True,
-                )
-            )
-        return list(simplequery(self.conn, (concept, "rdf:type", "?class"), models))
+        res = []
+
+        resource = self.fix_prefix(concept)
+
+        for model in models:
+            q = "SELECT ?c WHERE {\n"
+            q += "%s rdf:type%s ?c .\n" % (resource, "" if direct else "*")
+            q += "}"
+
+            res += self.format_sparql_result(self.sparql(model, q))
+
+        import pdb
+
+        pdb.set_trace()
+        return res
 
     def instancesof(self, concept, direct, models=[]):
-        raise NotImplementedError("not implemented")
-        if direct:
-            logger.warn(
-                "Direct instances are assumed to be the asserted is-a relations"
-            )
-            return list(
-                simplequery(
-                    self.conn,
-                    ("?instances", "rdf:type", concept),
-                    models,
-                    assertedonly=True,
-                )
-            )
-        return list(simplequery(self.conn, ("?instances", "rdf:type", concept), models))
+        res = []
+
+        resource = self.fix_prefix(concept)
+
+        for model in models:
+            q = "SELECT ?i WHERE {\n"
+            q += "?i rdf:type%s %s .\n" % (resource, "" if direct else "*")
+            q += "}"
+
+            res += self.format_sparql_result(self.sparql(model, q))
+
+        return res
 
     def superclassesof(self, concept, direct, models=[]):
-        raise NotImplementedError("not implemented")
-        if direct:
-            logger.warn(
-                "Direct super-classes are assumed to be the asserted subClassOf relations"
-            )
-            return list(
-                simplequery(
-                    self.conn,
-                    (concept, "rdfs:subClassOf", "?superclass"),
-                    models,
-                    assertedonly=True,
-                )
-            )
-        return list(
-            simplequery(self.conn, (concept, "rdfs:subClassOf", "?superclass"), models)
-        )
+        res = []
+
+        resource = self.fix_prefix(concept)
+
+        for model in models:
+            q = "SELECT ?c WHERE {\n"
+            q += "%s rdfs:subClassOf%s ?c .\n" % (resource, "" if direct else "*")
+            q += "}"
+
+            res += self.format_sparql_result(self.sparql(model, q))
+
+        return res
 
     def subclassesof(self, concept, direct, models=[]):
-        raise NotImplementedError("not implemented")
-        if direct:
-            logger.warn(
-                "Direct sub-classes are assumed to be the asserted subClassOf relations"
-            )
-            return list(
-                simplequery(
-                    self.conn,
-                    ("?subclass", "rdfs:subClassOf", concept),
-                    models,
-                    assertedonly=True,
-                )
-            )
-        return list(
-            simplequery(self.conn, ("?subclass", "rdfs:subClassOf", concept), models)
-        )
+        res = []
+
+        resource = self.fix_prefix(concept)
+
+        for model in models:
+            q = "SELECT ?c WHERE {\n"
+            q += "?c rdfs:subClassOf%s %s .\n" % (resource, "" if direct else "*")
+            q += "}"
+
+            res += self.format_sparql_result(self.sparql(model, q))
+
+        return res
 
     ###################################################################################
 
