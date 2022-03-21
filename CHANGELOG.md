@@ -1,6 +1,12 @@
 Changelog
 =========
 
+minimalkb 1.2.1
+---------------
+
+- fix a corner case where conversion of literals to Python object was actually
+  incorrect
+
 minimalkb 1.2.0
 ---------------
 
