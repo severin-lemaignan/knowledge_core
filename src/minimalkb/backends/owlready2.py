@@ -292,9 +292,24 @@ class OwlReady2Store:
 
         return len(candidates) > 0
 
+    def named_variables(self, vars):
+        """
+        Returns the list of variable that have been explicitely named (eg,
+        not the 'stars' wildcards, that would have been replaced by anonymous
+        variable starting with '__' by pykb)
+        """
+
+        return [v for v in vars if not v.startswith("?__")]
+
     def query(self, vars, patterns, models):
 
         res = []
+
+        named_variables = self.named_variables(vars)
+        # if we have named variable + extra 'anonymous' variable (coming from
+        # eg '*'), ignore them
+        if named_variables and len(named_variables) != len(vars):
+            vars = named_variables
 
         for model in models:
             q = "SELECT %s WHERE {\n" % " ".join(vars)
@@ -303,7 +318,13 @@ class OwlReady2Store:
                 q += "%s %s %s .\n" % (s, p, o)
             q += "}"
 
-            res += self.format_sparql_result(self._sparql(model, q))
+            if len(named_variables) > 1:
+                res += [
+                    dict(zip(vars, r))
+                    for r in self.format_sparql_result(self._sparql(model, q))
+                ]
+            else:
+                res += self.format_sparql_result(self._sparql(model, q))
 
         # if a single variable is requested, 'unpack' the result
         if len(vars) == 1:

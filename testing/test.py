@@ -285,15 +285,15 @@ class TestSequenceFunctions(unittest.TestCase):
         self.kb += ["jump rdf:type Action"]
         self.assertCountEqual(
             self.kb["?agent rdf:type Robot", "?agent desires ?obj"],
-            [{"agent": "alfred", "obj": "oil"}],
+            [{"?agent": "alfred", "?obj": "oil"}],
         )
         self.assertCountEqual(
             self.kb["?agent desires ?act", "?act rdf:type Action"],
-            [{"agent": "nono", "act": "jump"}],
+            [{"?agent": "nono", "?act": "jump"}],
         )
         self.assertCountEqual(
             self.kb["?agent desires ?obj"],
-            [{"agent": "alfred", "obj": "oil"}, {"agent": "nono", "obj": "jump"}],
+            [{"?agent": "alfred", "?obj": "oil"}, {"?agent": "nono", "?obj": "jump"}],
         )
 
     def test_update(self):
