@@ -108,6 +108,12 @@ class OwlReady2Store:
 
     def format_sparql_result(self, raw):
 
+        # if the SPARQL request updates the model (eg 'INSERT' or 'DELETE'),
+        # owlready2 returns the number of statements updated.
+        if type(raw) == int:
+            logger.debug("%s statements updated" % raw)
+            return []
+
         res = []
         for row in raw:
             clean_row = []
