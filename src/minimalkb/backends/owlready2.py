@@ -34,7 +34,8 @@ class OwlReady2Store:
         self.initialize_model(DEFAULT_MODEL)
 
     def initialize_model(self, model):
-        world = owlready2.World(filename=model + ".sqlite3")
+        # world = owlready2.World(filename=model + ".sqlite3")
+        world = owlready2.World()  # creates in-memory sqlite database
         self.ontologies[model] = world.get_ontology(model_iri(model))
 
         # self.add(
@@ -129,24 +130,25 @@ class OwlReady2Store:
 
         return res
 
+    def reset(self):
+
+        self.clear_cache()
+
+        for model in self.ontologies.keys():
+            self.ontologies[model].destroy()
+
+        self.ontologies = {}
+        self.initialize_model(DEFAULT_MODEL)
+
     def clear(self, models=None):
 
         # clear everything
         if models is None:
-
-            self.clear_cache()
-
-            for _, onto in self.ontologies.items():
-                # onto.graph.destroy()
-                # if 'graph.destroy' does not do what we want, we can try that:
-                onto.world.sparql("DELETE { ?s ?p ?o . } WHERE { ?s ?p ?o . }")
-
-            # self.initialize_model(DEFAULT_MODEL)
+            self.reset()
 
         else:
             for model in models:
-                onto = self.ontologies[model]
-                onto.world.sparql("DELETE { ?s ?p ?o . } WHERE { ?s ?p ?o . }")
+                self._sparql(model, "DELETE { ?s ?p ?o . } WHERE { ?s ?p ?o . }")
 
         self.onupdate()
 
