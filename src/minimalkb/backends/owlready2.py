@@ -41,7 +41,7 @@ class OwlReady2Store:
         #    ["owl:Thing rdf:type owl:Class", "owl:Nothing rdf:type owl:Class"], model
         # )
 
-        self.delete([["<http://anonymous>", "rdf:type", "owl:Ontology"]], model)
+        self.clear(models=[model])
 
     def expand_prefix(self, entity):
 
@@ -123,16 +123,24 @@ class OwlReady2Store:
 
         return res
 
-    def clear(self):
+    def clear(self, models=None):
 
-        self.clear_cache()
+        # clear everything
+        if models is None:
 
-        for _, onto in self.ontologies.items():
-            onto.graph.destroy()
-            # if 'graph.destroy' does not do what we want, we can try that:
-            # onto.world.sparql("DELETE { ?s ?p ?o . } WHERE { ?s ?p ?o . }")
+            self.clear_cache()
 
-        # self.initialize_model(DEFAULT_MODEL)
+            for _, onto in self.ontologies.items():
+                # onto.graph.destroy()
+                # if 'graph.destroy' does not do what we want, we can try that:
+                onto.world.sparql("DELETE { ?s ?p ?o . } WHERE { ?s ?p ?o . }")
+
+            # self.initialize_model(DEFAULT_MODEL)
+
+        else:
+            for model in models:
+                onto = self.ontologies[model]
+                onto.world.sparql("DELETE { ?s ?p ?o . } WHERE { ?s ?p ?o . }")
 
         self.onupdate()
 
