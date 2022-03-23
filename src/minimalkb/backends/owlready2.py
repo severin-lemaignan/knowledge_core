@@ -144,7 +144,7 @@ class OwlReady2Store:
             if hasattr(obj, "cache"):
                 obj.cache.clear()
 
-    def sparql(self, model, query, params=()):
+    def _sparql(self, model, query, params=()):
         q = "BASE <%s>\n" % (model_iri(model))
         q += "PREFIX : <%s>\n" % (model_iri(model))
         for p, iri in PREFIXES.items():
@@ -174,7 +174,7 @@ class OwlReady2Store:
             q += "%s %s %s .\n" % (s, p, o)
         q += "} WHERE {}"
 
-        self.sparql(model, q)
+        self._sparql(model, q)
 
         #
         #        timestamp = datetime.datetime.now()
@@ -204,13 +204,36 @@ class OwlReady2Store:
             q += "%s %s %s .\n" % (s, p, o)
         q += "} WHERE {}"
 
-        self.sparql(model, q)
+        self._sparql(model, q)
 
         self.onupdate()
 
     def update(self, stmts, model=DEFAULT_MODEL, lifespan=0):
 
         return self.add(stmts, model, lifespan)
+
+    def sparql(self, query, models):
+        """Performs a SPARQL query on all given models and return the result.
+
+        Standard prefixes and the default prefix of each model are added to the
+        query, which is then executed 'as it'. As such, the namespaces of the
+        resources used in the query need to be correct. In particular,
+        resources belonging to the model's namespace (ie, all the custom
+        entities created in this model) have to be prefixed by ':', as
+        indicated in the SPARQL spec
+        (https://www.w3.org/TR/sparql11-query/#sparqlSyntax).
+        """
+
+        result = []
+
+        for model in models:
+            if not model in self.ontologies:
+                logger.warn("Trying to run a SPARQL query on a non-existent model!")
+                return []
+
+            result += self.format_sparql_result(self._sparql(model, query))
+
+        return result
 
     def about(self, resource, models):
         """Returns all statements involving the resource."""
@@ -221,22 +244,22 @@ class OwlReady2Store:
 
         for model in models:
             if not model in self.ontologies:
-                logger.warn("Trying to list statments from an unexisting model!")
+                logger.warn("Trying to list statments from an non-existent model!")
                 return []
 
             q = "SELECT ?s ?p WHERE { ?s ?p %s . }" % res
 
-            for sp in self.format_sparql_result(self.sparql(model, q)):
+            for sp in self.format_sparql_result(self._sparql(model, q)):
                 result += (sp[0], sp[1], res)
 
             q = "SELECT ?s ?o WHERE { ?s %s ?o . }" % res
 
-            for sp in self.format_sparql_result(self.sparql(model, q)):
+            for sp in self.format_sparql_result(self._sparql(model, q)):
                 result += (sp[0], res, sp[1])
 
             q = "SELECT ?p ?o WHERE { %s ?p ?o . }" % res
 
-            for sp in self.format_sparql_result(self.sparql(model, q)):
+            for sp in self.format_sparql_result(self._sparql(model, q)):
                 result += (res, sp[0], sp[1])
 
         return result
@@ -264,7 +287,7 @@ class OwlReady2Store:
                 q += "%s %s %s .\n" % (s, p, o)
             q += "}"
 
-            res += self.format_sparql_result(self.sparql(model, q))
+            res += self.format_sparql_result(self._sparql(model, q))
 
         # if a single variable is requested, 'unpack' the result
         if len(vars) == 1:
@@ -323,7 +346,7 @@ class OwlReady2Store:
             q += "%s rdf:type%s ?c .\n" % (resource, "" if direct else "*")
             q += "}"
 
-            res += self.format_sparql_result(self.sparql(model, q))
+            res += self.format_sparql_result(self._sparql(model, q))
 
         import pdb
 
@@ -340,7 +363,7 @@ class OwlReady2Store:
             q += "?i rdf:type%s %s .\n" % (resource, "" if direct else "*")
             q += "}"
 
-            res += self.format_sparql_result(self.sparql(model, q))
+            res += self.format_sparql_result(self._sparql(model, q))
 
         return res
 
@@ -354,7 +377,7 @@ class OwlReady2Store:
             q += "%s rdfs:subClassOf%s ?c .\n" % (resource, "" if direct else "*")
             q += "}"
 
-            res += self.format_sparql_result(self.sparql(model, q))
+            res += self.format_sparql_result(self._sparql(model, q))
 
         return res
 
@@ -368,7 +391,7 @@ class OwlReady2Store:
             q += "?c rdfs:subClassOf%s %s .\n" % (resource, "" if direct else "*")
             q += "}"
 
-            res += self.format_sparql_result(self.sparql(model, q))
+            res += self.format_sparql_result(self._sparql(model, q))
 
         return res
 

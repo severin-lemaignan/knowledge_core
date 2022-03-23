@@ -566,6 +566,13 @@ class MinimalKB:
         return self.find(vars, pattern, constraints=None, models=None)
 
     @api
+    def sparql(self, query, models=None):
+
+        models = self.normalize_models(models)
+
+        return self.store.sparql(query, models)
+
+    @api
     def subscribe(self, type, trigger, var, patterns, models=None):
 
         models = self.normalize_models(models)
