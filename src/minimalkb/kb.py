@@ -287,9 +287,9 @@ class MinimalKB:
     @api
     def lookup(self, resource, models=None):
         logger.info(
-            "Lookup for "
+            "Lookup for <"
             + str(resource)
-            + " in "
+            + "> in "
             + (str(models) if models else "default model.")
         )
         models = self.normalize_models(models)

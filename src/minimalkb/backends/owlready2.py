@@ -254,43 +254,49 @@ class OwlReady2Store:
     def about(self, resource, models):
         """Returns all statements involving the resource."""
 
-        res = self.fix_prefix(resource)
+        is_literal = self.is_literal(resource)
+
+        if not is_literal:
+            res = self.fix_prefix(resource)
 
         result = []
 
         for model in models:
             if not model in self.ontologies:
-                logger.warn("Trying to list statments from an non-existent model!")
+                logger.warn("Trying to list statements from an non-existent model!")
                 return []
 
             q = "SELECT ?s ?p WHERE { ?s ?p %s . }" % res
 
             for sp in self.format_sparql_result(self._sparql(model, q)):
-                result += (sp[0], sp[1], res)
+                result.append([sp[0], sp[1], resource])
 
-            q = "SELECT ?s ?o WHERE { ?s %s ?o . }" % res
+            if not is_literal:
+                q = "SELECT ?s ?o WHERE { ?s %s ?o . }" % res
 
-            for sp in self.format_sparql_result(self._sparql(model, q)):
-                result += (sp[0], res, sp[1])
+                for sp in self.format_sparql_result(self._sparql(model, q)):
+                    result.append([sp[0], resource, sp[1]])
 
-            q = "SELECT ?p ?o WHERE { %s ?p ?o . }" % res
+                q = "SELECT ?p ?o WHERE { %s ?p ?o . }" % res
 
-            for sp in self.format_sparql_result(self._sparql(model, q)):
-                result += (res, sp[0], sp[1])
+                for sp in self.format_sparql_result(self._sparql(model, q)):
+                    result.append( [resource, sp[0], sp[1]] )
 
         return result
 
     def has(self, stmts, models):
 
-        raise NotImplementedError("not implemented")
-        candidates = set()
-        for s in stmts:
-            if not candidates:
-                candidates = set(matchingstmt(self.conn, s, models))
-            else:
-                candidates &= set(matchingstmt(self.conn, s, models))
+        for model in models:
+            q = "SELECT ?s ?p ?o WHERE { ?s ?p ?o .\n"
+            for p in stmts:
+                s, p, o = self.fix_prefixes(p)
+                q += "%s %s %s .\n" % (s, p, o)
+            q += "}"
 
-        return len(candidates) > 0
+            if len(list(self._sparql(model, q))) > 0:
+                return True
+
+        return False
 
     def named_variables(self, vars):
         """
@@ -343,7 +349,6 @@ class OwlReady2Store:
 
     @memoize
     def typeof(self, concept, models):
-        raise NotImplementedError("not implemented")
         classes = self.classesof(concept, False, models)
         if classes:
             if "owl:ObjectProperty" in classes:
@@ -363,6 +368,7 @@ class OwlReady2Store:
         ):
             return "class"
 
+        import pdb;pdb.set_trace()
         stmts_if_predicate = matchingstmt(self.conn, ("?s", concept, "?o"), models)
         if stmts_if_predicate:
             if self.is_literal(stmts_if_predicate[0][3]):
@@ -385,9 +391,6 @@ class OwlReady2Store:
 
             res += self.format_sparql_result(self._sparql(model, q))
 
-        import pdb
-
-        pdb.set_trace()
         return res
 
     def instancesof(self, concept, direct, models=[]):
@@ -440,20 +443,6 @@ class OwlReady2Store:
         #    self.instancesof("owl:FunctionalProperty", False)
         # )
 
-    def has_stmt(self, pattern, models):
-        """Returns True if the given statment exist in
-        *any* of the provided models.
-        """
-
-        raise NotImplementedError("not implemented")
-        s, p, o = pattern
-        query = "SELECT hash FROM %s WHERE hash=?" % TRIPLETABLENAME
-        for m in models:
-            if self.conn.execute(query, (sqlhash(s, p, o, m),)).fetchone():
-                return True
-
-        return False
-
     @memoize
     def encode_literal(self, atom):
         """The definition of a literal follows the Turtle grammar:
@@ -492,7 +481,7 @@ class OwlReady2Store:
         except ValueError:
             pass
 
-        if "@" in atom:  # langague tag
+        if "@" in atom:  # language tag
             return True
 
         if "^^" in atom:  # covers all XSD datatypes in Turtle syntax
