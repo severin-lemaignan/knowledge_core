@@ -322,10 +322,10 @@ class TestSequenceFunctions(unittest.TestCase):
         self.assertCountEqual(self.kb["* isNice false"], ["nono"])
 
     def test_about(self):
-        self.kb.add(["nono isNice true"], ["model1"])
-        self.kb.add(["jamesbond isNice true"], ["model2"])
-        self.assertTrue(bool(self.kb.about("nono", ["model1"])))
-        self.assertFalse(bool(self.kb.about("nono", ["model2"])))
+        self.kb.add([":nono :isNice true"], ["model1"])
+        self.kb.add([":jamesbond :isNice true"], ["model2"])
+        self.assertTrue(bool(self.kb.about(":nono", ["model1"])))
+        self.assertFalse(bool(self.kb.about(":nono", ["model2"])))
 
     def test_events(self):
 
@@ -518,4 +518,5 @@ if __name__ == "__main__":
     kblogger.setLevel(logging.DEBUG)
     kblogger.addHandler(console)
 
-    unittest.main(failfast=args.failfast)
+    # unittest.main(failfast=args.failfast)
+    unittest.main(failfast=True)

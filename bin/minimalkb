@@ -112,8 +112,6 @@ if __name__ == "__main__":
     from minimalkb.ansistrm import ColorizingStreamHandler
     import argparse
 
-    from minimalkb.backends import BACKENDS, DEFAULT_BACKEND
-
     parser = argparse.ArgumentParser(description="A minimal knowledge base for robots.")
     parser.add_argument(
         "-v",
@@ -135,15 +133,6 @@ if __name__ == "__main__":
         type=int,
         nargs="?",
         help="port the server listen to.",
-    )
-    parser.add_argument(
-        "-b",
-        "--backend",
-        default="sqlite",
-        type=str,
-        nargs="?",
-        choices=BACKENDS,
-        help="triple store backend (default: %s)." % DEFAULT_BACKEND,
     )
     parser.add_argument(
         "ontology",

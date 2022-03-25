@@ -4,44 +4,43 @@ logger = logging.getLogger("minimalKB." + __name__)
 DEBUG_LEVEL = logging.DEBUG
 
 
-import shlex
 from rdflib import Graph, URIRef
-from rdflib.namespace import Namespace, NamespaceManager, RDF, RDFS, OWL, XSD
+from rdflib.namespace import NamespaceManager
+
+from minimalkb.kb import DEFAULT_MODEL
 
 from minimalkb.exceptions import KbServerError
-
-DEFAULT_NAMESPACE = ("chili", "http://chili-research.epfl.ch#")
+from minimalkb.helpers import memoize
 
 
 class RDFlibStore:
     def __init__(self):
 
-        self.default_ns = Namespace(DEFAULT_NAMESPACE[1])
         self.models = {}
 
     def clear(self):
         """Empties all knowledge models."""
         self.models = {}
 
-    def add(self, stmts, model="default"):
+    def add(self, stmts, model=DEFAULT_MODEL, lifespan=0, replace=False):
         """Add the given statements to the given model."""
 
         # creates a model if necessary
         graph = self._create_or_get_graph(model)
 
         for stmt in stmts:
-            graph.add(self._parse_stmt(stmt))
+            graph.add(stmt)
 
-    def delete(self, stmts, model="default"):
+    def delete(self, stmts, model=DEFAULT_MODEL):
         """remove the given statements from the given model."""
         if not model in self.models:
             logger.warn("Trying to remove statements from an unexisting model!")
             return
 
         for stmt in stmts:
-            self.models[model].remove(self._parse_stmt(stmt))
+            self.models[model].remove(stmt)
 
-    def update(self, stmts, model="default"):
+    def update(self, stmts, model=DEFAULT_MODEL):
         """Add the given statements to the given model, updating the statements
         with a functional predicate.
         """
@@ -56,7 +55,7 @@ class RDFlibStore:
     def about(self, resource, models):
         """Returns all statements involving the resource."""
         res = []
-        resource = self._parse_resource(resource)
+        resource = parse_term(resource)
 
         for model in models:
             if not model in self.models:
@@ -99,35 +98,11 @@ class RDFlibStore:
         if name not in self.models:
             graph = Graph()
             namespace_manager = NamespaceManager(Graph())
-            namespace_manager.bind(DEFAULT_NAMESPACE[0], self.default_ns)
+            namespace_manager.bind(DEFAULT_NAMESPACE[0], default_ns)
             graph.ns_manager = namespace_manager
             self.models[name] = graph
 
         return self.models[name]
-
-    def _parse_stmt(self, stmt):
-        s, p, o = shlex.split(stmt)
-        return (
-            self._parse_resource(s),
-            self._parse_resource(p),
-            self._parse_resource(o),
-        )
-
-    def _parse_resource(self, resource):
-        tokens = resource.split(":")
-        if len(tokens) == 1:
-            return self.default_ns[resource]
-
-        ns, resource = tokens
-
-        if ns == "rdf":
-            return RDF[resource]
-        elif ns == "rdfs":
-            return RDFS[resource]
-        elif ns == "owl":
-            return OWL[resource]
-
-        raise KbServerError("Unknown namespace <%s> for resource %s" % (ns, resource))
 
     def _format_stmt(self, graph, s, p, o):
 

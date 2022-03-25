@@ -1,33 +1,60 @@
 import logging
 
+from rdflib.graph import Dataset
+
 logger = logging.getLogger("minimalKB." + __name__)
 
 from queue import Queue, Empty
 import json
 import traceback
 
-DEFAULT_MODEL = "default"
-
-import shlex
-from multiprocessing import Process
-
-hasRDFlib = False
 try:
     import rdflib
-    import rdflib.namespace
 
-    hasRDFlib = True
+    if rdflib.__version__ < "6.0.0":
+        logger.error("RDFlib >= 6.0.0 is required. Please upgrade.")
+        import sys
+
+        sys.exit(1)
 except ImportError:
-    logger.warn("RDFlib not available. You won't be able to load existing ontologies.")
-    pass
+    logger.error("RDFlib is required. Please install it.")
+    import sys
 
-from .backends import *
+    sys.exit(1)
+
+from rdflib import Graph, Dataset
+from rdflib.term import Literal
+from rdflib.namespace import Namespace, NamespaceManager, RDF, RDFS, OWL, XSD
+
+
+DEFAULT_MODEL = "default"
+
+
+IRIS = {
+    "pal": "http://www.pal-robotics.com/kb/",
+    "oro": "http://kb.openrobots.org#",
+    "cyc": "http://sw.opencyc.org/concept/",
+    "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+    "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+    "owl": "http://www.w3.org/2002/07/owl#",
+    "xsd": "http://www.w3.org/2001/XMLSchema#",
+}
+
+DEFAULT_PREFIX = "pal"
+
+default_ns = Namespace(IRIS[DEFAULT_PREFIX])
+
+SPARQL_PREFIXES = " ".join(["PREFIX %s: <%s>" % (p, iri) for p, iri in IRIS.items()])
+SPARQL_PREFIXES += " PREFIX : <%s> " % IRIS[DEFAULT_PREFIX]
+SPARQL_PREFIXES += "BASE <%s> " % IRIS[DEFAULT_PREFIX]
 
 from .exceptions import KbServerError
 from minimalkb import __version__
 
 from .services.simple_rdfs_reasoner import start_reasoner, stop_reasoner
 from .services import lifespan
+
+from .helpers import memoize
 
 
 def api(fn):
@@ -40,16 +67,23 @@ def compat(fn):
     return fn
 
 
+def parse_stmts(stmts):
+
+    data = SPARQL_PREFIXES
+
+    for stmt in stmts:
+        data += " %s . " % stmt
+
+    return Graph().parse(data=data, format="turtle")
+
+
 def parse_stmt(stmt):
 
-    tokens = stmt.split()
-    if len(tokens) < 3:
-        logger.error(
-            "Error while parsing the statement: %s. Only 2 tokens found" % stmt
-        )
-        raise RuntimeError("Malformed statement <%s>" % stmt)
+    return list(Graph().parse(data=SPARQL_PREFIXES + "%s ." % stmt, format="turtle"))[0]
 
-    return tokens[0], tokens[1], " ".join(tokens[2:])
+
+def stmt_to_str(stmt):
+    return [t.n3() for t in stmt]
 
 
 class Event:
@@ -141,7 +175,7 @@ class MinimalKB:
     MEMORYPROFILE_DEFAULT = ""
     MEMORYPROFILE_SHORTTERM = "SHORTTERM"
 
-    def __init__(self, filenames=None, backend=DEFAULT_BACKEND):
+    def __init__(self, filenames=None):
 
         _api = [
             getattr(self, fn) for fn in dir(self) if hasattr(getattr(self, fn), "_api")
@@ -149,27 +183,6 @@ class MinimalKB:
         import inspect
 
         self._api = {fn.__name__ + str(inspect.signature(fn)): fn for fn in _api}
-
-        if backend not in BACKENDS:
-            logger.error(
-                "Requested backend '%' not available! (missing dependency?). Falling back to %s"
-                % (backend, DEFAULT_BACKEND)
-            )
-            backend = DEFAULT_BACKEND
-
-        self.backend = backend
-        if self.backend == SQLITE:
-            from .backends.sqlite import SQLStore
-
-            self.store = SQLStore()
-        elif self.backend == RDFLIB:
-            from .backends.rdflib_backend import RDFlibStore
-
-            self.store = RDFlibStore()
-        else:
-            raise RuntimeError("Non-existent backend!")
-
-        self.models = {DEFAULT_MODEL}
 
         apilist = [
             key + (" (compatibility)" if hasattr(val, "_compat") else "")
@@ -187,9 +200,12 @@ class MinimalKB:
         self.active_evts = set()
         self.eventsubscriptions = {}
 
-        self.initialize_model(DEFAULT_MODEL)
+        # create a RDFlib dataset
+        self.ds = Dataset()
+        self.models = {}
+        self.create_model(DEFAULT_MODEL)
 
-        self.start_services()
+        # self.start_services()
 
         if filenames:
             for filename in filenames:
@@ -208,57 +224,7 @@ class MinimalKB:
     def load(self, filename, models=None):
 
         models = self.normalize_models(models)
-        if hasRDFlib and (filename.endswith("owl") or filename.endswith("rdf")):
-            logger.info("Trying to load RDF file %s..." % filename)
-            g = rdflib.Graph()
-            nsm = rdflib.namespace.NamespaceManager(g)
-            # namespace_manager.bind(DEFAULT_NAMESPACE[0], self.default_ns)
-            g.parse(filename)
-            triples = []
-            for s, p, o in g:
-
-                # skip blank nodes
-                if (
-                    isinstance(s, rdflib.term.BNode)
-                    or isinstance(p, rdflib.term.BNode)
-                    or isinstance(o, rdflib.term.BNode)
-                ):
-                    continue
-                try:
-                    s = nsm.qname(s)
-                except:
-                    pass
-                try:
-                    p = nsm.qname(p)
-                except:
-                    pass
-                try:
-                    if isinstance(o, rdflib.term.Literal):
-                        o = o.toPython()
-                    else:
-                        o = nsm.qname(o)
-                except:
-                    pass
-                triples += [(s, p, o)]
-
-            logger.debug("Importing:\n%s" % triples)
-            for model in models:
-                self.store.add(triples, model)
-        else:
-            if filename.endswith("owl") or filename.endswith("rdf"):
-                logger.error(
-                    "Trying to load a RDF file, but RDFlib is not available"
-                    "Install first RDFlib for Python. Ignoring the file for "
-                    "now."
-                )
-                return
-
-            logger.info("Trying to load raw triples from %s..." % filename)
-            with open(filename, "r") as triples:
-                for model in models:
-                    self.store.add(
-                        [shlex.split(s.strip()) for s in triples.readlines()], models
-                    )
+        self.store.load(filename, models)
 
     @compat
     @api
@@ -268,11 +234,12 @@ class MinimalKB:
     @api
     def clear(self):
         logger.warn("Clearing the knowledge base!")
-        self.store.clear()
         self.active_evts.clear()
 
-        models = set(DEFAULT_MODEL)
-        self.initialize_model(DEFAULT_MODEL)
+        for m, g in self.models.items():
+            self.ds.remove_graph(g)
+
+        self.create_model(DEFAULT_MODEL)
 
     @compat
     @api
@@ -442,7 +409,7 @@ class MinimalKB:
 
         if isinstance(stmts, str):
             raise KbServerError("A list of statements is expected")
-        stmts = [parse_stmt(s) for s in stmts]
+        subgraph = parse_stmts(stmts)
 
         if type(policy) != dict:
             raise KbServerError("Expected a dictionary as policy")
@@ -460,7 +427,7 @@ class MinimalKB:
                 + (" (lifespan: %ssec)" % lifespan if lifespan else "")
             )
             for model in models:
-                self.store.add(stmts, model, lifespan=lifespan)
+                self.models[model] += subgraph  # TODO: lifespan
 
         if policy["method"] == "retract":
             logger.info(
@@ -470,7 +437,7 @@ class MinimalKB:
                 + "\n\t- ".join([str(s) for s in stmts])
             )
             for model in models:
-                self.store.delete(stmts, model)
+                self.models[model] -= subgraph
 
         if policy["method"] in ["update", "safe_update", "revision"]:
 
@@ -484,6 +451,7 @@ class MinimalKB:
                 + (" (lifespan: %ssec)" % lifespan if lifespan else "")
             )
             for model in models:
+                raise NotImplementedError("not implemented")
                 self.store.update(stmts, model, lifespan=lifespan)
 
         self.onupdate()
@@ -672,7 +640,9 @@ class MinimalKB:
         self._reasoner.join()
         self._lifespan_manager.join()
 
-    def initialize_model(self, model):
+    def create_model(self, model):
+        self.models[model] = self.ds.graph(IRIS[DEFAULT_PREFIX] + model)
+
         self.add(
             ["owl:Thing rdf:type owl:Class", "owl:Nothing rdf:type owl:Class"], model
         )
@@ -694,8 +664,7 @@ class MinimalKB:
                 # do we have a new model? initialise it.
                 for model in models:
                     if model not in self.models:
-                        self.models.add(model)
-                        self.initialize_model(model)
+                        self.create_model(model)
 
                 return frozenset(models)
         else:

@@ -324,29 +324,6 @@ class SQLStore:
 
         return False
 
-    @memoize
-    def is_literal(self, atom):
-        """The definition of a literal follows the Turtle grammar:
-        http://www.w3.org/TeamSubmission/turtle/#literal
-        """
-        if atom in ["true", "false"]:  # only lower-case!
-            return True
-        if atom[0] in ['"', "'"] and atom[-1] in ['"', "'"]:
-            return True
-        try:
-            float(atom)  # test for integer, double, decimal
-            return True
-        except ValueError:
-            pass
-
-        if "@" in atom:  # langague tag
-            return True
-
-        if "^^" in atom:  # covers all XSD datatypes in Turtle syntax
-            return True
-
-        return False
-
     def literal_to_python(self, literal):
 
         if not literal:
