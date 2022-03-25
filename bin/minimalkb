@@ -3,7 +3,9 @@
 
 from minimalkb import __version__
 
-import logging; logger = logging.getLogger("minimalKB");
+import logging
+
+logger = logging.getLogger("minimalKB")
 
 
 import sys
@@ -16,8 +18,8 @@ import json
 
 PORT = 6969
 
-class MinimalKBChannel(asynchat.async_chat):
 
+class MinimalKBChannel(asynchat.async_chat):
     def __init__(self, server, sock, addr, kb):
         asynchat.async_chat.__init__(self, sock)
         self.set_terminator("#end#".encode("utf-8"))
@@ -36,7 +38,10 @@ class MinimalKBChannel(asynchat.async_chat):
                 try:
                     args.append(json.loads(t))
                 except ValueError:
-                    logger.error("Invalid arguments for <%s>: %s. Valid JSON was expected."%(tokens[0], t))
+                    logger.error(
+                        "Invalid arguments for <%s>: %s. Valid JSON was expected."
+                        % (tokens[0], t)
+                    )
 
             if isinstance(args[-1], dict) and "kwargs" in args[-1]:
                 kwargs = args[-1]["kwargs"]
@@ -50,7 +55,7 @@ class MinimalKBChannel(asynchat.async_chat):
 
     def found_terminator(self):
 
-        logger.debug("Got request:" + self.data )
+        logger.debug("Got request:" + self.data)
         request, args, kwargs = self.parse_request(self.data)
         self.data = ""
         self.kb.submitrequest(self, request, *args, **kwargs)
@@ -63,20 +68,26 @@ class MinimalKBChannel(asynchat.async_chat):
 
         raw = ""
         if status == "ok":
-            raw = "ok\n%s\n" % json.dumps(res, ensure_ascii=False) if res is not None else "ok\n"
+            raw = (
+                "ok\n%s\n" % json.dumps(res, ensure_ascii=False)
+                if res is not None
+                else "ok\n"
+            )
         elif status == "error":
             raw = "error\nkberror\n%s\n" % str(res)
         elif status == "event":
-            raw = "event\n%s\n%s\n" % (res.id, json.dumps(res.content, ensure_ascii=False))
+            raw = "event\n%s\n%s\n" % (
+                res.id,
+                json.dumps(res.content, ensure_ascii=False),
+            )
         else:
             raise RuntimeError("Unexpected message status: %s" % status)
 
         logger.debug("Sent message:" + raw)
-        self.push((raw + "#end#\n").encode('utf-8'))
+        self.push((raw + "#end#\n").encode("utf-8"))
 
 
 class MinimalKBServer(asyncore.dispatcher):
-
     def __init__(self, port, kb):
         asyncore.dispatcher.__init__(self)
 
@@ -91,29 +102,59 @@ class MinimalKBServer(asyncore.dispatcher):
         conn, addr = self.accept()
         MinimalKBChannel(self, conn, addr, kb)
 
+
 def version():
     print("minimalKB %s" % __version__)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
 
     from minimalkb.ansistrm import ColorizingStreamHandler
     import argparse
 
-    parser = argparse.ArgumentParser(description='A minimal knowledge base for robots.')
-    parser.add_argument('-v', '--version', action='version',
-                       version=__version__, help='returns minimalKB version')
-    parser.add_argument('-q', '--quiet', action='store_true',
-                                help='be quiet (only errors are reported)')
-    parser.add_argument('-d', '--debug', action='store_true',
-                                help='enables verbose output')
-    parser.add_argument('-p', '--port', default=PORT, type=int, nargs='?',
-                                help='port the server listen to.')
-    parser.add_argument('ontology', nargs='*', help="Files (OWL, RDF or raw triples) with initial ontologies to load")
+    from minimalkb.backends import BACKENDS, DEFAULT_BACKEND
+
+    parser = argparse.ArgumentParser(description="A minimal knowledge base for robots.")
+    parser.add_argument(
+        "-v",
+        "--version",
+        action="version",
+        version=__version__,
+        help="returns minimalKB version",
+    )
+    parser.add_argument(
+        "-q", "--quiet", action="store_true", help="be quiet (only errors are reported)"
+    )
+    parser.add_argument(
+        "-d", "--debug", action="store_true", help="enables verbose output"
+    )
+    parser.add_argument(
+        "-p",
+        "--port",
+        default=PORT,
+        type=int,
+        nargs="?",
+        help="port the server listen to.",
+    )
+    parser.add_argument(
+        "-b",
+        "--backend",
+        default="sqlite",
+        type=str,
+        nargs="?",
+        choices=BACKENDS,
+        help="triple store backend (default: %s)." % DEFAULT_BACKEND,
+    )
+    parser.add_argument(
+        "ontology",
+        nargs="*",
+        help="Files (OWL, RDF or raw triples) with initial ontologies to load",
+    )
 
     args = parser.parse_args()
 
     console = ColorizingStreamHandler()
-    
+
     if args.debug:
         logger.setLevel(logging.DEBUG)
     elif args.quiet:
@@ -121,10 +162,9 @@ if __name__ == '__main__':
     else:
         logger.setLevel(logging.INFO)
 
-    formatter = logging.Formatter('%(asctime)-15s: %(message)s')
+    formatter = logging.Formatter("%(asctime)-15s: %(message)s")
     console.setFormatter(formatter)
     logger.addHandler(console)
-
 
     # The logging handlers are now setup, import the other minimalkb components
     from minimalkb.kb import MinimalKB, KbServerError
@@ -136,7 +176,7 @@ if __name__ == '__main__':
 
     try:
         while True:
-            asyncore.loop(count = 1)
+            asyncore.loop(count=1)
             kb.process()
     except KeyboardInterrupt:
         kb.stop_services()

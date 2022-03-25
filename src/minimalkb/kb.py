@@ -21,12 +21,10 @@ except ImportError:
     logger.warn("RDFlib not available. You won't be able to load existing ontologies.")
     pass
 
+from .backends import *
+
 from .exceptions import KbServerError
 from minimalkb import __version__
-
-from .backends.sqlite import SQLStore
-
-# from backends.rdflib_backend import RDFlibStore
 
 from .services.simple_rdfs_reasoner import start_reasoner, stop_reasoner
 from .services import lifespan
@@ -143,7 +141,8 @@ class MinimalKB:
     MEMORYPROFILE_DEFAULT = ""
     MEMORYPROFILE_SHORTTERM = "SHORTTERM"
 
-    def __init__(self, filenames=None):
+    def __init__(self, filenames=None, backend=DEFAULT_BACKEND):
+
         _api = [
             getattr(self, fn) for fn in dir(self) if hasattr(getattr(self, fn), "_api")
         ]
@@ -151,8 +150,24 @@ class MinimalKB:
 
         self._api = {fn.__name__ + str(inspect.signature(fn)): fn for fn in _api}
 
-        self.store = SQLStore()
-        # self.store = RDFlibStore()
+        if backend not in BACKENDS:
+            logger.error(
+                "Requested backend '%' not available! (missing dependency?). Falling back to %s"
+                % (backend, DEFAULT_BACKEND)
+            )
+            backend = DEFAULT_BACKEND
+
+        self.backend = backend
+        if self.backend == SQLITE:
+            from .backends.sqlite import SQLStore
+
+            self.store = SQLStore()
+        elif self.backend == RDFLIB:
+            from .backends.rdflib_backend import RDFlibStore
+
+            self.store = RDFlibStore()
+        else:
+            raise RuntimeError("Non-existent backend!")
 
         self.models = {DEFAULT_MODEL}
 
@@ -640,11 +655,15 @@ class MinimalKB:
                     self.active_evts.discard(e)
 
     def start_services(self, *args):
-        self._reasoner = Process(target=start_reasoner, args=("kb.db",))
-        self._reasoner.start()
 
-        self._lifespan_manager = Process(target=lifespan.start_service, args=("kb.db",))
-        self._lifespan_manager.start()
+        if self.backend == SQLITE:
+            self._reasoner = Process(target=start_reasoner, args=("kb.db",))
+            self._reasoner.start()
+
+            self._lifespan_manager = Process(
+                target=lifespan.start_service, args=("kb.db",)
+            )
+            self._lifespan_manager.start()
 
     def stop_services(self):
         self._reasoner.terminate()
