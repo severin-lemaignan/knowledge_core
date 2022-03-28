@@ -276,6 +276,9 @@ class MinimalKB:
         # create a RDFlib dataset
         self.ds = Dataset()
         self.models = {}
+        self.is_dirty = (
+            {}
+        )  # stores whether models have changes that would require re-classification
         self.create_model(DEFAULT_MODEL)
 
         self._functionalproperties = frozenset()
@@ -643,11 +646,13 @@ class MinimalKB:
             )
             for model in models:
                 self.models[model] += subgraph  # TODO: lifespan
+                self.is_dirty[model] = True
 
         if policy["method"] == "retract":
             logger.info("Deleting from " + str(list(models)) + ":\n\t- " + parsed_stmts)
             for model in models:
                 self.models[model] -= subgraph
+                self.is_dirty[model] = True
 
         if policy["method"] in ["update", "safe_update", "revision"]:
 
@@ -667,6 +672,7 @@ class MinimalKB:
                         self.models[model].set((s, p, o))  # TODO: lifespan
                     else:
                         self.models[model].add((s, p, o))  # TODO: lifespan
+                self.is_dirty[model] = True
 
         self.onupdate()
 
@@ -880,10 +886,12 @@ class MinimalKB:
                 self.is_dirty[model] = False
 
             end = time.time()
-            logger.debug(
-                "Materialisation performed by reasoner in %.1fms"
-                % ((end - start) * 1000)
-            )
+
+            if end - start > 0.001:  # did we actually classify anything?
+                logger.debug(
+                    "Materialisation performed by reasoner in %.1fms"
+                    % ((end - start) * 1000)
+                )
 
     def start_services(self, *args):
 
