@@ -5,6 +5,8 @@ import logging
 import unittest
 import time
 
+from kb import KbError
+
 try:
     import kb
 except ImportError:
@@ -124,7 +126,8 @@ class TestSequenceFunctions(unittest.TestCase):
         self.assertTrue("alfred" in self.kb)
         self.assertFalse("tartempion" in self.kb)
 
-        self.assertFalse("alfred likes" in self.kb)
+        with self.assertRaises(KbError):
+            self.assertFalse("alfred likes" in self.kb)
         self.assertTrue("alfred likes icecream" in self.kb)
         self.assertTrue("alfred likes *" in self.kb)
         self.assertTrue("alfred likes ?smthg" in self.kb)
@@ -154,25 +157,17 @@ class TestSequenceFunctions(unittest.TestCase):
             self.kb.lookup("rdf:type"), [["rdf:type", "object_property"]]
         )
 
-        # The following test would fail: alfred would still be recognized as an instance due to memoization.
-        # I'm not sure what is the best strategy here, but likely to reset memoizers in case of a non-monotomic
-        # modification (ie, retractation or update)
-        # self.kb -= ["alfred rdf:type Robot"]
-        # self.assertCountEqual(self.kb.lookup('alfred'), [['alfred', 'undecided']])
-
         self.kb += ["alfred likes icecream"]
         self.assertCountEqual(self.kb.lookup("likes"), [["likes", "object_property"]])
         self.assertCountEqual(self.kb.lookup("alfred"), [["alfred", "instance"]])
 
         self.kb += ['nono rdfs:label "alfred"']
-        self.assertCountEqual(
-            self.kb.lookup("alfred"), [["alfred", "instance"], ["nono", "undecided"]]
-        )
+        self.assertCountEqual(self.kb.lookup("alfred"), [["alfred", "instance"]])
 
         self.kb += ['gerard rdfs:label "likes"']
         self.assertCountEqual(
-            self.kb.lookup("likes"),
-            [["likes", "object_property"], ["gerard", "undecided"]],
+            self.kb.lookup('"likes"'),
+            [['"likes"', "literal"]],
         )
 
         self.kb += ["gerard age 18"]
@@ -518,5 +513,5 @@ if __name__ == "__main__":
     kblogger.setLevel(logging.DEBUG)
     kblogger.addHandler(console)
 
-    # unittest.main(failfast=args.failfast)
-    unittest.main(failfast=True)
+    unittest.main(failfast=args.failfast)
+    # unittest.main(failfast=True)

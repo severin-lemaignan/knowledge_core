@@ -89,7 +89,10 @@ def parse_stmts_to_graph(stmts):
     for stmt in stmts:
         data += " %s . " % stmt
 
-    return Graph().parse(data=data, format="n3")
+    try:
+        return Graph().parse(data=data, format="n3")
+    except rdflib.plugins.parsers.notation3.BadSyntax:
+        raise KbServerError("invalid syntax for statements %s" % stmts)
 
 
 # @memoize
@@ -101,16 +104,22 @@ def parse_stmts(stmts):
 # @memoize
 def parse_stmt(stmt):
 
-    return list(Graph().parse(data=N3_PROLOGUE + "%s ." % stmt, format="n3"))[0]
+    try:
+        return list(Graph().parse(data=N3_PROLOGUE + "%s ." % stmt, format="n3"))[0]
+    except rdflib.plugins.parsers.notation3.BadSyntax:
+        raise KbServerError("invalid syntax for statement <%s>" % stmt)
 
 
 # @memoize
 def parse_term(term):
 
-    # TODO: correct, but not super effective!
-    return list(Graph().parse(data=N3_PROLOGUE + " <s> <p> %s ." % term, format="n3"))[
-        0
-    ][2]
+    try:
+        # TODO: correct, but not super effective!
+        return list(
+            Graph().parse(data=N3_PROLOGUE + " <s> <p> %s ." % term, format="n3")
+        )[0][2]
+    except rdflib.plugins.parsers.notation3.BadSyntax:
+        raise KbServerError("invalid syntax for term <%s>" % term)
 
 
 def shorten_term(graph, term):
@@ -139,6 +148,10 @@ def shortenN(graph, stmts):
 def shorten_graph(graph):
     """returns a list of s,p,o statements contained in a graph, with their URIs shorten (eg, using prefixes when possible)"""
     return [shorten(graph, s) for s in graph.triples([None, None, None])]
+
+
+def get_variables(stmt):
+    return [v for v in stmt if isinstance(v, Variable)]
 
 
 class Event:
@@ -319,11 +332,11 @@ class MinimalKB:
         for model in models:
             g = self.models[model]
             for triple in g.triples((term, None, None)):
-                result += shorten(g, triple)
+                result.append(shorten(g, triple))
             for triple in g.triples((None, term, None)):
-                result += shorten(g, triple)
+                result.append(shorten(g, triple))
             for triple in g.triples((None, None, term)):
-                result += shorten(g, triple)
+                result.append(shorten(g, triple))
 
         return result
 
@@ -342,6 +355,7 @@ class MinimalKB:
             + (str(models) if models else "default model.")
         )
         about = self.about(resource, models)
+
         if not about:
             logger.info("'%s' not found." % str(resource))
             return []
@@ -351,17 +365,13 @@ class MinimalKB:
         for s, p, o in about:
             if s == resource or p == resource or o == resource:
                 matching_concepts.add(resource)
-            if (
-                isinstance(o, str) and resource in o and p == "rdfs:label"
-            ):  # resource is the label -> add s
-                matching_concepts.add(s)
 
         res = [(concept, self.typeof(concept, models)) for concept in matching_concepts]
         logger.info("Found: " + str(res))
         return res
 
     @api
-    def instancesof(self, term, direct, models=[]):
+    def _instancesof(self, term, direct=False, models=[]):
 
         if direct:
             logger.warn(
@@ -373,12 +383,16 @@ class MinimalKB:
 
         res = parse_term(term)
         for model in models:
-            result.append(self.models[model].subjects(RDF.type, res))
+            result += self.models[model].subjects(RDF.type, res)
 
         return result
 
     @api
-    def classesof(self, term, direct, models=[]):
+    def classesof(self, term, direct=False, models=[]):
+        cls = self._classesof(term, direct, models)
+        return [shorten_term(self.models[DEFAULT_MODEL], c) for c in cls]
+
+    def _classesof(self, term, direct=False, models=[]):
 
         if direct:
             logger.warn(
@@ -390,12 +404,12 @@ class MinimalKB:
 
         res = parse_term(term)
         for model in models:
-            result.append(self.models[model].objects(res, RDF.type))
+            result += self.models[model].objects(res, RDF.type)
 
         return result
 
     @api
-    def subclassesof(self, term, direct, models=[]):
+    def _subclassesof(self, term, direct=False, models=[]):
 
         if direct:
             logger.warn(
@@ -407,12 +421,12 @@ class MinimalKB:
 
         res = parse_term(term)
         for model in models:
-            result.append(self.models[model].subjects(RDFS.subClassOf, res))
+            result += self.models[model].subjects(RDFS.subClassOf, res)
 
         return result
 
     @api
-    def superclassesof(self, term, direct, models=[]):
+    def _superclassesof(self, term, direct=False, models=[]):
 
         if direct:
             logger.warn(
@@ -424,7 +438,7 @@ class MinimalKB:
 
         res = parse_term(term)
         for model in models:
-            result.append(self.models[model].objects(res, RDFS.subClassOf))
+            result += self.models[model].objects(res, RDFS.subClassOf)
 
         return result
 
@@ -435,7 +449,7 @@ class MinimalKB:
         if isinstance(term, Literal):
             return "literal"
 
-        classes = self.classesof(raw_term, False, models)
+        classes = self._classesof(raw_term, False, models)
         if classes:
             if "owl:ObjectProperty" in classes:
                 return "object_property"
@@ -447,21 +461,22 @@ class MinimalKB:
                 return "instance"
 
         if (
-            self.instancesof(raw_term, False, models)
-            or self.subclassesof(raw_term, False, models)
-            or self.superclassesof(raw_term, False, models)
+            self._instancesof(raw_term, False, models)
+            or self._subclassesof(raw_term, False, models)
+            or self._superclassesof(raw_term, False, models)
         ):
             return "class"
 
-        raise NotImplemented("to be done")
-        stmts_if_predicate = matchingstmt(self.conn, ("?s", concept, "?o"), models)
-        if stmts_if_predicate:
-            if self.is_literal(stmts_if_predicate[0][3]):
-                return "datatype_property"
-            else:
-                return "object_property"
+        for model in models:
+            stmts_if_predicate = list(self.models[model].triples([None, term, None]))
 
-        logger.warn("Concept <%s> has undecidable type." % concept)
+            if stmts_if_predicate:
+                if isinstance(stmts_if_predicate[0][2], Literal):
+                    return "datatype_property"
+                else:
+                    return "object_property"
+
+        logger.warn("Concept <%s> has undecidable type." % term.n3())
         return "undecided"
 
     @api
@@ -496,7 +511,7 @@ class MinimalKB:
                     "id": "superClasses",
                     "values": [
                         {"id": r, "name": self.store.label(r, models)}
-                        for r in self.superclassesof(resource, True, models)
+                        for r in self._superclassesof(resource, True, models)
                     ],
                 }
             )
@@ -507,7 +522,7 @@ class MinimalKB:
                     "id": "subClasses",
                     "values": [
                         {"id": r, "name": self.store.label(r, models)}
-                        for r in self.subclassesof(resource, True, models)
+                        for r in self._subclassesof(resource, True, models)
                     ],
                 }
             )
@@ -518,7 +533,7 @@ class MinimalKB:
                     "id": "instances",
                     "values": [
                         {"id": r, "name": self.store.label(r, models)}
-                        for r in self.instancesof(resource, True, models)
+                        for r in self._instancesof(resource, True, models)
                     ],
                 }
             )
@@ -530,7 +545,7 @@ class MinimalKB:
                     "id": "classes",
                     "values": [
                         {"id": r, "name": self.store.label(r, models)}
-                        for r in self.store.classesof(resource, True, models)
+                        for r in self.store._classesof(resource, True, models)
                     ],
                 }
             ]
@@ -551,7 +566,7 @@ class MinimalKB:
         return self.exist(stmts, models)
 
     @api
-    def exist(self, stmts, models=None):
+    def exist(self, raw_stmts, models=None):
         """Returns True if all the statements exist (eg, are materialised) in
         all the given models.
         """
@@ -560,18 +575,27 @@ class MinimalKB:
 
         logger.info(
             "Checking existence of "
-            + str(stmts)
+            + str(raw_stmts)
             + " in "
             + (str(models) if models else "default model.")
         )
-        stmts = [parse_stmt(s) for s in stmts]
+        stmts = [parse_stmt(s) for s in raw_stmts]
 
-        for model in models:
-            for stmt in stmts:
-                if not stmt in self.models[model]:
-                    return False
+        vars = []
+        for stmt in stmts:
+            vars += [v.n3() for v in get_variables(stmt)]
 
-        return True
+        # no variable? simply check if all the statements are asserted
+        if len(vars) == 0:
+            for model in models:
+                for stmt in stmts:
+                    if not stmt in self.models[model]:
+                        return False
+
+            return True
+
+        # else, run a query
+        return bool(self.find(vars, raw_stmts, models))
 
     @api
     def revise(self, stmts, policy):
@@ -778,33 +802,6 @@ class MinimalKB:
 
         return event.id
 
-    @compat
-    @api
-    def registerEvent(self, type, trigger, patterns):
-        return self.subscribe(type, trigger, None, patterns)
-
-    @compat
-    @api
-    def discriminateForAgent(self, *args):
-        raise NotImplementedError("discriminateForAgent not implemented in MinimalKB")
-
-    @compat
-    @api
-    def getLabel(self, concept):
-        return self.store.label(concept)
-
-    @compat
-    @api
-    def getDirectClassesOf(self, concept):
-        return self.getClassesOf(concept, True)
-
-    @compat
-    @api
-    def getClassesOf(self, concept, direct=False):
-        classes = self.classesof(concept, direct)
-
-        return {cls: self.getLabel(cls) for cls in classes}
-
     @api
     def close(self):
         """This code should actually never be called: the 'close' request
@@ -836,7 +833,7 @@ class MinimalKB:
     def onupdate(self):
 
         self._functionalproperties = frozenset(
-            self.instancesof("owl:FunctionalProperty", False)
+            self._instancesof("owl:FunctionalProperty", False)
         )
 
         for e in self.active_evts:
