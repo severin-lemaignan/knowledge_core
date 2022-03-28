@@ -289,7 +289,9 @@ class MinimalKB:
     def load(self, filename, models=None):
 
         models = self.normalize_models(models)
-        self.store.load(filename, models)
+        for model in models:
+            logger.info("Loading file <%s> in model <%s>" % (filename, model))
+            self.models[model].parse(filename, publicID=IRIS[DEFAULT_PREFIX])
 
     @compat
     @api
