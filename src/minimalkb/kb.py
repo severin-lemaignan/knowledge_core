@@ -5,7 +5,6 @@ from rdflib.graph import Dataset
 logger = logging.getLogger("minimalKB." + __name__)
 
 from queue import Queue, Empty
-import json
 import traceback
 
 try:
@@ -24,7 +23,18 @@ except ImportError:
 
 from rdflib import Graph, Dataset
 from rdflib.term import Literal, URIRef, Variable
-from rdflib.namespace import Namespace, NamespaceManager, RDF, RDFS, OWL, XSD
+from rdflib.namespace import Namespace, RDF, RDFS
+
+has_reasoner = False
+try:
+    import reasonable
+
+    has_reasoner = True
+except ImportError:
+    logger.warning(
+        "reasonable OWL2 RL reasoner not available. Install it with `pip install reasonable`. Running without reasoning."
+    )
+
 
 import hashlib
 
@@ -34,6 +44,7 @@ def stable_hash(s, p="", o="", model=""):
 
 
 DEFAULT_MODEL = "default"
+REASONER_RATE = 5  # Hz
 
 
 IRIS = {
@@ -65,7 +76,6 @@ N3_PROLOGUE += (
 from .exceptions import KbServerError
 from minimalkb import __version__
 
-from .services.simple_rdfs_reasoner import start_reasoner, stop_reasoner
 from .services import lifespan
 
 from .helpers import memoize
@@ -270,7 +280,7 @@ class MinimalKB:
 
         self._functionalproperties = frozenset()
 
-        # self.start_services()
+        self.start_services()
 
         if filenames:
             for filename in filenames:
@@ -850,23 +860,57 @@ class MinimalKB:
                 if not e.valid:
                     self.active_evts.discard(e)
 
+    def materialise(self):
+        if not has_reasoner:
+            return
+
+        import time
+
+        while self.running:
+            time.sleep(1.0 / REASONER_RATE)
+
+            start = time.time()
+            for model, g in self.models.items():
+                if not self.is_dirty[model]:
+                    continue
+                r = reasonable.PyReasoner()
+                r.from_graph(g)
+                g += r.reason()
+
+                self.is_dirty[model] = False
+
+            end = time.time()
+            logger.debug(
+                "Materialisation performed by reasoner in %.1fms"
+                % ((end - start) * 1000)
+            )
+
     def start_services(self, *args):
 
-        if self.backend == SQLITE:
-            self._reasoner = Process(target=start_reasoner, args=("kb.db",))
-            self._reasoner.start()
+        import threading
 
-            self._lifespan_manager = Process(
-                target=lifespan.start_service, args=("kb.db",)
-            )
-            self._lifespan_manager.start()
+        self.running = True
+
+        logger.info(
+            "Starting the reasoner (running in the background at %sHz)" % REASONER_RATE
+        )
+        self._reasoner = threading.Thread(target=self.materialise)
+        self._reasoner.start()
+
+        # self._lifespan_manager = Process(
+        #    target=lifespan.start_service, args=("kb.db",)
+        # )
+        # self._lifespan_manager.start()
 
     def stop_services(self):
-        self._reasoner.terminate()
-        self._lifespan_manager.terminate()
+        # self._reasoner.terminate()
+        # self._lifespan_manager.terminate()
 
+        logger.info("Stopping the reasoner...")
+        self.running = False
         self._reasoner.join()
-        self._lifespan_manager.join()
+        logger.info("Reasoner stopped.")
+        # self._lifespan_manager.join()
 
     def create_model(self, model):
         g = self.ds.graph(IRIS[DEFAULT_PREFIX] + model)
@@ -882,6 +926,8 @@ class MinimalKB:
         self.add(
             ["owl:Thing rdf:type owl:Class", "owl:Nothing rdf:type owl:Class"], model
         )
+
+        self.is_dirty[model] = True
 
     def normalize_models(self, models):
         """If 'models' is None or [], returns the default model (ie, the
@@ -924,7 +970,7 @@ class MinimalKB:
             res = None
             if args or kwargs:
                 res = f(*args, **kwargs)
-                if name in ["subscribe", "registerEvent"]:
+                if name in ["subscribe"]:
                     self.eventsubscriptions.setdefault(res, []).append(client)
             else:
                 res = f()
