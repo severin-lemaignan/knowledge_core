@@ -1,8 +1,7 @@
 import logging
-
-from rdflib.graph import Dataset
-
 logger = logging.getLogger("minimalKB." + __name__)
+
+import time
 
 from queue import Queue, Empty
 import traceback
@@ -163,6 +162,11 @@ def shorten_graph(graph):
 def get_variables(stmt):
     return [v for v in stmt if isinstance(v, Variable)]
 
+class dotdict(dict):
+    """dot.notation access to dictionary attributes"""
+    __getattr__ = dict.get
+    __setattr__ = dict.__setitem__
+    __delattr__ = dict.__delitem__
 
 class Event:
 
@@ -276,9 +280,6 @@ class MinimalKB:
         # create a RDFlib dataset
         self.ds = Dataset()
         self.models = {}
-        self.is_dirty = (
-            {}
-        )  # stores whether models have changes that would require re-classification
         self.create_model(DEFAULT_MODEL)
 
         self._functionalproperties = frozenset()
@@ -304,12 +305,7 @@ class MinimalKB:
         models = self.normalize_models(models)
         for model in models:
             logger.info("Loading file <%s> in model <%s>" % (filename, model))
-            self.models[model].parse(filename, publicID=IRIS[DEFAULT_PREFIX])
-
-    @compat
-    @api
-    def listAgents(self):
-        return list(self.models)
+            self.models[model].graph.parse(filename, publicID=IRIS[DEFAULT_PREFIX])
 
     @api
     def clear(self):
@@ -317,7 +313,7 @@ class MinimalKB:
         self.active_evts.clear()
 
         for m, g in self.models.items():
-            self.ds.remove_graph(g)
+            self.ds.remove_graph(g.graph)
 
         self.create_model(DEFAULT_MODEL)
 
@@ -345,7 +341,7 @@ class MinimalKB:
         term = parse_term(term)
 
         for model in models:
-            g = self.models[model]
+            g = self.models[model].materialized_graph
             for triple in g.triples((term, None, None)):
                 result.append(shorten(g, triple))
             for triple in g.triples((None, term, None)):
@@ -398,14 +394,14 @@ class MinimalKB:
 
         res = parse_term(term)
         for model in models:
-            result += self.models[model].subjects(RDF.type, res)
+            result += self.models[model].materialized_graph.subjects(RDF.type, res)
 
         return result
 
     @api
     def classesof(self, term, direct=False, models=[]):
         cls = self._classesof(term, direct, models)
-        return [shorten_term(self.models[DEFAULT_MODEL], c) for c in cls]
+        return [shorten_term(self.models[DEFAULT_MODEL].materialized_graph, c) for c in cls]
 
     def _classesof(self, term, direct=False, models=[]):
 
@@ -419,7 +415,7 @@ class MinimalKB:
 
         res = parse_term(term)
         for model in models:
-            result += self.models[model].objects(res, RDF.type)
+            result += self.models[model].materialized_graph.objects(res, RDF.type)
 
         return result
 
@@ -436,7 +432,7 @@ class MinimalKB:
 
         res = parse_term(term)
         for model in models:
-            result += self.models[model].subjects(RDFS.subClassOf, res)
+            result += self.models[model].materialized_graph.subjects(RDFS.subClassOf, res)
 
         return result
 
@@ -453,7 +449,7 @@ class MinimalKB:
 
         res = parse_term(term)
         for model in models:
-            result += self.models[model].objects(res, RDFS.subClassOf)
+            result += self.models[model].materialized_graph.objects(res, RDFS.subClassOf)
 
         return result
 
@@ -483,7 +479,7 @@ class MinimalKB:
             return "class"
 
         for model in models:
-            stmts_if_predicate = list(self.models[model].triples([None, term, None]))
+            stmts_if_predicate = list(self.models[model].materialized_graph.triples([None, term, None]))
 
             if stmts_if_predicate:
                 if isinstance(stmts_if_predicate[0][2], Literal):
@@ -604,7 +600,7 @@ class MinimalKB:
         if len(vars) == 0:
             for model in models:
                 for stmt in stmts:
-                    if not stmt in self.models[model]:
+                    if not stmt in self.models[model].materialized_graph:
                         return False
 
             return True
@@ -645,14 +641,14 @@ class MinimalKB:
                 + (" (lifespan: %ssec)" % lifespan if lifespan else "")
             )
             for model in models:
-                self.models[model] += subgraph  # TODO: lifespan
-                self.is_dirty[model] = True
+                self.models[model].graph += subgraph  # TODO: lifespan
+                self.models[model].is_dirty = True
 
         if policy["method"] == "retract":
             logger.info("Deleting from " + str(list(models)) + ":\n\t- " + parsed_stmts)
             for model in models:
-                self.models[model] -= subgraph
-                self.is_dirty[model] = True
+                self.models[model].graph -= subgraph
+                self.models[model].is_dirty = True
 
         if policy["method"] in ["update", "safe_update", "revision"]:
 
@@ -669,10 +665,10 @@ class MinimalKB:
                 for s, p, o in subgraph.triples([None, None, None]):
 
                     if p in self._functionalproperties:
-                        self.models[model].set((s, p, o))  # TODO: lifespan
+                        self.models[model].graph.set((s, p, o))  # TODO: lifespan
                     else:
-                        self.models[model].add((s, p, o))  # TODO: lifespan
-                self.is_dirty[model] = True
+                        self.models[model].graph.add((s, p, o))  # TODO: lifespan
+                self.models[model].is_dirty = True
 
         self.onupdate()
 
@@ -774,7 +770,7 @@ class MinimalKB:
 
         patterns = [parse_stmt(p) for p in patterns]
         parsed_patterns = "\n\t- ".join(
-            [" ".join(s) for s in shortenN(self.models[DEFAULT_MODEL], patterns)]
+            [" ".join(s) for s in shortenN(self.models[DEFAULT_MODEL].graph, patterns)]
         )
 
         normalised_patterns = [" ".join([t.n3() for t in stmt]) for stmt in patterns]
@@ -807,17 +803,13 @@ class MinimalKB:
 
             sparql_res = self._sparql(model, q)
 
-            # to serialise to JSON:
-            # https://www.w3.org/TR/2013/REC-sparql11-results-json-20130321/
-            # sparql_res.serialize(format="json")
-
             if len(named_variables) > 1:
                 res += [
                     dict(zip(vars_naked, r))
-                    for r in [shorten(self.models[model], row) for row in sparql_res]
+                    for r in [shorten(self.models[model].graph, row) for row in sparql_res]
                 ]
             else:
-                res += [shorten(self.models[model], row) for row in sparql_res]
+                res += [shorten(self.models[model].graph, row) for row in sparql_res]
 
         # if a single variable is requested, 'unpack' the result
         if len(vars) == 1:
@@ -874,7 +866,8 @@ class MinimalKB:
 
         logger.debug("Executing SPARQL query in model: %s\n%s" % (model, q))
 
-        return self.models[model].query(q)
+
+        return self.models[model].materialized_graph.query(q)
 
     def named_variables(self, vars):
         """
@@ -886,6 +879,10 @@ class MinimalKB:
         return [v for v in vars if not v.startswith("?__")]
 
     def onupdate(self):
+
+        # need to materialise as soon as possible after the model has been
+        # changed so that events are triggered in a timely fashion
+        self.materialise()
 
         self._functionalproperties = frozenset(
             self._instancesof("owl:FunctionalProperty", False)
@@ -903,59 +900,69 @@ class MinimalKB:
                 if not e.valid:
                     self.active_evts.discard(e)
 
-    def materialise(self):
+    def materialise(self, models=None):
         if not has_reasoner:
             return
 
-        import time
 
-        while self.running:
-            time.sleep(1.0 / REASONER_RATE)
 
-            start = time.time()
-            for model, g in self.models.items():
-                if not self.is_dirty[model]:
-                    continue
-                r = reasonable.PyReasoner()
-                r.from_graph(g)
-                g += r.reason()
+        start = time.time()
+        
+        if models is None:
+            models = self.models.keys()
 
-                self.is_dirty[model] = False
+        for model in models:
+            g = self.models[model]
+            if not g.is_dirty:
+                continue
 
-            end = time.time()
+            r = reasonable.PyReasoner()
+            r.from_graph(g.graph)
 
-            if end - start > 0.001:  # did we actually classify anything?
-                logger.debug(
-                    "Materialisation performed by reasoner in %.1fms"
-                    % ((end - start) * 1000)
-                )
+            g.materialized_graph = Graph()
+            g.materialized_graph.namespace_manager = g.graph.namespace_manager
+            g.materialized_graph += r.reason()
+
+
+            g.is_dirty = False
+
+        end = time.time()
+
+        if end - start > 0.0001:  # did we actually classify anything?
+            logger.debug(
+                "Materialisation performed by reasoner in %.1fms"
+                % ((end - start) * 1000)
+            )
 
     def start_services(self, *args):
 
-        import threading
+        #import threading
 
-        self.running = True
+        #self.running = True
 
-        logger.info(
-            "Starting the reasoner (running in the background at %sHz)" % REASONER_RATE
-        )
-        self._reasoner = threading.Thread(target=self.materialise)
-        self._reasoner.start()
+        #logger.info(
+        #    "Starting the reasoner (running in the background at %sHz)" % REASONER_RATE
+        #)
+        #self._reasoner = threading.Thread(target=self.materialise)
+        #self._reasoner.start()
 
         # self._lifespan_manager = Process(
         #    target=lifespan.start_service, args=("kb.db",)
         # )
         # self._lifespan_manager.start()
+        pass
 
     def stop_services(self):
         # self._reasoner.terminate()
         # self._lifespan_manager.terminate()
 
-        logger.info("Stopping the reasoner...")
-        self.running = False
-        self._reasoner.join()
-        logger.info("Reasoner stopped.")
+        #logger.info("Stopping the reasoner...")
+        #self.running = False
+        #self._reasoner.join()
+        #logger.info("Reasoner stopped.")
+
         # self._lifespan_manager.join()
+        pass
 
     def create_model(self, model):
         g = self.ds.graph(IRIS[DEFAULT_PREFIX] + model)
@@ -966,13 +973,10 @@ class MinimalKB:
 
         g.bind("", IRIS[DEFAULT_PREFIX])
 
-        self.models[model] = g
-
-        self.add(
-            ["owl:Thing rdf:type owl:Class", "owl:Nothing rdf:type owl:Class"], model
-        )
-
-        self.is_dirty[model] = True
+        self.models[model] = dotdict({"graph": g,
+                                      "is_dirty": True,  # stores whether models have changes that would require re-classification
+                                      "materialized_graph": Graph()
+                                    })
 
     def normalize_models(self, models):
         """If 'models' is None or [], returns the default model (ie, the
