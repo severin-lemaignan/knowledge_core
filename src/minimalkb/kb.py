@@ -687,11 +687,6 @@ class MinimalKB:
     def safeAdd(self, stmts, lifespan=0):
         return self.revise(stmts, {"method": "safe_add", "lifespan": lifespan})
 
-    @compat
-    @api
-    def addForAgent(self, agent, stmts, lifespan=0):
-        return self.add(stmts, [agent], lifespan)
-
     @api
     def retract(self, stmts, models=None):
         return self.revise(stmts, {"method": "retract", "models": models})
@@ -701,21 +696,57 @@ class MinimalKB:
     def remove(self, stmts, models=None):
         return self.retract(stmts, models)
 
-    @compat
-    @api
-    def removeForAgent(self, agent, stmts):
-        return self.retract(stmts, [agent])
-
     @api
     def update(self, stmts, models=None, lifespan=0):
         return self.revise(
             stmts, {"method": "update", "models": models, "lifespan": lifespan}
         )
 
-    @compat
     @api
-    def findForAgent(self, agent, var, stmts):
-        return self.find([var], stmts, None, [agent])
+    def sparql(self, query, model=None):
+        """
+        performs a raw SPARQL query on a given model ('default' by default).
+        The SPARQL PREFIX and BASE are automatically added, no need to do it
+        manually (even though you can if you want to use non-standard
+        prefixes).
+
+        Note that you are responsible for writing a syntactically corret SPARQL
+        query. In particualar, all non-literal/non-variable terms must have a
+        namespace (or a prefix).
+
+        Results is returned as a JSON object that follow the standard JSON
+        serialization of SPARQL Results
+        (https://www.w3.org/TR/2013/REC-sparql11-results-json-20130321/)
+
+        Example:
+        ```
+        >>> kb += ["myself age 40"]
+        >>> kb.sparql("SELECT ?age WHERE { :myself :age ?age . }")
+        {'results': 
+            {'bindings': [
+                {'age': 
+                    {'type': 'literal',
+                     'value': '40',
+                     'datatype': 'http://www.w3.org/2001/XMLSchema#integer'}
+                }]
+            },
+          'head': {'vars': ['age']}
+         }
+
+        """
+
+        models = self.normalize_models(model)
+        if len(models) != 1:
+            logger.error("sparql() can only be executed on a single model")
+            return None
+
+        model = list(models)[0]
+
+        sparql_res = self._sparql(model, query)
+
+        import json
+
+        return json.loads(sparql_res.serialize(format="json"))
 
     @api
     def find(self, vars, patterns, models=None):
