@@ -18,7 +18,7 @@ setup(
     name="minimalKB",
     version=version["__version__"],
     license="BSD",
-    description="A SQLite-backed minimalistic knowledge based for robotic application",
+    description="A RDFlib-backed minimalistic knowledge based for robotic application",
     long_description=readme(),
     classifiers=[
         "License :: OSI Approved :: BSD License",
@@ -29,7 +29,7 @@ setup(
     url="https://github.com/severin-lemaignan/minimalkb",
     requires=["pysqlite", "rdflib"],
     package_dir={"": "src"},
-    packages=["minimalkb", "minimalkb/backends", "minimalkb/services"],
+    packages=["minimalkb", "minimalkb/services"],
     scripts=["bin/minimalkb"],
     data_files=[
         (
