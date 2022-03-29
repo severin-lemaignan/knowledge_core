@@ -127,6 +127,9 @@ if __name__ == "__main__":
         "-d", "--debug", action="store_true", help="enables verbose output"
     )
     parser.add_argument(
+        "--no-reasoner", action="store_false", help="do not use the reasoner"
+    )
+    parser.add_argument(
         "-p",
         "--port",
         default=PORT,
@@ -158,7 +161,7 @@ if __name__ == "__main__":
     # The logging handlers are now setup, import the other minimalkb components
     from minimalkb.kb import MinimalKB, KbServerError
 
-    kb = MinimalKB(args.ontology)
+    kb = MinimalKB(args.ontology, enable_reasoner=args.no_reasoner)
 
     s = MinimalKBServer(args.port, kb)
     logger.info("Starting to serve at port %d..." % args.port)

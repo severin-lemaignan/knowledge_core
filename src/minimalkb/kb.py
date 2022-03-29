@@ -255,7 +255,11 @@ class MinimalKB:
     MEMORYPROFILE_DEFAULT = ""
     MEMORYPROFILE_SHORTTERM = "SHORTTERM"
 
-    def __init__(self, filenames=None):
+    def __init__(self, filenames=None, enable_reasoner=True):
+
+        self.reasoner_enabled = enable_reasoner
+        if not self.reasoner_enabled:
+            logger.warn("Running without OWL2 RL reasoner.")
 
         _api = [
             getattr(self, fn) for fn in dir(self) if hasattr(getattr(self, fn), "_api")
@@ -871,8 +875,6 @@ class MinimalKB:
                     self.active_evts.discard(e)
 
     def materialise(self, models=None):
-        if not has_reasoner:
-            return
 
         start = time.time()
 
@@ -884,12 +886,15 @@ class MinimalKB:
             if not g.is_dirty:
                 continue
 
-            r = reasonable.PyReasoner()
-            r.from_graph(g.graph)
+            if not has_reasoner or not self.reasoner_enabled:
+                g.materialized_graph = g.graph
+            else:
+                r = reasonable.PyReasoner()
+                r.from_graph(g.graph)
 
-            g.materialized_graph = Graph()
-            g.materialized_graph.namespace_manager = g.graph.namespace_manager
-            g.materialized_graph += r.reason()
+                g.materialized_graph = Graph()
+                g.materialized_graph.namespace_manager = g.graph.namespace_manager
+                g.materialized_graph += r.reason()
 
             g.is_dirty = False
 
@@ -903,16 +908,6 @@ class MinimalKB:
 
     def start_services(self, *args):
 
-        # import threading
-
-        # self.running = True
-
-        # logger.info(
-        #    "Starting the reasoner (running in the background at %sHz)" % REASONER_RATE
-        # )
-        # self._reasoner = threading.Thread(target=self.materialise)
-        # self._reasoner.start()
-
         # self._lifespan_manager = Process(
         #    target=lifespan.start_service, args=("kb.db",)
         # )
@@ -920,13 +915,6 @@ class MinimalKB:
         pass
 
     def stop_services(self):
-        # self._reasoner.terminate()
-        # self._lifespan_manager.terminate()
-
-        # logger.info("Stopping the reasoner...")
-        # self.running = False
-        # self._reasoner.join()
-        # logger.info("Reasoner stopped.")
 
         # self._lifespan_manager.join()
         pass
