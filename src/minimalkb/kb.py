@@ -22,8 +22,8 @@ except ImportError:
     sys.exit(1)
 
 from rdflib import Graph, Dataset
-from rdflib.term import Literal, URIRef, Variable
-from rdflib.namespace import Namespace, RDF, RDFS
+from rdflib.term import Node, Literal, URIRef, Variable
+from rdflib.namespace import Namespace, RDF, RDFS, OWL
 
 has_reasoner = False
 try:
@@ -376,12 +376,14 @@ class MinimalKB:
         models = self.normalize_models(models)
         result = []
 
-        res = parse_term(term)
+        if not isinstance(term, Node):
+            term = parse_term(term)
+
         for model in models:
             if direct:
-                result += self.models[model].graph.subjects(RDF.type, res)
+                result += self.models[model].graph.subjects(RDF.type, term)
             else:
-                result += self.models[model].materialized_graph.subjects(RDF.type, res)
+                result += self.models[model].materialized_graph.subjects(RDF.type, term)
 
         return result
 
@@ -397,12 +399,14 @@ class MinimalKB:
         models = self.normalize_models(models)
         result = []
 
-        res = parse_term(term)
+        if not isinstance(term, Node):
+            term = parse_term(term)
+
         for model in models:
             if direct:
-                result += self.models[model].graph.objects(res, RDF.type)
+                result += self.models[model].graph.objects(term, RDF.type)
             else:
-                result += self.models[model].materialized_graph.objects(res, RDF.type)
+                result += self.models[model].materialized_graph.objects(term, RDF.type)
 
         return result
 
@@ -411,13 +415,15 @@ class MinimalKB:
         models = self.normalize_models(models)
         result = []
 
-        res = parse_term(term)
+        if not isinstance(term, Node):
+            term = parse_term(term)
+
         for model in models:
             if direct:
-                result += self.models[model].graph.subjects(RDFS.subClassOf, res)
+                result += self.models[model].graph.subjects(RDFS.subClassOf, term)
             else:
                 result += self.models[model].materialized_graph.subjects(
-                    RDFS.subClassOf, res
+                    RDFS.subClassOf, term
                 )
 
         return result
@@ -427,13 +433,15 @@ class MinimalKB:
         models = self.normalize_models(models)
         result = []
 
-        res = parse_term(term)
+        if not isinstance(term, Node):
+            term = parse_term(term)
+
         for model in models:
             if direct:
-                result += self.models[model].graph.objects(res, RDFS.subClassOf)
+                result += self.models[model].graph.objects(term, RDFS.subClassOf)
             else:
                 result += self.models[model].materialized_graph.objects(
-                    res, RDFS.subClassOf
+                    term, RDFS.subClassOf
                 )
 
         return result
@@ -469,28 +477,29 @@ class MinimalKB:
 
         return result
 
-    def typeof(self, raw_term, models):
+    def typeof(self, term, models):
 
-        term = parse_term(raw_term)
+        if not isinstance(term, Node):
+            term = parse_term(term)
 
         if isinstance(term, Literal):
             return "literal"
 
-        classes = self._classesof(raw_term, False, models)
+        classes = self._classesof(term, False, models)
         if classes:
-            if "owl:ObjectProperty" in classes:
+            if OWL.ObjectProperty in classes:
                 return "object_property"
-            elif "owl:DatatypeProperty" in classes:
+            elif OWL.DatatypeProperty in classes:
                 return "datatype_property"
-            elif "owl:Class" in classes:
+            elif OWL.Class in classes:
                 return "class"
             else:
                 return "instance"
 
         if (
-            self._instancesof(raw_term, False, models)
-            or self._subclassesof(raw_term, False, models)
-            or self._superclassesof(raw_term, False, models)
+            self._instancesof(term, False, models)
+            or self._subclassesof(term, False, models)
+            or self._superclassesof(term, False, models)
         ):
             return "class"
 
