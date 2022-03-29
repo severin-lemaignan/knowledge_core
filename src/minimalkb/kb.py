@@ -438,6 +438,37 @@ class MinimalKB:
 
         return result
 
+    @api
+    def label(self, term, models=[]):
+        """returns the labels attached to a term, as a dictionary `{"default":"label1", "lang_code1": label1,
+        "lang_code2": "label2",...}` where the 'default' key returns either the
+        English version of the label, or the name of the term, if no label is
+        available, and the other keys provide localised version of the label, if
+        available in the knowledge base.
+        """
+        models = self.normalize_models(models)
+        result = {}
+
+        if not isinstance(term, URIRef):
+            term = parse_term(term)
+
+        for model in models:
+
+            labels = self.models[model].materialized_graph.objects(term, RDFS.label)
+            for label in labels:
+                if label.language:
+                    result[label.language] = label
+                else:
+                    result["default"] = label
+
+        if not "default" in result:
+            if "en" in result:
+                result["default"] = result["en"]
+            else:
+                result["default"] = shorten_term(self.models[DEFAULT_MODEL].graph, term)
+
+        return result
+
     def typeof(self, raw_term, models):
 
         term = parse_term(raw_term)
@@ -481,7 +512,7 @@ class MinimalKB:
     def details(self, resource, models=None):
         """
         Returns a dictionary containing the following details on a given resource:
-        - 'name': resource label, if any, literal value for literals, else resource ID.
+        - 'label': resource label, if any, literal value for literals, else resource ID.
         - 'id': resource ID or 'literal' for literals
         - 'type': one of ['instance', 'class', 'object_property', 'datatype_property', 'undecided']
         - 'sameAs': list of equivalent classes or instances, if any
@@ -497,9 +528,9 @@ class MinimalKB:
         """
         models = self.normalize_models(models)
         res = {}
-        res["name"] = self.store.label(resource, models)
+        res["label"] = self.label(resource, models)
         res["id"] = resource
-        res["type"] = self.store.typeof(resource, models)
+        res["type"] = self.typeof(resource, models)
 
         if res["type"] == "class":
             res["attributes"] = []
@@ -508,7 +539,7 @@ class MinimalKB:
                     "name": "Parents",
                     "id": "superClasses",
                     "values": [
-                        {"id": r, "name": self.store.label(r, models)}
+                        {"id": r, "name": self.label(r, models)}
                         for r in self._superclassesof(resource, True, models)
                     ],
                 }
@@ -519,7 +550,7 @@ class MinimalKB:
                     "name": "Children",
                     "id": "subClasses",
                     "values": [
-                        {"id": r, "name": self.store.label(r, models)}
+                        {"id": r, "label": setermlabel(r, models)}
                         for r in self._subclassesof(resource, True, models)
                     ],
                 }
@@ -530,7 +561,7 @@ class MinimalKB:
                     "name": "Instances",
                     "id": "instances",
                     "values": [
-                        {"id": r, "name": self.store.label(r, models)}
+                        {"id": r, "label": self.label(r, models)}
                         for r in self._instancesof(resource, True, models)
                     ],
                 }
@@ -542,8 +573,8 @@ class MinimalKB:
                     "name": "Classes",
                     "id": "classes",
                     "values": [
-                        {"id": r, "name": self.store.label(r, models)}
-                        for r in self.store._classesof(resource, True, models)
+                        {"id": r, "label": self.label(r, models)}
+                        for r in self._classesof(resource, True, models)
                     ],
                 }
             ]
