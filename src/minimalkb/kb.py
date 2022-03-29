@@ -373,17 +373,15 @@ class MinimalKB:
 
     def _instancesof(self, term, direct=False, models=[]):
 
-        if direct:
-            logger.warn(
-                "'direct=True' not implemented! Returing all asserted 'is-a' relations."
-            )
-
         models = self.normalize_models(models)
         result = []
 
         res = parse_term(term)
         for model in models:
-            result += self.models[model].materialized_graph.subjects(RDF.type, res)
+            if direct:
+                result += self.models[model].graph.subjects(RDF.type, res)
+            else:
+                result += self.models[model].materialized_graph.subjects(RDF.type, res)
 
         return result
 
@@ -396,53 +394,47 @@ class MinimalKB:
 
     def _classesof(self, term, direct=False, models=[]):
 
-        if direct:
-            logger.warn(
-                "'direct=True' not implemented! Returing all asserted 'is-a' relations."
-            )
-
         models = self.normalize_models(models)
         result = []
 
         res = parse_term(term)
         for model in models:
-            result += self.models[model].materialized_graph.objects(res, RDF.type)
+            if direct:
+                result += self.models[model].graph.objects(res, RDF.type)
+            else:
+                result += self.models[model].materialized_graph.objects(res, RDF.type)
 
         return result
 
     def _subclassesof(self, term, direct=False, models=[]):
 
-        if direct:
-            logger.warn(
-                "'direct=True' not implemented! Returing all asserted 'is-a' relations."
-            )
-
         models = self.normalize_models(models)
         result = []
 
         res = parse_term(term)
         for model in models:
-            result += self.models[model].materialized_graph.subjects(
-                RDFS.subClassOf, res
-            )
+            if direct:
+                result += self.models[model].graph.subjects(RDFS.subClassOf, res)
+            else:
+                result += self.models[model].materialized_graph.subjects(
+                    RDFS.subClassOf, res
+                )
 
         return result
 
     def _superclassesof(self, term, direct=False, models=[]):
 
-        if direct:
-            logger.warn(
-                "'direct=True' not implemented! Returing all asserted 'is-a' relations."
-            )
-
         models = self.normalize_models(models)
         result = []
 
         res = parse_term(term)
         for model in models:
-            result += self.models[model].materialized_graph.objects(
-                res, RDFS.subClassOf
-            )
+            if direct:
+                result += self.models[model].graph.objects(res, RDFS.subClassOf)
+            else:
+                result += self.models[model].materialized_graph.objects(
+                    res, RDFS.subClassOf
+                )
 
         return result
 
