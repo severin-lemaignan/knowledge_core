@@ -186,7 +186,9 @@ class Event:
         self.models = models
 
         self.id = "evt_" + str(
-            stable_hash(str(sorted(self.patterns)) + str(sorted(self.models)))
+            stable_hash(
+                str(sorted(self.patterns)) + str(one_shot) + str(sorted(self.models))
+            )
         )
 
         self.content = None
@@ -851,10 +853,12 @@ class MinimalKB:
         from kb import KB
 
         def on_new_robot_instance(instances):
-            print("New robots: " + ", ".join(instances)
+            print("New robots: " + ", ".join(instances))
 
         with KB() as kb:
             kb.subscribe(["?robot rdf:type Robot"])
+
+            kb += ["myself rdf:type Robot"] # should print "New robots: myself"
             time.sleep()
         ```
 
@@ -917,7 +921,7 @@ class MinimalKB:
             self._instancesof("owl:FunctionalProperty", False)
         )
 
-        for e in self.active_evts:
+        for e in list(self.active_evts):
             if e.evaluate():
                 clients = self.eventsubscriptions[e.id]
                 logger.info(
@@ -927,7 +931,8 @@ class MinimalKB:
                     msg = ("event", e)
                     self.requestresults.setdefault(client, Queue()).put(msg)
                 if not e.valid:
-                    self.active_evts.discard(e)
+                    self.active_evts.remove(e)
+                    del self.eventsubscriptions[e.id]
 
     def materialise(self, models=None):
 
@@ -1017,6 +1022,30 @@ class MinimalKB:
     def execute(self, client, name, *args, **kwargs):
 
         if name == "close":
+
+            ### Event-related housekepping
+            evts_id_to_remove = []
+            for evt_id, clients in self.eventsubscriptions.items():
+                if client in clients:
+                    logger.info(
+                        "Client closing, removing event subscription <%s>" % evt_id
+                    )
+                    clients.remove(client)
+                if len(clients) == 0:
+                    evts_id_to_remove.append(evt_id)
+            for evt_id in evts_id_to_remove:
+                logger.debug(
+                    "No one interested in event %s anymore. Removing it" % evt_id
+                )
+                del self.eventsubscriptions[evt_id]
+                evts_to_remove = []
+                for e in self.active_evts:
+                    if e.id == evt_id:
+                        evts_to_remove.append(e)
+                for e in evts_to_remove:
+                    self.active_evts.remove(e)
+            ###############
+
             logger.info("Closing connection to client.")
             return
 
