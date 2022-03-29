@@ -1,6 +1,25 @@
 Changelog
 =========
 
+minimalkb 2.0.0
+---------------
+
+**Attention: minimalkb-2.0 is a major rewrite of minimalkb, and only partially
+backward-compatible with minimalkb-1.x.x**
+
+- complete rewrite of the core, around rdflib-6.x.x
+- as a consequence, much more standard-compilant parsing of statements
+- integration with [`reasonable`](https://github.com/gtfierro/reasonable)
+  for fast OWL2 RL reasoning.
+- a new `sparql` API method has been add, to perform raw SPARQL queries.
+
+
+### Porting notes from 1.x.x:
+
+- old compatibility (`compat`) API methods have been removed
+- the `find` API method does not take a `constraints` parameter any more
+- `retract` has been renamed to `remove`
+
 minimalkb 1.2.1
 ---------------
 
