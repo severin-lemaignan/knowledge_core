@@ -1,6 +1,23 @@
 Changelog
 =========
 
+minimalkb 2.1.0
+---------------
+
+*Released on 29 Mar 2022*
+
+- add `kb.label` to retrieve (multi-lingual) labels associated to a term
+- add support for querying direct classes, instances, subclasses, superclasses
+  (via eg `kb.details`)
+- significantly simplify the event subscription mechanism. Now, you simply
+  pass a list of patterns with an optional `one_shot` parameter (false by
+  default)
+- better [API documentation](https://github.com/severin-lemaignan/minimalkb/blob/master/doc/api.md)
+- remove `kb.check` as it was strictly equivalent to `kb.exist`
+- fix bug where loaded ontologies would not be processed by the reasoner
+- fix internal methods being mistakenly exposed in the API
+- a few other minor bug fixes
+
 minimalkb 2.0.0
 ---------------
 
