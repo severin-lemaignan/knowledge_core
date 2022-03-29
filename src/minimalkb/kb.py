@@ -368,7 +368,6 @@ class MinimalKB:
         logger.info("Found: " + str(res))
         return res
 
-    @api
     def _instancesof(self, term, direct=False, models=[]):
 
         if direct:
@@ -408,7 +407,6 @@ class MinimalKB:
 
         return result
 
-    @api
     def _subclassesof(self, term, direct=False, models=[]):
 
         if direct:
@@ -427,7 +425,6 @@ class MinimalKB:
 
         return result
 
-    @api
     def _superclassesof(self, term, direct=False, models=[]):
 
         if direct:
