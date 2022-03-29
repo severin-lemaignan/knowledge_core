@@ -3,26 +3,47 @@ minimalKB
 
 ![Screenshot of a minimalKB knowledge model viewed with oro-view](doc/oroview.jpg)
 
-minimalKB is a SQLite-backed minimalistic knowledge base, initially designed
+minimalKB is a RDFlib-backed minimalistic knowledge base, initially designed
 for robots (in particular human-robot interaction or multi-robot interaction).
 
-It stores triples (like RDF/OWL triples), and provides a mostly conformant
-[KB-API](doc/api.md) API accessible via a simple socket protocol.
+It stores triples (like RDF/OWL triples), and provides an [API](doc/api.md)
+accessible via a simple socket protocol.
 
 [pykb](https://github.com/severin-lemaignan/pykb) provides an idiomatic Python
 binding, making easy to integrate the knowledge base in your applications.
 
-It has almost no features, except it is fast and simple. Basic RDFS reasoning
-is provided (cf below for details).
+It integrates with the [reasonable](https://github.com/gtfierro/reasonable) OWL2
+RL reasoner to provide OWL2 semantics and fast knowledge materialisation.
 
-Written in Python. The only required dependency is `sqlite3`. If `rdflib` is
-also available, you can easily import existing ontologies in RDF/OWL/n3/Turtle
-formats in the knowledge base.
 
 Installation
 ------------
 
 **minimalkb only supports Python 3**
+
+### Prerequisite
+
+`rdlib >= 6.0.0`:
+
+```
+$ pip install rdflib
+```
+
+For reasoning:
+
+```
+$ pip install reasonable
+```
+
+### Installation
+
+From `pypi`:
+
+```
+$ pip install minimalkb
+```
+
+From source:
 
 ```
 $ git clone https://github.com/severin-lemaignan/minimalkb.git
@@ -115,25 +136,18 @@ true, etc.) and get notified back.
 
 ### Reasoning
 
-`minimalKB` only provides very basic RDFS/OWL reasoning capabilities:
+`minimalKB` provides RDFS/OWL reasoning capabilities via the
+[reasonable](https://github.com/gtfierro/reasonable) reasoner.
 
-The detail of supported OWL2 RL rules can [be found here](doc/reasoning.md).
-
-- it honors the transitive closure of the `rdfs:subClassOf` relation.
-- functional predicates (child of `owl:functionalProperty`) are properly
-  handled when updating the model (ie, if `<S P O>` is asserted with `P` a
-  functional predicate, updating the model with `<S P O'>` will first cause `<S
-  P O>` to be retracted).
-- `owl:equivalentClass` is properly handled.
-
-The reasoner runs in its own thread, and classify the model at a given rate, by
-default 5Hz. It is thus needed to wait ~200ms before the results of the
-classification become visible in the model.
+See [reasonable README](https://github.com/gtfierro/reasonable#owl-2-rules) for
+the exact level of support of the different OWL2 RL rules.
 
 ### Transient knowledge
 
 `minimalKB` allows to attach 'lifespans' to statements: after a given duration,
 they are automatically collected.
+
+**[this functionality is currently unavailable]**
 
 ### Ontology walking
 
