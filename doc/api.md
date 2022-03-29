@@ -90,11 +90,21 @@ want to update/query.
     would return: `[{"agent":"james", "action": "jumpHigh"}, {"agent": "laurel", "action":"jumpHigher"}]`
 - `hello()`: returns the version number of the `minimalkb` server as a string. Can be used
   to check connection status.
-- `load(filename, models=None)`: loads the content of the specified OWL ontology. Note that
-  this capability is only available if
-  [RDFlib](https://rdflib.readthedocs.io/en/stable/) is available to the server.
-- `lookup(resource, models=None)`
-- `methods()`: list available methods
+- `label(self, term, models=[])`: returns the labels attached to a term, as a
+  dictionary `{"default":"label1", "lang_code1": label1, "lang_code2":
+  "label2",...}` where the 'default' key returns either the English version of
+  the label, or the name of the term, if no label is available, and the other
+  keys provide localised version of the label, if available in the knowledge
+  base.
+- `load(filename, models=None)`: loads the content of the specified OWL
+  ontology. Format is inferred from the file content. Currently support RDF/XML,
+  n3, n-triples, turtle.
+- `lookup(resource, models=None)`: search the knowledge base for a term matching
+  a string. The search is performed both on terms' names and on label.
+
+  Returns the list of found terms, alongside with their type (one of
+  instance, class, datatype_property, object_property, literal)
+ - `methods()`: list available methods exposed by the server
 - `remove(stmts, models=None)`: alias for `revise` with
   `policy['method']='retract'`.
 - `revise(stmts, policy)`: Add/retract/updates one or several statements in the
@@ -117,7 +127,35 @@ want to update/query.
   Results is returned as a JSON object that follow the standard [JSON
   serialization of SPARQL Results](https://www.w3.org/TR/2013/REC-sparql11-results-json-20130321/)
 
-- `subscribe(type, trigger, var, patterns, models=None)`
+- `subscribe(patterns, one_shot=False, models=None)`: subscribes to a specified
+  event in the ontology.
+
+  Every time the model(s) is(are) updated, the provided `patterns` are evaluated
+  against the set of asserted and inferred triples. If at least one triple is
+  returned, the event is fired.
+
+  The terms bounded to the named variables in the patterns are attached to the
+  fired event.
+
+  For instance:
+
+  ```python
+  from kb import KB
+
+  def on_new_robot_instance(instances):
+      print("New robots: " + ", ".join(instances))
+
+  with KB() as kb:
+      kb.subscribe(["?robot rdf:type Robot"])
+
+      kb += ["myself rdf:type Robot"] # should print "New robots: myself"
+      time.sleep()
+  ```
+
+  If `one_shot` is set to true, the event is discarded once it has fired
+  once.
+
+
 - `update(stmts, models=None, lifespan=0)`: updates statements in the given model(s)
   with the given lifespan. Alias for `revise` with `policy['method']='update'`.
   If the predicate(s) are *not* inferred to be functional (i.e., it accept only
