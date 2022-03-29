@@ -116,8 +116,7 @@ class TestSequenceFunctions(unittest.TestCase):
         self.assertTrue("alfred" in self.kb)
         self.assertFalse("tartempion" in self.kb)
 
-        with self.assertRaises(KbError):
-            self.assertFalse("alfred likes" in self.kb)
+        self.assertFalse("alfred likes" in self.kb)
         self.assertTrue("alfred likes icecream" in self.kb)
         self.assertTrue("alfred likes *" in self.kb)
         self.assertTrue("alfred likes ?smthg" in self.kb)
@@ -152,7 +151,9 @@ class TestSequenceFunctions(unittest.TestCase):
         self.assertCountEqual(self.kb.lookup("alfred"), [["alfred", "instance"]])
 
         self.kb += ['nono rdfs:label "alfred"']
-        self.assertCountEqual(self.kb.lookup("alfred"), [["alfred", "instance"]])
+        self.assertCountEqual(
+            self.kb.lookup("alfred"), [["alfred", "instance"], ["nono", "undecided"]]
+        )
 
         self.kb += ['gerard rdfs:label "likes"']
         self.assertCountEqual(
@@ -425,7 +426,7 @@ class TestSequenceFunctions(unittest.TestCase):
 
     def test_complex_events(self):
 
-        evtid = self.kb.subscribe(["?a desires ?act", "?act rdf:type Action"], var="a")
+        evtid = self.kb.subscribe(["?a desires ?act", "?act rdf:type Action"])
 
         # should not trigger an event
         self.kb += ["alfred desires ragnagna"]
@@ -447,7 +448,7 @@ class TestSequenceFunctions(unittest.TestCase):
 
         id, value = self.kb.events.get_nowait()
         self.assertEqual(id, evtid)
-        self.assertCountEqual(value, [u"alfred"])
+        self.assertEqual(value, [{"a": "alfred", "act": "ragnagna"}])
 
     def test_taxonomy_walking(self):
 

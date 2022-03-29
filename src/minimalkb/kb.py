@@ -171,53 +171,40 @@ class dotdict(dict):
     __delattr__ = dict.__delitem__
 
 
+class hashabledict(dict):
+    def __hash__(self):
+        return hash(tuple(sorted(self.items())))
+
+
 class Event:
-
-    NEW_INSTANCE = "NEW_INSTANCE"
-    NEW_CLASS_INSTANCE = "NEW_CLASS_INSTANCE"
-    NEW_INSTANCE_ONE_SHOT = "NEW_INSTANCE_ONE_SHOT"
-    NEW_CLASS_INSTANCE_ONE_SHOT = "NEW_CLASS_INSTANCE_ONE_SHOT"
-
-    def __init__(self, kb, type, trigger, var, patterns, models):
+    def __init__(self, kb, patterns, one_shot, models):
         self.kb = kb
 
-        if type == Event.NEW_CLASS_INSTANCE:
-            self.type = Event.NEW_INSTANCE
-            self.var = "?instance"
-            self.patterns = ["?instance rdf:type %s" % klass[0] for klass in patterns]
-        elif type == Event.NEW_CLASS_INSTANCE_ONE_SHOT:
-            self.type = Event.NEW_INSTANCE_ONE_SHOT
-            self.var = "?instance"
-            self.patterns = ["?instance rdf:type %s" % klass[0] for klass in patterns]
-        else:
-            self.type = type
-            self.var = var
-            self.patterns = patterns
+        self.patterns = patterns
+        self.one_shot = one_shot
 
-        self.trigger = trigger
         self.models = models
 
         self.id = "evt_" + str(
-            stable_hash(
-                self.type
-                + self.trigger
-                + (self.var if self.var else "")
-                + str(sorted(self.patterns))
-                + str(sorted(self.models))
-            )
+            stable_hash(str(sorted(self.patterns)) + str(sorted(self.models)))
         )
 
         self.content = None
 
+        self.vars = []
+        for p in self.patterns:
+            self.vars += [v.n3() for v in get_variables(parse_stmt(p))]
+
         self.valid = True
 
         self.previous_instances = set()
-        if type in [Event.NEW_INSTANCE, Event.NEW_INSTANCE_ONE_SHOT]:
 
-            instances = self.kb.find([self.var], self.patterns, frozenset(self.models))
-            logger.debug(
-                "Creating a NEW_INSTANCE event with initial instances %s" % instances
-            )
+        instances = self.kb.find(self.vars, self.patterns, frozenset(self.models))
+        logger.debug("Creating a event with initial instances %s" % instances)
+
+        if len(self.vars) > 1:
+            self.previous_instances = set([hashabledict(row) for row in instances])
+        else:
             self.previous_instances = set(instances)
 
     def __hash__(self):
@@ -227,27 +214,31 @@ class Event:
         return hash(self).__cmp__(hash(other))
 
     def evaluate(self):
-        if "ONE_SHOT" in self.trigger:
+        if not self.valid:
+            return False
+
+        if self.one_shot:
             self.valid = False
 
-        if self.type in [Event.NEW_INSTANCE, Event.NEW_INSTANCE_ONE_SHOT]:
-            instances = set(
-                self.kb.find([self.var], self.patterns, frozenset(self.models))
-            )
-            newinstances = instances - self.previous_instances
+        instances = self.kb.find(self.vars, self.patterns, frozenset(self.models))
 
-            # previous_instances must be set to the current set of matching instance
-            # else we won't trigger events when an instance disappear and
-            # re-appear later.
-            self.previous_instances = instances
+        if len(self.vars) > 1:
+            instances = set([hashabledict(row) for row in instances])
+        else:
+            instances = set(instances)
 
-            if not newinstances:
-                return False
+        newinstances = instances - self.previous_instances
 
-            self.content = [
-                i for i in newinstances
-            ]  # for some reason, calling list() does not work
-            return True
+        # previous_instances must be set to the current set of matching instance
+        # else we won't trigger events when an instance disappear and
+        # re-appear later.
+        self.previous_instances = instances
+
+        if not newinstances:
+            return False
+
+        self.content = list(newinstances)
+        return True
 
 
 class MinimalKB:
@@ -792,6 +783,7 @@ class MinimalKB:
         models = self.normalize_models(models)
 
         patterns = [parse_stmt(p) for p in patterns]
+
         parsed_patterns = "\n\t- ".join(
             [" ".join(s) for s in shortenN(self.models[DEFAULT_MODEL].graph, patterns)]
         )
@@ -844,18 +836,38 @@ class MinimalKB:
         return res
 
     @api
-    def subscribe(self, type, trigger, var, patterns, models=None):
+    def subscribe(self, patterns, one_shot=False, models=None):
+        """Subscribes to a specified event in the ontology.
+
+        Every time the model(s) is(are) updated, the provided `patterns` are
+        evaluated against the set of asserted and inferred triples. If at least
+        one triple is returned, the event is fired.
+
+        The terms bounded to the named variables in the patterns are attached to
+        the fired event.
+
+        For instance:
+        ```
+        from kb import KB
+
+        def on_new_robot_instance(instances):
+            print("New robots: " + ", ".join(instances)
+
+        with KB() as kb:
+            kb.subscribe(["?robot rdf:type Robot"])
+            time.sleep()
+        ```
+
+        If `one_shot` is set to true, the event is discarded once it has fired
+        once.
+
+        """
 
         models = self.normalize_models(models)
 
-        logger.info(
-            "Registering a new event: %s %s for %s on %s"
-            % (type, trigger, var, patterns)
-            + " in "
-            + (str(models) if models else "default model.")
-        )
+        logger.info("Registering a new event: %s" % patterns + " in " + str(models))
 
-        event = Event(self, type, trigger, var, patterns, models)
+        event = Event(self, patterns, one_shot, models)
 
         self.active_evts.add(event)
 
