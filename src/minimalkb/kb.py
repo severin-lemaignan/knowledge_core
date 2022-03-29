@@ -327,27 +327,45 @@ class MinimalKB:
         return list(self._api.keys())
 
     @api
-    def about(self, term, models=None):
+    def about(self, raw_term, models=None):
 
         result = []
 
         models = self.normalize_models(models)
 
-        term = parse_term(term)
+        term = None
+        try:
+            term = parse_term(raw_term)
+        except KbServerError:
+            # error while parsing the raw term: probably a
+            # string with spaces. In that case, only search in the labels.
+            pass
 
         for model in models:
             g = self.models[model].materialized_graph
-            for triple in g.triples((term, None, None)):
-                result.append(shorten(g, triple))
-            for triple in g.triples((None, term, None)):
-                result.append(shorten(g, triple))
-            for triple in g.triples((None, None, term)):
-                result.append(shorten(g, triple))
+
+            if term:
+                for triple in g.triples((term, None, None)):
+                    result.append(shorten(g, triple))
+                for triple in g.triples((None, term, None)):
+                    result.append(shorten(g, triple))
+                for triple in g.triples((None, None, term)):
+                    result.append(shorten(g, triple))
+
+            for s, p, o in g.triples((None, RDFS.label, None)):
+                if raw_term in o.value:
+                    result.append(shorten(g, (s, p, o)))
 
         return result
 
     @api
     def lookup(self, resource, models=None):
+        """Search the knowledge base for a term matching a string. The search is
+        performed both on terms' names and on label.
+
+        Returns the list of found terms, alongside with their type (one of instance, class,
+        datatype_property, object_property, literal)
+        """
         models = self.normalize_models(models)
         logger.info(
             "Lookup for "
@@ -366,6 +384,8 @@ class MinimalKB:
         for s, p, o in about:
             if s == resource or p == resource or o == resource:
                 matching_concepts.add(resource)
+            elif p == shorten_term(self.models[DEFAULT_MODEL].graph, RDFS.label):
+                matching_concepts.add(s)
 
         res = [(concept, self.typeof(concept, models)) for concept in matching_concepts]
         logger.info("Found: " + str(res))
