@@ -557,15 +557,6 @@ class MinimalKB:
         return res
 
     @api
-    def check(self, stmts, models=None):
-        logger.warn(
-            "'check' has been invoked, but no classification supported."
-            "Returning true if the statements are already asserted/inferred,"
-            "false otherwise (ie, calls 'exist' instead of 'check')."
-        )
-        return self.exist(stmts, models)
-
-    @api
     def exist(self, raw_stmts, models=None):
         """Returns True if all the statements exist (eg, are materialised) in
         all the given models.
