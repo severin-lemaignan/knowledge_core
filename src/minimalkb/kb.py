@@ -308,6 +308,7 @@ class MinimalKB:
         for model in models:
             logger.info("Loading file <%s> in model <%s>" % (filename, model))
             self.models[model].graph.parse(filename, publicID=IRIS[DEFAULT_PREFIX])
+            self.models[model].is_dirty = True
 
         self.onupdate()
 
