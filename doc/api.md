@@ -54,12 +54,13 @@ want to update/query.
 
 ### Methods
 
-- `about(resource, models=None)`
+- `about(term, models=None)`: returns the list of triples where `term` is either
+  subject, predicate or object
 - `add(stmts, models=None, lifespan=0)`: adds statements to the given model(s)
-  with the given lifespan. Alias for `revise` with `policy['method']='add'`.
-- `check(stmts, models=None)`: 
-- `classesof(concept, direct=False, models=None)`
-- `clear()`
+  with the given lifespan. Alias for `revise` with `policy['method']='add'`
+- `classesof(term, direct=False, models=None)`: returns the list of (direct
+  of direct + indirect) classes of the given term
+- `clear()`: reset the knowledge base, deleting all facts and all models
 - `details(resource, models=None)`: returns a dictionary containing the
   following details on a given resource:
   - `name`: resource label, if any, literal value for literals, else resource ID.
