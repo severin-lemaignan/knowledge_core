@@ -309,6 +309,8 @@ class MinimalKB:
             logger.info("Loading file <%s> in model <%s>" % (filename, model))
             self.models[model].graph.parse(filename, publicID=IRIS[DEFAULT_PREFIX])
 
+        self.onupdate()
+
     @api
     def clear(self):
         logger.warn("Clearing the knowledge base!")
