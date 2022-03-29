@@ -7,22 +7,41 @@ Core API
 ### Statements
 
 `minimalkb` currently only support binary predicates, using the infix syntax to
-represent symbolic statements: `subject predicate object`.
+represent symbolic statements as triples: `subject predicate object`.
 For instance: `sky0 hasColor blue`
 
-Statements are represented as a single string, with the subject, predicate and
+Triples *must* follow the [Turtle
+syntax](https://www.w3.org/TR/turtle/#language-features): 
+statements are represented as a single string, with the subject, predicate and
 object separated by a space character.
 
-Subjects and predicates must by valid OWL identifiers. Objects can be either OWL
-identifiers, or literals. String literals must be surrounded by double quotes.
+In a nutshell:
 
-OWL identifiers might include XML namespaces, separated with a semi colon. For
-instance: `james rdf:type oro:Human`.
+- subjects and predicates must by valid RDF identifiers;
+- objects can be either RDF identifiers, or literals. String literals must be
+  surrounded by double quotes.
+- RDF identifiers might include XML namespaces. Prefixes can be used (see below
+  the list of recognised prefixes), separated with a semi colon. For instance:
+  `james rdf:type oro:Human`
+- as the triples are actually parsed with the
+  [N3](https://www.w3.org/TeamSubmission/n3/) grammar (a super-set of Turtle),
+  the namespace/prefix can actually be omitted altogether. In that case, the
+  default prefix of the OpenRobots Ontology (`oro:`) is used.
+- the means that all the terms defined in the OpenRobots ontology (eg `Robot`) can be used
+  without prefix, and all new terms added without a specific prefix will be
+  added to the OpenRobots ontology namespace.
 
-A *partial statement* is a statement with a least one unbound member. Unbound
-variable must start with a question mark `?`. For instance: `["?ag sees obj1",
-"?ag rdf:type Human"]`.  Partial statements are masks or patterns, and used as
-such in methods like `find`.
+Triples might occasionaly also include *variables* (eg, unbound terms).
+Variables must start with a question mark `?`. For instance: `["?agent sees obj1",
+"?agent rdf:type Human"]`.  Sets of triples that include variables are refered
+to as *patterns* by `minimalkb`, and used as such in methods like `find`.
+
+Instead of such *named* variables, you can also use `*` as an unnamed variable.
+For instance, `kb["* rdf:type Agent"]` would return the list of all agents.
+
+Note however that if you mix named and unnamed variables, only the *named*
+variables will be returned: `kb["?agent looksAt *"]` would therefore return a
+list of agents looking at 'something'.
 
 
 ### Models
@@ -67,12 +86,7 @@ want to update/query.
     - else, a list of dictionaries is returned with
     possible combination of values for the different variables. For
     instance, `find(["?agent", "?action"], ["?agent desires ?action", "?action rdf:type Jump"])`
-    would return something like: `[{"agent":"james", "action": "jumpHigh"}, {"agent": "laurel", "action":"jumpHigher"}]`
-
-  Note that `constraints` is currently not supported.
-- `findmpe(vars, pattern, constraints=None, models=None)`: finds the most
-  probable explanation. Currently strictly equivalent to `find`, as `minimalkb`
-  does not currently support probabilistic reasoning.
+    would return: `[{"agent":"james", "action": "jumpHigh"}, {"agent": "laurel", "action":"jumpHigher"}]`
 - `hello()`: returns the version number of the `minimalkb` server as a string. Can be used
   to check connection status.
 - `load(filename, models=None)`: loads the content of the specified OWL ontology. Note that
@@ -80,7 +94,7 @@ want to update/query.
   [RDFlib](https://rdflib.readthedocs.io/en/stable/) is available to the server.
 - `lookup(resource, models=None)`
 - `methods()`: list available methods
-- `retract(stmts, models=None)`: alias for `revise` with
+- `remove(stmts, models=None)`: alias for `revise` with
   `policy['method']='retract'`.
 - `revise(stmts, policy)`: Add/retract/updates one or several statements in the
   specified model.
@@ -91,31 +105,20 @@ want to update/query.
   -  `lifespan` (optional, default to `0`): duration before automatic removal of statements, in
      seconds, float. If set to 0, statements do not expire.
 
+- `sparql(query, model='default')`: performs a raw SPARQL query on a given
+  model.  The SPARQL PREFIX and BASE are automatically added, no need to do it
+  manually (even though you can if you want to use non-standard prefixes).
+
+  Note that you are responsible for writing a syntactically corret SPARQL
+  query. In particualar, all non-literal/non-variable terms must have a
+  namespace (or a prefix).
+  
+  Results is returned as a JSON object that follow the standard [JSON
+  serialization of SPARQL Results](https://www.w3.org/TR/2013/REC-sparql11-results-json-20130321/)
 
 - `subscribe(type, trigger, var, patterns, models=None)`
 - `update(stmts, models=None, lifespan=0)`: updates statements in the given model(s)
   with the given lifespan. Alias for `revise` with `policy['method']='update'`.
   If the predicate(s) are *not* inferred to be functional (i.e., it accept only
   one single value), behaves like `add`.
-
-Backward compatibility with ORO
--------------------------------
-
-*Do not use these function calls in new code. They might be removed in the
-future.*
-
-- `findForAgent(agent, var, stmts) (compatibility)`
-- `getClassesOf(concept, direct=False) (compatibility)``
-- `getDirectClassesOf(concept) (compatibility)`
-- `getLabel(concept) (compatibility)`
-- `getResourceDetails(concept) (compatibility)`
-- `listAgents() (compatibility)`
-- `listSimpleMethods() (compatibility)`
-- `lookupForAgent(agent, resource) (compatibility)`
-- `registerEvent(type, trigger, patterns) (compatibility)`
-- `remove(stmts, models=None) (compatibility)`
-- `removeForAgent(agent, stmts) (compatibility)`
-- `reset() (compatibility)`
-- `safeAdd(stmts, lifespan=0) (compatibility)`
-- `stats() (compatibility)`
 

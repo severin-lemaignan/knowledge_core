@@ -44,7 +44,7 @@ class TestSequenceFunctions(unittest.TestCase):
         # check no exception is raised
         self.kb.add(["johnny rdf:type Human", 'johnny rdfs:label "A que Johnny"'])
         self.kb += ["alfred rdf:type Human", "alfred likes icecream"]
-        self.kb.retract(["alfred rdf:type Human", "alfred likes icecream"])
+        self.kb.remove(["alfred rdf:type Human", "alfred likes icecream"])
         self.kb -= ["johnny rdf:type Human"]
 
         self.kb.revise(["toto likes tata"], {"method": "add"})
@@ -55,13 +55,13 @@ class TestSequenceFunctions(unittest.TestCase):
         self.kb.add(
             ["johnny rdf:type Human", 'johnny rdfs:label "A que Johnny"'], ["model1"]
         )
-        self.kb.retract(["alfred rdf:type Human", "alfred likes icecream"], ["model1"])
+        self.kb.remove(["alfred rdf:type Human", "alfred likes icecream"], ["model1"])
 
         self.kb.add(
             ["johnny rdf:type Human", 'johnny rdfs:label "A que Johnny"'],
             ["model1", "model2"],
         )
-        self.kb.retract(
+        self.kb.remove(
             ["alfred rdf:type Human", "alfred likes icecream"], ["model1", "model2"]
         )
 
@@ -79,10 +79,7 @@ class TestSequenceFunctions(unittest.TestCase):
 
         self.assertCountEqual(
             self.kb["* * *"],
-            [
-                ["owl:Thing", "rdf:type", "owl:Class"],
-                ["owl:Nothing", "rdf:type", "owl:Class"],
-            ],
+            [],
         )
 
         self.kb += ["alfred rdf:type Human"]
@@ -90,18 +87,13 @@ class TestSequenceFunctions(unittest.TestCase):
             self.kb["* * *"],
             [
                 ["alfred", "rdf:type", "Human"],
-                ["owl:Thing", "rdf:type", "owl:Class"],
-                ["owl:Nothing", "rdf:type", "owl:Class"],
             ],
         )
 
         self.kb -= ["alfred rdf:type Human"]
         self.assertCountEqual(
             self.kb["* * *"],
-            [
-                ["owl:Thing", "rdf:type", "owl:Class"],
-                ["owl:Nothing", "rdf:type", "owl:Class"],
-            ],
+            [],
         )
 
         self.kb += ["alfred rdf:type Human", "alfred likes icecream"]
@@ -110,8 +102,6 @@ class TestSequenceFunctions(unittest.TestCase):
             [
                 ["alfred", "likes", "icecream"],
                 ["alfred", "rdf:type", "Human"],
-                ["owl:Thing", "rdf:type", "owl:Class"],
-                ["owl:Nothing", "rdf:type", "owl:Class"],
             ],
         )
 
@@ -268,8 +258,6 @@ class TestSequenceFunctions(unittest.TestCase):
             [
                 ["nono", "rdf:type", "Human"],
                 ["alfred", "rdf:type", "Robot"],
-                ["owl:Thing", "rdf:type", "owl:Class"],
-                ["owl:Nothing", "rdf:type", "owl:Class"],
             ],
         )
 
@@ -281,8 +269,6 @@ class TestSequenceFunctions(unittest.TestCase):
                 ["alfred", "desires", "oil"],
                 ["nono", "rdf:type", "Human"],
                 ["alfred", "rdf:type", "Robot"],
-                ["owl:Thing", "rdf:type", "owl:Class"],
-                ["owl:Nothing", "rdf:type", "owl:Class"],
             ],
         )
 

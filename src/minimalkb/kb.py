@@ -1,4 +1,5 @@
 import logging
+
 logger = logging.getLogger("minimalKB." + __name__)
 
 import time
@@ -47,7 +48,6 @@ REASONER_RATE = 5  # Hz
 
 
 IRIS = {
-    "pal": "http://www.pal-robotics.com/kb/",
     "oro": "http://kb.openrobots.org#",
     "cyc": "http://sw.opencyc.org/concept/",
     "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
@@ -56,7 +56,7 @@ IRIS = {
     "xsd": "http://www.w3.org/2001/XMLSchema#",
 }
 
-DEFAULT_PREFIX = "pal"
+DEFAULT_PREFIX = "oro"
 
 default_ns = Namespace(IRIS[DEFAULT_PREFIX])
 
@@ -162,11 +162,14 @@ def shorten_graph(graph):
 def get_variables(stmt):
     return [v for v in stmt if isinstance(v, Variable)]
 
+
 class dotdict(dict):
     """dot.notation access to dictionary attributes"""
+
     __getattr__ = dict.get
     __setattr__ = dict.__setitem__
     __delattr__ = dict.__delitem__
+
 
 class Event:
 
@@ -294,11 +297,6 @@ class MinimalKB:
     def hello(self):
         return "MinimalKB, v.%s" % __version__
 
-    @compat
-    @api
-    def stats(self):
-        return {"version": __version__}
-
     @api
     def load(self, filename, models=None):
 
@@ -316,16 +314,6 @@ class MinimalKB:
             self.ds.remove_graph(g.graph)
 
         self.create_model(DEFAULT_MODEL)
-
-    @compat
-    @api
-    def reset(self):
-        self.clear()
-
-    @compat
-    @api
-    def listSimpleMethods(self):
-        return self.methods()
 
     @api
     def methods(self):
@@ -350,11 +338,6 @@ class MinimalKB:
                 result.append(shorten(g, triple))
 
         return result
-
-    @compat
-    @api
-    def lookupForAgent(self, agent, resource):
-        return self.lookup(resource, models=[agent])
 
     @api
     def lookup(self, resource, models=None):
@@ -401,7 +384,9 @@ class MinimalKB:
     @api
     def classesof(self, term, direct=False, models=[]):
         cls = self._classesof(term, direct, models)
-        return [shorten_term(self.models[DEFAULT_MODEL].materialized_graph, c) for c in cls]
+        return [
+            shorten_term(self.models[DEFAULT_MODEL].materialized_graph, c) for c in cls
+        ]
 
     def _classesof(self, term, direct=False, models=[]):
 
@@ -432,7 +417,9 @@ class MinimalKB:
 
         res = parse_term(term)
         for model in models:
-            result += self.models[model].materialized_graph.subjects(RDFS.subClassOf, res)
+            result += self.models[model].materialized_graph.subjects(
+                RDFS.subClassOf, res
+            )
 
         return result
 
@@ -449,7 +436,9 @@ class MinimalKB:
 
         res = parse_term(term)
         for model in models:
-            result += self.models[model].materialized_graph.objects(res, RDFS.subClassOf)
+            result += self.models[model].materialized_graph.objects(
+                res, RDFS.subClassOf
+            )
 
         return result
 
@@ -479,7 +468,9 @@ class MinimalKB:
             return "class"
 
         for model in models:
-            stmts_if_predicate = list(self.models[model].materialized_graph.triples([None, term, None]))
+            stmts_if_predicate = list(
+                self.models[model].materialized_graph.triples([None, term, None])
+            )
 
             if stmts_if_predicate:
                 if isinstance(stmts_if_predicate[0][2], Literal):
@@ -561,11 +552,6 @@ class MinimalKB:
                 }
             ]
         return res
-
-    @compat
-    @api
-    def getResourceDetails(self, concept):
-        return self.details(concept)
 
     @api
     def check(self, stmts, models=None):
@@ -678,19 +664,9 @@ class MinimalKB:
             stmts, {"method": "add", "models": models, "lifespan": lifespan}
         )
 
-    @compat
-    @api
-    def safeAdd(self, stmts, lifespan=0):
-        return self.revise(stmts, {"method": "safe_add", "lifespan": lifespan})
-
-    @api
-    def retract(self, stmts, models=None):
-        return self.revise(stmts, {"method": "retract", "models": models})
-
-    @compat
     @api
     def remove(self, stmts, models=None):
-        return self.retract(stmts, models)
+        return self.revise(stmts, {"method": "retract", "models": models})
 
     @api
     def update(self, stmts, models=None, lifespan=0):
@@ -718,9 +694,9 @@ class MinimalKB:
         ```
         >>> kb += ["myself age 40"]
         >>> kb.sparql("SELECT ?age WHERE { :myself :age ?age . }")
-        {'results': 
+        {'results':
             {'bindings': [
-                {'age': 
+                {'age':
                     {'type': 'literal',
                      'value': '40',
                      'datatype': 'http://www.w3.org/2001/XMLSchema#integer'}
@@ -806,7 +782,9 @@ class MinimalKB:
             if len(named_variables) > 1:
                 res += [
                     dict(zip(vars_naked, r))
-                    for r in [shorten(self.models[model].graph, row) for row in sparql_res]
+                    for r in [
+                        shorten(self.models[model].graph, row) for row in sparql_res
+                    ]
                 ]
             else:
                 res += [shorten(self.models[model].graph, row) for row in sparql_res]
@@ -817,13 +795,6 @@ class MinimalKB:
 
         logger.info("Found: " + str(res))
         return res
-
-    @api
-    def findmpe(self, vars, pattern, constraints=None, models=None):
-        """Finds the most probable explanation. Strictly equivalent to
-        'find' until we support probabilities.
-        """
-        return find(self, vars, pattern, constraints=None, models=None)
 
     @api
     def subscribe(self, type, trigger, var, patterns, models=None):
@@ -866,7 +837,6 @@ class MinimalKB:
 
         logger.debug("Executing SPARQL query in model: %s\n%s" % (model, q))
 
-
         return self.models[model].materialized_graph.query(q)
 
     def named_variables(self, vars):
@@ -904,10 +874,8 @@ class MinimalKB:
         if not has_reasoner:
             return
 
-
-
         start = time.time()
-        
+
         if models is None:
             models = self.models.keys()
 
@@ -923,7 +891,6 @@ class MinimalKB:
             g.materialized_graph.namespace_manager = g.graph.namespace_manager
             g.materialized_graph += r.reason()
 
-
             g.is_dirty = False
 
         end = time.time()
@@ -936,15 +903,15 @@ class MinimalKB:
 
     def start_services(self, *args):
 
-        #import threading
+        # import threading
 
-        #self.running = True
+        # self.running = True
 
-        #logger.info(
+        # logger.info(
         #    "Starting the reasoner (running in the background at %sHz)" % REASONER_RATE
-        #)
-        #self._reasoner = threading.Thread(target=self.materialise)
-        #self._reasoner.start()
+        # )
+        # self._reasoner = threading.Thread(target=self.materialise)
+        # self._reasoner.start()
 
         # self._lifespan_manager = Process(
         #    target=lifespan.start_service, args=("kb.db",)
@@ -956,10 +923,10 @@ class MinimalKB:
         # self._reasoner.terminate()
         # self._lifespan_manager.terminate()
 
-        #logger.info("Stopping the reasoner...")
-        #self.running = False
-        #self._reasoner.join()
-        #logger.info("Reasoner stopped.")
+        # logger.info("Stopping the reasoner...")
+        # self.running = False
+        # self._reasoner.join()
+        # logger.info("Reasoner stopped.")
 
         # self._lifespan_manager.join()
         pass
@@ -973,10 +940,13 @@ class MinimalKB:
 
         g.bind("", IRIS[DEFAULT_PREFIX])
 
-        self.models[model] = dotdict({"graph": g,
-                                      "is_dirty": True,  # stores whether models have changes that would require re-classification
-                                      "materialized_graph": Graph()
-                                    })
+        self.models[model] = dotdict(
+            {
+                "graph": g,
+                "is_dirty": True,  # stores whether models have changes that would require re-classification
+                "materialized_graph": Graph(),
+            }
+        )
 
     def normalize_models(self, models):
         """If 'models' is None or [], returns the default model (ie, the
