@@ -8,10 +8,12 @@ import json
 from minimalkb.srv import Manage, ManageRequest
 from minimalkb.srv import Revise, ReviseRequest
 from minimalkb.srv import Query
+from minimalkb.srv import Sparql
 
 MANAGE_SRV = "/kb/manage"
 REVISE_SRV = "/kb/revise"
 QUERY_SRV = "/kb/query"
+SPARQL_SRV = "/kb/sparql"
 
 
 class TestKB(unittest.TestCase):
@@ -20,10 +22,12 @@ class TestKB(unittest.TestCase):
         rospy.wait_for_service(MANAGE_SRV)
         rospy.wait_for_service(REVISE_SRV)
         rospy.wait_for_service(QUERY_SRV)
+        rospy.wait_for_service(SPARQL_SRV)
 
         cls.manage = rospy.ServiceProxy(MANAGE_SRV, Manage)
         cls.revise = rospy.ServiceProxy(REVISE_SRV, Revise)
         cls.query = rospy.ServiceProxy(QUERY_SRV, Query)
+        cls.sparql = rospy.ServiceProxy(SPARQL_SRV, Sparql)
 
     def setUp(self):
 
@@ -165,7 +169,7 @@ class TestKB(unittest.TestCase):
             ],
         )
 
-        res = self.query(["?agent rdf:type Agent"], None, None)
+        res = self.query(patterns=["?agent rdf:type Agent"], vars=None, models=None)
         self.assertCountEqual(
             json.loads(res.json),
             [
@@ -174,7 +178,7 @@ class TestKB(unittest.TestCase):
             ],
         )
 
-        res = self.query(["?food rdf:type Food"], None, None)
+        res = self.query(patterns=["?food rdf:type Food"], vars=None, models=None)
         self.assertCountEqual(
             json.loads(res.json),
             [
@@ -183,13 +187,39 @@ class TestKB(unittest.TestCase):
             ],
         )
 
-        res = self.query(["?agent rdf:type Human", "?agent eats ?food"], None, None)
+        res = self.query(
+            patterns=["?agent rdf:type Human", "?agent eats ?food"],
+            vars=None,
+            models=None,
+        )
         self.assertCountEqual(
             json.loads(res.json),
             [
                 {"agent": "joe", "food": "carrot"},
             ],
         )
+
+    def test_sparql(self):
+
+        res = self.sparql(query="SELECT ?a WHERE { ?a :eats ?b . }", models=None)
+
+        self.assertCountEqual(json.loads(res.json)["results"]["bindings"], [])
+
+        self.revise(
+            method=ReviseRequest.ADD,
+            statements=[
+                "joe eats carrot",
+                "ari eats electricity",
+            ],
+        )
+
+        res = self.sparql(query="SELECT ?a WHERE { ?a :eats ?b . }", models=None)
+
+        self.assertEquals(len(json.loads(res.json)["results"]["bindings"]), 2)
+
+        # invalid SPARQL! 'eats' has no namespace
+        res = self.sparql(query="SELECT ?a WHERE { ?a eats ?b . }", models=None)
+        self.assertFalse(res.success)
 
 
 if __name__ == "__main__":

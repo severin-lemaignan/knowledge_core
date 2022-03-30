@@ -1,0 +1,27 @@
+## Performs a raw SPARQL query on a given model.
+
+#  The SPARQL PREFIX and BASE are automatically added, no need to do it
+#  manually (even though you can if you want to use non-standard prefixes).
+#
+#  Note that you are responsible for writing a syntactically corret SPARQL
+#  query. In particualar, all non-literal/non-variable terms must have a
+#  namespace (or a prefix).
+#  
+#  Results is returned as a JSON object that follow the standard [JSON
+#  serialization of SPARQL Results](https://www.w3.org/TR/2013/REC-sparql11-results-json-20130321/)
+string query
+
+string[] models
+---
+# Result:
+bool success
+
+# a JSON-encoded list of dictionaries, representing the result of the FIND
+# method. Each key in the dictionaries correspond to one varaible.
+string json
+
+# if success = False, error_msg might contain additional information about the
+# failure.
+string error_msg
+
+

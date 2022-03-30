@@ -25,13 +25,14 @@ class MinimalKBROS:
         self.kb = kb
 
         import rospy
-        from minimalkb.srv import Revise, Query, Manage
+        from minimalkb.srv import Manage, Revise, Query, Sparql
 
         rospy.init_node("minimalkb", disable_signals=True)
         self.services = {
             "manage": rospy.Service("kb/manage", Manage, self.handle_manage),
             "revise": rospy.Service("kb/revise", Revise, self.handle_revise),
             "query": rospy.Service("kb/query", Query, self.handle_query),
+            "sparql": rospy.Service("kb/sparql", Sparql, self.handle_sparql),
         }
 
     def handle_manage(self, req):
@@ -85,6 +86,16 @@ class MinimalKBROS:
             return QueryResponse(success=True, error_msg="", json=json.dumps(res))
         except KbServerError as kbe:
             return QueryResponse(success=False, error_msg=str(kbe))
+
+    def handle_sparql(self, req):
+
+        from minimalkb.srv import SparqlResponse
+
+        try:
+            res = kb.sparql(req.query, req.models)
+            return SparqlResponse(success=True, error_msg="", json=json.dumps(res))
+        except KbServerError as kbe:
+            return SparqlResponse(success=False, error_msg=str(kbe))
 
     def shutdown(self):
         import rospy

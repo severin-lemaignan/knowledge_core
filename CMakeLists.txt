@@ -16,6 +16,7 @@ add_service_files(
   Manage.srv
   Revise.srv
   Query.srv
+  Sparql.srv
 )
 
 generate_messages(
