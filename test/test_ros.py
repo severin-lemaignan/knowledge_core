@@ -134,6 +134,49 @@ class TestKB(unittest.TestCase):
             ],
         )
 
+    def test_queries(self):
+        """These tests require a RDFS reasoner!"""
+
+        self.revise(
+            method=ReviseRequest.ADD,
+            statements=[
+                "ari rdf:type Robot",
+                "Robot rdfs:subClassOf Machine",
+                "Robot rdfs:subClassOf Agent",
+                "joe rdf:type Human",
+                "Human rdfs:subClassOf Agent",
+                "joe eats carrot",
+                "ari eats electricity",
+                "eats rdfs:range Food",
+            ],
+        )
+
+        res = self.query(["?agent rdf:type Agent"], None, None)
+        self.assertCountEqual(
+            json.loads(res.json),
+            [
+                {"agent": "joe"},
+                {"agent": "ari"},
+            ],
+        )
+
+        res = self.query(["?food rdf:type Food"], None, None)
+        self.assertCountEqual(
+            json.loads(res.json),
+            [
+                {"food": "carrot"},
+                {"food": "electricity"},
+            ],
+        )
+
+        res = self.query(["?agent rdf:type Human", "?agent eats ?food"], None, None)
+        self.assertCountEqual(
+            json.loads(res.json),
+            [
+                {"agent": "joe", "food": "carrot"},
+            ],
+        )
+
 
 if __name__ == "__main__":
     import rostest

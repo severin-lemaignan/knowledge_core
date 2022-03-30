@@ -1,6 +1,6 @@
 <launch>
 
-	<node pkg="minimalkb" type="minimalkb" name="minimalkb" args="--debug --no-reasoner" output="screen"/>
+	<node pkg="minimalkb" type="minimalkb" name="minimalkb" args="--debug" output="screen"/>
 
 	<!-- Run ROS test -->
 	<test test-name="ros_test" pkg="minimalkb" type="test_ros.py"/>
