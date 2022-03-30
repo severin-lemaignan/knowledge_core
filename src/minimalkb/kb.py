@@ -645,14 +645,15 @@ class MinimalKB:
           seconds, float
         """
 
+        if type(policy) != dict:
+            raise KbServerError("Expected a dictionary as policy")
+
         if isinstance(stmts, str):
             raise KbServerError("A list of statements is expected")
 
         subgraph = parse_stmts_to_graph(stmts)
         parsed_stmts = "\n\t- ".join([" ".join(s) for s in shorten_graph(subgraph)])
 
-        if type(policy) != dict:
-            raise KbServerError("Expected a dictionary as policy")
         models = self.normalize_models(policy.get("models", []))
 
         if policy["method"] in ["add", "safe_add"]:
@@ -1009,6 +1010,8 @@ class MinimalKB:
             else:
                 if isinstance(models, str):
                     models = [models]
+
+                models = [m if m != "" else DEFAULT_MODEL for m in models]
 
                 # do we have a new model? initialise it.
                 for model in models:
