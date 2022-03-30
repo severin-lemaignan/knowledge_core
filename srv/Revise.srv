@@ -1,0 +1,13 @@
+string ADD=add
+string UPDATE=update
+string RETRACT=retract
+string REMOVE=retract # alias for RETRACT
+
+# goal
+string method
+string[] statements
+string[] models
+duration lifespan # only relevant for ADD and UPDATE. Lifespan of 0 (default) means no expiration.
+---
+bool success # true if the triples were successfull added/deleted/updated
+

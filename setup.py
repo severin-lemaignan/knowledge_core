@@ -30,7 +30,7 @@ setup(
     requires=["rdflib"],
     package_dir={"": "src"},
     packages=["minimalkb"],
-    scripts=["bin/minimalkb"],
+    # scripts=["bin/minimalkb"], # commented out, as bin installed via catkin in ROS world
     data_files=[
         (
             "share/ontologies",

@@ -19,6 +19,28 @@ import json
 PORT = 6969
 
 
+class MinimalKBROS:
+    def __init__(self, kb):
+        self.kb = kb
+
+        import rospy
+        from minimalkb.srv import Revise
+
+        rospy.init_node("minimalkb")
+        self.services = {
+            "revise": rospy.Service("kb/revise", Revise, self.handle_revise),
+        }
+
+    def handle_revise(self, req):
+
+        from minimalkb.srv import ReviseResponse
+
+        policy = {"method": req.method, "models": req.models}
+        kb.revise(req.statements, policy)
+
+        return ReviseResponse(True)
+
+
 class MinimalKBChannel(asynchat.async_chat):
     def __init__(self, server, sock, addr, kb):
         asynchat.async_chat.__init__(self, sock)
@@ -129,6 +151,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--no-reasoner", action="store_false", help="do not use the reasoner"
     )
+    parser.add_argument("--no-ros", action="store_false", help="disable ROS support")
     parser.add_argument(
         "-p",
         "--port",
@@ -165,6 +188,10 @@ if __name__ == "__main__":
 
     s = MinimalKBServer(args.port, kb)
     logger.info("Starting to serve at port %d..." % args.port)
+
+    if args.no_ros:
+        logger.info("Initializing the ROS node...")
+        ros = MinimalKBROS(kb)
 
     try:
         while True:
