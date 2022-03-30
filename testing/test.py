@@ -85,9 +85,7 @@ class TestSequenceFunctions(unittest.TestCase):
         self.kb += ["alfred rdf:type Human"]
         self.assertCountEqual(
             self.kb["* * *"],
-            [
-                ["alfred", "rdf:type", "Human"],
-            ],
+            [{"var1": "alfred", "var2": "rdf:type", "var3": "Human"}],
         )
 
         self.kb -= ["alfred rdf:type Human"]
@@ -100,8 +98,8 @@ class TestSequenceFunctions(unittest.TestCase):
         self.assertCountEqual(
             self.kb["* * *"],
             [
-                ["alfred", "likes", "icecream"],
-                ["alfred", "rdf:type", "Human"],
+                {"var1": "alfred", "var2": "likes", "var3": "icecream"},
+                {"var1": "alfred", "var2": "rdf:type", "var3": "Human"},
             ],
         )
 
@@ -230,15 +228,15 @@ class TestSequenceFunctions(unittest.TestCase):
             [["johnny", "rdf:type", "Human"], ["alfred", "rdf:type", "Human"]],
         )
 
-        self.assertCountEqual(self.kb["* rdf:type Human"], ["johnny", "alfred"])
+        self.assertCountEqual(
+            self.kb["* rdf:type Human"], [{"var1": "johnny"}, {"var1": "alfred"}]
+        )
 
         self.kb -= ["alfred rdf:type Human", "alfred likes icecream"]
 
-        self.assertCountEqual(self.kb["* rdf:type Human"], ["johnny"])
+        self.assertCountEqual(self.kb["* rdf:type Human"], [{"var1": "johnny"}])
 
-        self.assertCountEqual(
-            self.kb["johnny rdf:type Human"], ["johnny rdf:type Human"]
-        )
+        self.assertTrue(self.kb["johnny rdf:type Human"])
 
     def test_models_retrieval(self):
 
@@ -254,11 +252,11 @@ class TestSequenceFunctions(unittest.TestCase):
         )
 
         self.kb += ["nono rdf:type Human", "alfred rdf:type Robot"]
-        self.assertCountEqual(
+        self.assertEqual(
             self.kb["* * *"],
             [
-                ["nono", "rdf:type", "Human"],
-                ["alfred", "rdf:type", "Robot"],
+                {"var1": "nono", "var2": "rdf:type", "var3": "Human"},
+                {"var1": "alfred", "var2": "rdf:type", "var3": "Robot"},
             ],
         )
 
@@ -266,19 +264,19 @@ class TestSequenceFunctions(unittest.TestCase):
         self.assertCountEqual(
             self.kb["* * *"],
             [
-                ["nono", "desires", "jump"],
-                ["alfred", "desires", "oil"],
-                ["nono", "rdf:type", "Human"],
-                ["alfred", "rdf:type", "Robot"],
+                {"var1": "nono", "var2": "desires", "var3": "jump"},
+                {"var1": "alfred", "var2": "desires", "var3": "oil"},
+                {"var1": "nono", "var2": "rdf:type", "var3": "Human"},
+                {"var1": "alfred", "var2": "rdf:type", "var3": "Robot"},
             ],
         )
 
         self.kb += ["nono loves icecream"]
-        self.assertCountEqual(
-            self.kb["?agent desires jump", "?agent loves icecream"], ["nono"]
+        self.assertEqual(
+            self.kb["?agent desires jump", "?agent loves icecream"], [{"agent": "nono"}]
         )
         self.assertCountEqual(
-            self.kb["?agent desires *", "?agent loves icecream"], ["nono"]
+            self.kb["?agent desires *", "?agent loves icecream"], [{"agent": "nono"}]
         )
 
         self.kb += ["jump rdf:type Action"]
@@ -297,11 +295,11 @@ class TestSequenceFunctions(unittest.TestCase):
 
     def test_update(self):
         self.kb += ["nono isNice true", "isNice rdf:type owl:FunctionalProperty"]
-        self.assertCountEqual(self.kb["* isNice true"], ["nono"])
+        self.assertCountEqual(self.kb["* isNice true"], [{"var1": "nono"}])
 
         self.kb += ["nono isNice false"]
         self.assertFalse(self.kb["* isNice true"])
-        self.assertCountEqual(self.kb["* isNice false"], ["nono"])
+        self.assertCountEqual(self.kb["* isNice false"], [{"var1": "nono"}])
 
     def test_about(self):
         self.kb.add(["nono isNice true"], ["model1"])
@@ -394,7 +392,7 @@ class TestSequenceFunctions(unittest.TestCase):
 
         id, value = self.kb.events.get_nowait()
         self.assertEqual(id, evtid)
-        self.assertCountEqual(value, [u"alfred"])
+        self.assertCountEqual(value, [{"o": "alfred"}])
 
         # should not trigger an event
         self.kb += ["alfred leaves room"]
@@ -422,7 +420,7 @@ class TestSequenceFunctions(unittest.TestCase):
 
         id, value = self.kb.events.get_nowait()
         self.assertEqual(id, evtid)
-        self.assertCountEqual(value, [u"batman"])
+        self.assertCountEqual(value, [{"o": "batman"}])
 
     def test_complex_events(self):
 
