@@ -753,11 +753,14 @@ class MinimalKB:
 
         model = list(models)[0]
 
-        sparql_res = self._sparql(model, query)
+        sparql_res, query = self._sparql(model, query)
 
         import json
 
-        return json.loads(sparql_res.serialize(format="json"))
+        res = json.loads(sparql_res.serialize(format="json"))
+        res["query"] = query
+
+        return res
 
     @api
     def find(self, patterns, vars=None, models=None):
@@ -835,7 +838,7 @@ class MinimalKB:
                 q += "%s .\n" % p
             q += "}"
 
-            sparql_res = self._sparql(model, q)
+            sparql_res, _ = self._sparql(model, q)
 
             res += [
                 dict(zip(vars_naked, r))
@@ -910,7 +913,11 @@ class MinimalKB:
 
         logger.debug("Executing SPARQL query in model: %s\n%s" % (model, q))
 
-        return self.models[model].materialized_graph.query(q)
+        import pyparsing
+        try:
+            return self.models[model].materialized_graph.query(q), q
+        except pyparsing.ParseException:
+            raise KbServerError("Syntax error while parsing SPARQL query:\n%s" % q)
 
     def named_variables(self, vars):
         """
