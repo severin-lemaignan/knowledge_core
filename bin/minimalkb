@@ -180,7 +180,9 @@ if __name__ == "__main__":
         help="Files (OWL, RDF or raw triples) with initial ontologies to load",
     )
 
-    args = parser.parse_args()
+    # filter out possible ROS remapping args
+    argv = [a for a in sys.argv if not a.startswith("__")]
+    args = parser.parse_args(argv[1:])
 
     console = ColorizingStreamHandler()
 
