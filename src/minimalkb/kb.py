@@ -113,6 +113,8 @@ def parse_stmt(stmt):
         return list(Graph().parse(data=N3_PROLOGUE + "%s ." % stmt, format="n3"))[0]
     except rdflib.plugins.parsers.notation3.BadSyntax:
         raise KbServerError("invalid syntax for statement <%s>" % stmt)
+    except IndexError:
+        raise KbServerError("invalid syntax for statement <%s>" % stmt)
 
 
 # @memoize
