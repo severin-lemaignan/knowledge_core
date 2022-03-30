@@ -1,3 +1,5 @@
+debian/
+
 *.py[cod]
 
 # C extensions
