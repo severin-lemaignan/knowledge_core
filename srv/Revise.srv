@@ -1,7 +1,10 @@
 string ADD=add
 string UPDATE=update
 string RETRACT=retract
-string REMOVE=retract # alias for RETRACT
+# alias for RETRACT
+string REMOVE=retract
+# alias for RETRACT
+string DELETE=retract
 
 # goal
 string method
