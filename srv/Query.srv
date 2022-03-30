@@ -1,0 +1,19 @@
+# find(vars, statements, models): queries the model
+#
+# returns a list of dictionaries is returned with possible combination of
+# values for the different variables
+#
+# For instance, find(["?agent", "?action"], ["?agent desires ?action", "?action
+# rdf:type Jump"]) could return something like: [{"agent":"james", "action":
+# "jumpHigh"}, {"agent": "laurel", "action":"jumpHigher"}]
+string FIND=find
+string QUERY=find # alias for FIND
+
+string method
+string[] patterns
+string[] vars # the variables you want to be returned. If empty, all variables found in the patterns are returned
+string[] models
+---
+# result
+string json # a JSON-encoded list of dictionaries, representing the result of the FIND method. Each key in the dictionaries correspond to one varaible.
+

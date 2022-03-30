@@ -24,11 +24,12 @@ class MinimalKBROS:
         self.kb = kb
 
         import rospy
-        from minimalkb.srv import Revise
+        from minimalkb.srv import Revise, Query
 
         rospy.init_node("minimalkb")
         self.services = {
             "revise": rospy.Service("kb/revise", Revise, self.handle_revise),
+            "query": rospy.Service("kb/query", Query, self.handle_query),
         }
 
     def handle_revise(self, req):
@@ -39,6 +40,14 @@ class MinimalKBROS:
         kb.revise(req.statements, policy)
 
         return ReviseResponse(True)
+
+    def handle_query(self, req):
+
+        from minimalkb.srv import QueryResponse
+
+        res = kb.find(req.patterns, req.vars, req.models)
+
+        return QueryResponse(json.dumps(res))
 
 
 class MinimalKBChannel(asynchat.async_chat):

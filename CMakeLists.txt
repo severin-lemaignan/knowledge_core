@@ -13,6 +13,7 @@ catkin_python_setup()
 add_service_files(
   FILES
   Revise.srv
+  Query.srv
 )
 
 generate_messages(
