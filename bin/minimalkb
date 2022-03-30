@@ -15,6 +15,7 @@ import traceback
 
 import json
 
+from minimalkb.exceptions import KbServerError
 
 PORT = 6969
 
@@ -24,30 +25,66 @@ class MinimalKBROS:
         self.kb = kb
 
         import rospy
-        from minimalkb.srv import Revise, Query
+        from minimalkb.srv import Revise, Query, Manage
 
         rospy.init_node("minimalkb", disable_signals=True)
         self.services = {
+            "manage": rospy.Service("kb/manage", Manage, self.handle_manage),
             "revise": rospy.Service("kb/revise", Revise, self.handle_revise),
             "query": rospy.Service("kb/query", Query, self.handle_query),
         }
+
+    def handle_manage(self, req):
+
+        from minimalkb.srv import ManageResponse, ManageRequest
+
+        try:
+            if req.action == ManageRequest.CLEAR:
+                kb.clear()
+                return ManageResponse(success=True, error_msg="")
+
+            elif req.action == ManageRequest.LOAD:
+                if len(req.parameters) != 1:
+                    return ManageResponse(
+                        success=False,
+                        error_msg="'load' expects 'parameters' to contain exactly one URI pointing to the ontology to load",
+                    )
+                kb.load(req.parameters[0], models=req.models)
+                return ManageResponse(success=True, error_msg="")
+
+            elif req.action == ManageRequest.STATUS:
+                status = {"name": kb.hello()}
+                return ManageResponse(
+                    success=True, json=json.dumps(status), error_msg=""
+                )
+            else:
+                return ManageResponse(
+                    success=False, error_msg="Unknown 'manage' action: %s" % req.action
+                )
+        except KbServerError as kbe:
+            return ManageResponse(success=False, error_msg=str(kbe))
 
     def handle_revise(self, req):
 
         from minimalkb.srv import ReviseResponse
 
         policy = {"method": req.method, "models": req.models}
-        kb.revise(req.statements, policy)
+        try:
+            kb.revise(req.statements, policy)
 
-        return ReviseResponse(True)
+            return ReviseResponse(success=True, error_msg="")
+        except KbServerError as kbe:
+            return ReviseResponse(success=False, error_msg=str(kbe))
 
     def handle_query(self, req):
 
         from minimalkb.srv import QueryResponse
 
-        res = kb.find(req.patterns, req.vars, req.models)
-
-        return QueryResponse(json.dumps(res))
+        try:
+            res = kb.find(req.patterns, req.vars, req.models)
+            return QueryResponse(success=True, error_msg="", json=json.dumps(res))
+        except KbServerError as kbe:
+            return QueryResponse(success=False, error_msg=str(kbe))
 
     def shutdown(self):
         import rospy

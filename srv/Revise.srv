@@ -1,3 +1,7 @@
+##
+## Modify the knowledge base (add,retract,update statements)
+##
+
 string ADD=add
 string UPDATE=update
 string RETRACT=retract
@@ -6,11 +10,19 @@ string REMOVE=retract
 # alias for RETRACT
 string DELETE=retract
 
-# goal
 string method
 string[] statements
 string[] models
-duration lifespan # only relevant for ADD and UPDATE. Lifespan of 0 (default) means no expiration.
+
+# only relevant for ADD and UPDATE. Lifespan of 0 (default) means no expiration.
+duration lifespan
 ---
-bool success # true if the triples were successfull added/deleted/updated
+# Result:
+
+# true if the action was successfully performed
+bool success
+
+# if success = False, error_msg might contain additional information about the
+# failure.
+string error_msg
 

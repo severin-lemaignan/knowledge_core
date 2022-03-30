@@ -13,6 +13,7 @@ catkin_python_setup()
 
 add_service_files(
   FILES
+  Manage.srv
   Revise.srv
   Query.srv
 )
