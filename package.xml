@@ -14,7 +14,7 @@
   <build_depend>message_generation</build_depend>
   <build_depend>rostest</build_depend>
   <depend>std_msgs</depend>
-  <depend>rdflib</depend>
+  <depend>python3-rdflib</depend>
 
   <export>
   </export>
