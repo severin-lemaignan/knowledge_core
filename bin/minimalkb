@@ -26,7 +26,7 @@ class MinimalKBROS:
         import rospy
         from minimalkb.srv import Revise, Query
 
-        rospy.init_node("minimalkb")
+        rospy.init_node("minimalkb", disable_signals=True)
         self.services = {
             "revise": rospy.Service("kb/revise", Revise, self.handle_revise),
             "query": rospy.Service("kb/query", Query, self.handle_query),
@@ -48,6 +48,11 @@ class MinimalKBROS:
         res = kb.find(req.patterns, req.vars, req.models)
 
         return QueryResponse(json.dumps(res))
+
+    def shutdown(self):
+        import rospy
+
+        rospy.signal_shutdown("minimalkb closing")
 
 
 class MinimalKBChannel(asynchat.async_chat):
@@ -207,5 +212,7 @@ if __name__ == "__main__":
             asyncore.loop(count=1)
             kb.process()
     except KeyboardInterrupt:
+        if args.no_ros:
+            ros.shutdown()
         kb.stop_services()
         logger.info("Bye bye")
