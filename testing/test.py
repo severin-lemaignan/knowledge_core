@@ -38,6 +38,14 @@ class TestSequenceFunctions(unittest.TestCase):
             self.kb.add()
         with self.assertRaises(kb.KbError):
             self.kb.add("toto")
+        with self.assertRaises(kb.KbError):
+            self.kb.add(["toto"])
+        with self.assertRaises(kb.KbError):
+            self.kb += ["toto"]
+        with self.assertRaises(kb.KbError):
+            self.kb += ["toto titi"]
+        with self.assertRaises(kb.KbError):
+            self.kb += ["toto titi tutu tata"]
 
     def test_basic_modifications(self):
 
@@ -211,9 +219,9 @@ class TestSequenceFunctions(unittest.TestCase):
                 self.kb.lookup("relobj%s" % i), [["relobj%s" % i, "object_property"]]
             )
 
-        # for val in malformed:
-        #    with self.assertRaises():
-        #        self.kb += ["robert rel%s %s" % (i, val)]
+        for val in malformed:
+            with self.assertRaises(kb.KbError):
+                self.kb += ["robert rel%s %s" % (i, val)]
 
     def test_retrieval(self):
 
@@ -252,7 +260,7 @@ class TestSequenceFunctions(unittest.TestCase):
         )
 
         self.kb += ["nono rdf:type Human", "alfred rdf:type Robot"]
-        self.assertEqual(
+        self.assertCountEqual(
             self.kb["* * *"],
             [
                 {"var1": "nono", "var2": "rdf:type", "var3": "Human"},

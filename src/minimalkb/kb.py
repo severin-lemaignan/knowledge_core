@@ -92,6 +92,8 @@ def parse_stmts_to_graph(stmts):
     data = N3_PROLOGUE
 
     for stmt in stmts:
+        if " " not in stmt:
+            raise KbServerError("invalid syntax for statement %s: it should be formed of 3 terms." % stmt)
         data += " %s . " % stmt
 
     try:
