@@ -30,6 +30,20 @@ class TestKB(unittest.TestCase):
         # clean-up the knowledge base before starting each test
         self.manage(action=ManageRequest.CLEAR)
 
+    def test_basics(self):
+
+        self.assertTrue(
+            self.revise(statements=["ari rdf:type Robot"], method=ReviseRequest.ADD)
+        )
+
+        res = self.query(["?s rdf:type Robot"], None, None)
+        self.assertCountEqual(json.loads(res.json), [{"s": "ari"}])
+
+        self.manage(action=ManageRequest.CLEAR)
+
+        res = self.query(["?s ?p ?o"], None, None)
+        self.assertCountEqual(json.loads(res.json), [])
+
     def test_base_revise(self):
 
         self.assertTrue(
