@@ -75,7 +75,7 @@ N3_PROLOGUE += (
 from .exceptions import KbServerError
 from minimalkb import __version__
 
-from .services import lifespan
+#from .services import lifespan
 
 from .helpers import memoize
 

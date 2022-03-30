@@ -27,9 +27,9 @@ setup(
     author="Séverin Lemaignan",
     author_email="severin.lemaignan@pal-robotics.com",
     url="https://github.com/severin-lemaignan/minimalkb",
-    requires=["pysqlite", "rdflib"],
+    requires=["rdflib"],
     package_dir={"": "src"},
-    packages=["minimalkb", "minimalkb/services"],
+    packages=["minimalkb"],
     scripts=["bin/minimalkb"],
     data_files=[
         (
