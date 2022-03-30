@@ -10,11 +10,7 @@ import traceback
 try:
     import rdflib
 
-    if rdflib.__version__ < "6.0.0":
-        logger.error("RDFlib >= 6.0.0 is required. Please upgrade.")
-        import sys
-
-        sys.exit(1)
+    logger.info("Using RDFlib %s" % rdflib.__version__)
 except ImportError:
     logger.error("RDFlib is required. Please install it.")
     import sys
