@@ -1,6 +1,16 @@
 Changelog
 =========
 
+minimalkb 2.2.1
+---------------
+
+*Released on 30 Mar 2022*
+
+- better error handling/reporting
+- slightly stricter statement parsing
+- updated LICENSE to 2022
+- remove requirement for rdflib >= 6.0.0 (works with RDFlib 4.x.x)
+
 minimalkb 2.2.0
 ---------------
 
