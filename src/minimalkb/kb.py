@@ -667,13 +667,13 @@ class MinimalKB:
                 self.models[model].graph += subgraph  # TODO: lifespan
                 self.models[model].is_dirty = True
 
-        if policy["method"] == "retract":
+        elif policy["method"] == "retract":
             logger.info("Deleting from " + str(list(models)) + ":\n\t- " + parsed_stmts)
             for model in models:
                 self.models[model].graph -= subgraph
                 self.models[model].is_dirty = True
 
-        if policy["method"] in ["update", "safe_update", "revision"]:
+        elif policy["method"] in ["update", "safe_update", "revision"]:
 
             lifespan = policy.get("lifespan", 0)
 
@@ -692,6 +692,8 @@ class MinimalKB:
                     else:
                         self.models[model].graph.add((s, p, o))  # TODO: lifespan
                 self.models[model].is_dirty = True
+        else:
+            raise KbServerError("Unknown method in revise: %s" % policy["method"])
 
         self.onupdate()
 
