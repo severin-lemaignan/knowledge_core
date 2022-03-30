@@ -1,6 +1,20 @@
 Changelog
 =========
 
+minimalkb 2.2.0
+---------------
+
+*Released on 30 Mar 2022*
+
+- change find() API to make it more consistent
+  - whatever the number of variables, always returns a list of dict with the
+    variables as key
+  - the param 'vars' is now optional.
+  - if no variable is passed, search for all variables by default
+  - anonymous variables (starting by `__`) are now named var1, var2,... in
+    the results
+- removed unused `minimalkb/services` sub-package
+
 minimalkb 2.1.0
 ---------------
 
