@@ -1,6 +1,13 @@
 Changelog
 =========
 
+minimalkb 2.3.0
+---------------
+
+*Released on 12 Apr 2022*
+
+- Add ROS support via Revise, Query, Sparql, Manage services
+
 minimalkb 2.2.1
 ---------------
 
