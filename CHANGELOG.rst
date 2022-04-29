@@ -146,23 +146,6 @@ Unit-tests results:
 -  ``testing/test_embedded.py``: 17 tests, 4 errors, 3 failures
 
 
-Some stats regarding the Dialogs unit-tests (unchanged since 0.8.1):
-(note that some of the failures are Dialogs bugs, not minimalkb ones)
-
-======================================================================
-\| suite \| nb tests \| tests run \| failures \| errors \|\| OK \|
-\|——————————————————————–\| \| statements \| 63 \| 63 \| 12 \| 2 \|\| 49
-\| \|——————————————————————–\| \| sentence \| 33 \| 33 \| 0 \| 0 \|\| 33
-\| \|——————————————————————–\| \| discrimination \| 13 \| 13 \| 6 \| 5
-\|\| 2 \| \|——————————————————————–\| \| parser \| 72 \| 72 \| 7 \| 0
-\|\| 65 \| \|——————————————————————–\| \| verbalization \| 76 \| 76 \| 4
-\| 0 \|\| 72 \| \|——————————————————————–\| \| questions \| 42 \| 42 \|
-13 \| 0 \|\| 29 \| \|——————————————————————–\| \| TOTAL \| 299 \| 299 \|
-42 \| 7 \|\| 250\|
-======================================================================
-
-Total time: 14.257743sec
-
 0.8.1
 -----
 
@@ -187,22 +170,6 @@ Main changes since 0.7:
 -  fix a race with the reasoner when clearing the database
 
 
-Some stats regarding the Dialogs unit-tests: (note that some of the
-failures are Dialogs bugs, not minimalkb ones)
-
-======================================================================
-\| suite \| nb tests \| tests run \| failures \| errors \|\| OK \|
-\|——————————————————————–\| \| statements \| 63 \| 63 \| 12 \| 2 \|\| 49
-\| \|——————————————————————–\| \| sentence \| 33 \| 33 \| 0 \| 0 \|\| 33
-\| \|——————————————————————–\| \| discrimination \| 13 \| 13 \| 5 \| 6
-\|\| 2 \| \|——————————————————————–\| \| parser \| 72 \| 72 \| 7 \| 0
-\|\| 65 \| \|——————————————————————–\| \| verbalization \| 76 \| 76 \| 4
-\| 0 \|\| 72 \| \|——————————————————————–\| \| questions \| 42 \| 42 \|
-13 \| 0 \|\| 29 \| \|——————————————————————–\| \| TOTAL \| 299 \| 299 \|
-41 \| 8 \|\| 250 \|
-======================================================================
-
-Total time: 23.148309sec
 
 0.7.0
 -----
@@ -220,22 +187,6 @@ Main changes since 0.6:
 Also, compatibility with the C++ liboro bindings (hence, oro-view) has
 been extended to events.
 
-
-Some stats regarding the unit-tests:
-
-======================================================================
-\| suite \| nb tests \| tests run \| failures \| errors \|\| OK \|
-\|——————————————————————–\| \| statements \| 63 \| 63 \| 14 \| 11 \|\|
-38 \| \|——————————————————————–\| \| sentence \| 33 \| 33 \| 0 \| 0 \|\|
-33 \| \|——————————————————————–\| \| discrimination \| 13 \| 13 \| 4 \|
-7 \|\| 2 \| \|——————————————————————–\| \| parser \| 72 \| 72 \| 7 \| 0
-\|\| 65 \| \|——————————————————————–\| \| verbalization \| 76 \| 76 \| 4
-\| 0 \|\| 72 \| \|——————————————————————–\| \| questions \| 42 \| 42 \|
-11 \| 4 \|\| 27 \| \|——————————————————————–\| \| TOTAL \| 299 \| 299 \|
-40 \| 22 \|\| 237 \|
-======================================================================
-
-Total time: 34.212394sec
 
 0.6.0
 -----
