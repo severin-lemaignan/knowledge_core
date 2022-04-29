@@ -153,7 +153,113 @@ class TestKB(unittest.TestCase):
         )
 
     def test_queries(self):
-        """These tests require a RDFS reasoner!"""
+
+        self.revise(
+            method=ReviseRequest.ADD,
+            statements=[
+                "ari rdf:type Robot",
+                "Robot rdfs:subClassOf Machine",
+                "Robot rdfs:subClassOf Agent",
+                "joe rdf:type Human",
+                "Human rdfs:subClassOf Agent",
+                "joe eats carrot",
+                "ari eats electricity",
+                "eats rdfs:range Food",
+            ],
+        )
+
+        res = self.query(patterns=["?agent rdf:type Robot"])
+        self.assertCountEqual(
+            json.loads(res.json),
+            [
+                {"agent": "ari"},
+            ],
+        )
+
+        res = self.query(
+            patterns=["Robot rdfs:subClassOf ?cls"], vars=None, models=None
+        )
+        self.assertCountEqual(
+            json.loads(res.json),
+            [
+                {"cls": "Machine"},
+                {"cls": "Agent"},
+            ],
+        )
+
+        res = self.query(patterns=["?subcls rdfs:subClassOf ?cls"])
+        self.assertCountEqual(
+            json.loads(res.json),
+            [
+                {"cls": "Machine", "subcls": "Robot"},
+                {"cls": "Agent", "subcls": "Robot"},
+                {"cls": "Agent", "subcls": "Human"},
+            ],
+        )
+
+        res = self.query(
+            patterns=["?subcls rdfs:subClassOf ?cls"], vars=["?cls"], models=None
+        )
+        self.assertCountEqual(
+            json.loads(res.json),
+            [
+                {"cls": "Machine"},
+                {"cls": "Agent"},
+                {"cls": "Agent"},
+            ],
+        )
+
+        res = self.query(patterns=["?__ rdfs:subClassOf Agent"])
+        self.assertCountEqual(
+            json.loads(res.json),
+            [
+                {"var1": "Robot"},
+                {"var1": "Human"},
+            ],
+        )
+
+        res = self.query(
+            patterns=["?agent rdf:type Robot", "?agent eats ?food"],
+            vars=None,
+            models=None,
+        )
+        self.assertCountEqual(
+            json.loads(res.json),
+            [
+                {"agent": "ari", "food": "electricity"},
+            ],
+        )
+
+    def test_sparql(self):
+
+        res = self.sparql(query="SELECT ?a WHERE { ?a :eats ?b . }", models=None)
+
+        self.assertCountEqual(json.loads(res.json)["results"]["bindings"], [])
+
+        self.revise(
+            method=ReviseRequest.ADD,
+            statements=[
+                "joe eats carrot",
+                "ari eats electricity",
+            ],
+        )
+
+        res = self.sparql(query="SELECT ?a WHERE { ?a :eats ?b . }", models=None)
+
+        self.assertEquals(len(json.loads(res.json)["results"]["bindings"]), 2)
+
+        # invalid SPARQL! 'eats' has no namespace
+        res = self.sparql(query="SELECT ?a WHERE { ?a eats ?b . }", models=None)
+        self.assertFalse(res.success)
+
+    def test_reasoning(self):
+        """This test require a RDFS reasoner!"""
+
+        status = json.loads(self.manage(action=ManageRequest.STATUS).json)
+
+        if not status["reasoning_enabled"]:
+            rospy.logwarn("RDFS Reasoner not available/enable. Skipping this test.")
+            return
 
         self.revise(
             method=ReviseRequest.ADD,
@@ -198,28 +304,6 @@ class TestKB(unittest.TestCase):
                 {"agent": "joe", "food": "carrot"},
             ],
         )
-
-    def test_sparql(self):
-
-        res = self.sparql(query="SELECT ?a WHERE { ?a :eats ?b . }", models=None)
-
-        self.assertCountEqual(json.loads(res.json)["results"]["bindings"], [])
-
-        self.revise(
-            method=ReviseRequest.ADD,
-            statements=[
-                "joe eats carrot",
-                "ari eats electricity",
-            ],
-        )
-
-        res = self.sparql(query="SELECT ?a WHERE { ?a :eats ?b . }", models=None)
-
-        self.assertEquals(len(json.loads(res.json)["results"]["bindings"]), 2)
-
-        # invalid SPARQL! 'eats' has no namespace
-        res = self.sparql(query="SELECT ?a WHERE { ?a eats ?b . }", models=None)
-        self.assertFalse(res.success)
 
 
 if __name__ == "__main__":
