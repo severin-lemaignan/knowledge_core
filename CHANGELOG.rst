@@ -3,8 +3,8 @@ Changelog for package minimalkb
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
-Forthcoming
------------
+2.4.0 (2022-04-29)
+------------------
 * increase coverage of ROS Query test + only test reasoning if reasoner available
 * kb.version + export whether reasoner available through ROS Manage service
 * Contributors: Séverin Lemaignan
