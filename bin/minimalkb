@@ -54,7 +54,11 @@ class MinimalKBROS:
                 return ManageResponse(success=True, error_msg="")
 
             elif req.action == ManageRequest.STATUS:
-                status = {"name": kb.hello()}
+                status = {
+                    "name": kb.hello(),
+                    "version": kb.version(),
+                    "reasoning_enabled": kb.reasoner_enabled,
+                }
                 return ManageResponse(
                     success=True, json=json.dumps(status), error_msg=""
                 )

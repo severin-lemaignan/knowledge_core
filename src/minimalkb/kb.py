@@ -248,7 +248,7 @@ class MinimalKB:
 
     def __init__(self, filenames=None, enable_reasoner=True):
 
-        self.reasoner_enabled = enable_reasoner
+        self.reasoner_enabled = has_reasoner and enable_reasoner
         if not self.reasoner_enabled:
             logger.warn("Running without OWL2 RL reasoner.")
 
@@ -291,6 +291,10 @@ class MinimalKB:
     @api
     def hello(self):
         return "MinimalKB, v.%s" % __version__
+
+    @api
+    def version(self):
+        return str(__version__)
 
     @api
     def load(self, filename, models=None):
@@ -963,7 +967,7 @@ class MinimalKB:
             if not g.is_dirty:
                 continue
 
-            if not has_reasoner or not self.reasoner_enabled:
+            if not self.reasoner_enabled:
                 g.materialized_graph = g.graph
             else:
                 r = reasonable.PyReasoner()
