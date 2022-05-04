@@ -30,7 +30,7 @@ setup(
     requires=["rdflib"],
     package_dir={"": "src"},
     packages=["knowledge_core"],
-    # scripts=["bin/knowledge_core"], # commented out, as bin installed via catkin in ROS world
+    scripts=["bin/knowledge_core"],
     data_files=[
         (
             "share/ontologies",
