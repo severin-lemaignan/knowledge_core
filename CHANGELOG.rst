@@ -3,6 +3,12 @@ Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
+Forthcoming
+-----------
+* provide better feedback when running outside of ROS
+* more minimalkb->KnowledgeCore
+* Contributors: Séverin Lemaignan
+
 2.5.0 (2022-05-04)
 ------------------
 * rename project to KnowledgeCore
