@@ -3,8 +3,8 @@ Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
-Forthcoming
------------
+2.5.2 (2022-05-04)
+------------------
 * add back missing files following project renaming
 * Contributors: Séverin Lemaignan
 
