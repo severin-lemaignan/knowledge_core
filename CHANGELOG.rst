@@ -3,8 +3,8 @@ Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
-Forthcoming
------------
+2.5.0 (2022-05-04)
+------------------
 * rename project to KnowledgeCore
 * setup.py: install bin so that the project remains usable via pip
 * Contributors: Séverin Lemaignan
