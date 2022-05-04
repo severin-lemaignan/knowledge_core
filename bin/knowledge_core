@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from minimalkb import __version__
+from knowledge_core import __version__
 
 import logging
 
-logger = logging.getLogger("minimalKB")
+logger = logging.getLogger("KnowledgeCore")
 
 
 import sys
@@ -15,19 +15,19 @@ import traceback
 
 import json
 
-from minimalkb.exceptions import KbServerError
+from knowledge_core.exceptions import KbServerError
 
 PORT = 6969
 
 
-class MinimalKBROS:
+class KnowledgeCoreROS:
     def __init__(self, kb):
         self.kb = kb
 
         import rospy
-        from minimalkb.srv import Manage, Revise, Query, Sparql
+        from knowledge_core.srv import Manage, Revise, Query, Sparql
 
-        rospy.init_node("minimalkb", disable_signals=True)
+        rospy.init_node("knowledge_core", disable_signals=True)
         self.services = {
             "manage": rospy.Service("kb/manage", Manage, self.handle_manage),
             "revise": rospy.Service("kb/revise", Revise, self.handle_revise),
@@ -37,7 +37,7 @@ class MinimalKBROS:
 
     def handle_manage(self, req):
 
-        from minimalkb.srv import ManageResponse, ManageRequest
+        from knowledge_core.srv import ManageResponse, ManageRequest
 
         try:
             if req.action == ManageRequest.CLEAR:
@@ -71,7 +71,7 @@ class MinimalKBROS:
 
     def handle_revise(self, req):
 
-        from minimalkb.srv import ReviseResponse
+        from knowledge_core.srv import ReviseResponse
 
         policy = {"method": req.method, "models": req.models}
         try:
@@ -83,7 +83,7 @@ class MinimalKBROS:
 
     def handle_query(self, req):
 
-        from minimalkb.srv import QueryResponse
+        from knowledge_core.srv import QueryResponse
 
         try:
             res = kb.find(req.patterns, req.vars, req.models)
@@ -93,7 +93,7 @@ class MinimalKBROS:
 
     def handle_sparql(self, req):
 
-        from minimalkb.srv import SparqlResponse
+        from knowledge_core.srv import SparqlResponse
 
         try:
             res = kb.sparql(req.query, req.models)
@@ -104,10 +104,10 @@ class MinimalKBROS:
     def shutdown(self):
         import rospy
 
-        rospy.signal_shutdown("minimalkb closing")
+        rospy.signal_shutdown("knowledge_core closing")
 
 
-class MinimalKBChannel(asynchat.async_chat):
+class KnowledgeCoreChannel(asynchat.async_chat):
     def __init__(self, server, sock, addr, kb):
         asynchat.async_chat.__init__(self, sock)
         self.set_terminator("#end#".encode("utf-8"))
@@ -175,7 +175,7 @@ class MinimalKBChannel(asynchat.async_chat):
         self.push((raw + "#end#\n").encode("utf-8"))
 
 
-class MinimalKBServer(asyncore.dispatcher):
+class KnowledgeCoreServer(asyncore.dispatcher):
     def __init__(self, port, kb):
         asyncore.dispatcher.__init__(self)
 
@@ -188,16 +188,16 @@ class MinimalKBServer(asyncore.dispatcher):
 
     def handle_accept(self):
         conn, addr = self.accept()
-        MinimalKBChannel(self, conn, addr, kb)
+        KnowledgeCoreChannel(self, conn, addr, kb)
 
 
 def version():
-    print("minimalKB %s" % __version__)
+    print("KnowledgeCore %s" % __version__)
 
 
 if __name__ == "__main__":
 
-    from minimalkb.ansistrm import ColorizingStreamHandler
+    from knowledge_core.ansistrm import ColorizingStreamHandler
     import argparse
 
     parser = argparse.ArgumentParser(description="A minimal knowledge base for robots.")
@@ -206,7 +206,7 @@ if __name__ == "__main__":
         "--version",
         action="version",
         version=__version__,
-        help="returns minimalKB version",
+        help="returns KnowledgeCore version",
     )
     parser.add_argument(
         "-q", "--quiet", action="store_true", help="be quiet (only errors are reported)"
@@ -249,17 +249,17 @@ if __name__ == "__main__":
     console.setFormatter(formatter)
     logger.addHandler(console)
 
-    # The logging handlers are now setup, import the other minimalkb components
-    from minimalkb.kb import MinimalKB, KbServerError
+    # The logging handlers are now setup, import the other knowledge_core components
+    from knowledge_core.kb import KnowledgeCore, KbServerError
 
-    kb = MinimalKB(args.ontology, enable_reasoner=args.no_reasoner)
+    kb = KnowledgeCore(args.ontology, enable_reasoner=args.no_reasoner)
 
-    s = MinimalKBServer(args.port, kb)
+    s = KnowledgeCoreServer(args.port, kb)
     logger.info("Starting to serve at port %d..." % args.port)
 
     if args.no_ros:
         logger.info("Initializing the ROS node...")
-        ros = MinimalKBROS(kb)
+        ros = KnowledgeCoreROS(kb)
 
     try:
         while True:
