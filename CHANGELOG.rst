@@ -1,7 +1,13 @@
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Changelog for package minimalkb
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Changelog for package knowledge_core
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+
+Forthcoming
+-----------
+* rename project to KnowledgeCore
+* setup.py: install bin so that the project remains usable via pip
+* Contributors: Séverin Lemaignan
 
 2.4.0 (2022-04-29)
 ------------------
