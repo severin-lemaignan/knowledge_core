@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(minimalkb)
+project(knowledge_core)
 
 
 find_package(catkin REQUIRED COMPONENTS
@@ -28,7 +28,7 @@ catkin_package(
   CATKIN_DEPENDS rospy
 )
 
-catkin_install_python(PROGRAMS bin/minimalkb
+catkin_install_python(PROGRAMS bin/knowledge_core
     DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
 

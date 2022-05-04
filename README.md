@@ -1,9 +1,9 @@
-minimalKB
-=========
+KnowledgeCore
+==============
 
-![Screenshot of a minimalKB knowledge model viewed with oro-view](doc/oroview.jpg)
+![KnowledgeCore icon](icon.png)
 
-minimalKB is a RDFlib-backed minimalistic knowledge base, initially designed
+KnowledgeCore is a RDFlib-backed minimalistic knowledge base, initially designed
 for robots (in particular human-robot interaction or multi-robot interaction).
 
 It stores triples (like RDF/OWL triples), and provides an [API](doc/api.md)
@@ -19,7 +19,7 @@ RL reasoner to provide OWL2 semantics and fast knowledge materialisation.
 Installation
 ------------
 
-**minimalkb only supports Python 3**
+**KnowledgeCore only supports Python 3**
 
 ### Prerequisite
 
@@ -29,7 +29,7 @@ Installation
 $ pip install rdflib
 ```
 
-For reasoning:
+For reasoning (optional):
 
 ```
 $ pip install reasonable
@@ -40,26 +40,26 @@ $ pip install reasonable
 From `pypi`:
 
 ```
-$ pip install minimalkb
+$ pip install knowledge_core
 ```
 
 From source:
 
 ```
-$ git clone https://github.com/severin-lemaignan/minimalkb.git
-$ cd minimalkb
+$ git clone https://github.com/severin-lemaignan/knowledge_core.git
+$ cd knowledge_core
 $ python setup.py install
-$ minimalkb
+$ knowledge_core
 ```
 
 
 Documentation
 -------------
 
-You can use `minimalkb` either as a server, accessible from multiple
+You can use `KnowledgeCore` either as a server, accessible from multiple
 applications (clients), or in *embedded* mode (which does not require to start a
-server process, but is limited to one single component). Note that the embedded
-mode is only available for Python applciations.
+server process, but is limited to one single client). Note that the embedded
+mode is only available for Python applications.
 
 In both case, and if your application is written in Python, it is highly recommended
 to use [pykb](https://github.com/severin-lemaignan/pykb) to interact the
@@ -71,10 +71,10 @@ knowledge base.
 To start the knowledge base as a server, simply type:
 
 ```
-$ minimalkb
+$ knowledge_core
 ```
 
-(run `minimalkb --help` for available options)
+(run `knowledge_core --help` for available options)
 
 Then:
 
@@ -85,11 +85,11 @@ with kb.KB() as kb:
     #...
 ```
 
-See usage examples on the [pykb](https://github.com/severin-lemaignan/pykb) page, or in the `minimalkb` [unit-tests](testing).
+See usage examples on the [pykb](https://github.com/severin-lemaignan/pykb) page, or in the `KnowledgeCore` [unit-tests](testing).
 
 ### Embedded mode
 
-No need to start `minimalkb`. Simply use the following code to start using the
+No need to start `KnowledgeCore`. Simply use the following code to start using the
 knowledge base in your code:
 
 ```python
@@ -99,7 +99,7 @@ with kb.KB(embedded=True) as kb:
     #...
 ```
 
-### Interacting with the minimalkb from other languages
+### Interacting with KnowledgeCore from other languages
 
 - from C++: check [liboro](https://github.com/severin-lemaignan/liboro)
 - from any other language: the communication with the server relies on a simply
@@ -115,12 +115,12 @@ Features
 
 ### Server-Client or embedded
 
-`minimalKB` can be run as a stand-alone (socket) server, or directly embedded
+`KnowledgeCore` can be run as a stand-alone (socket) server, or directly embedded
 in Python applications.
 
 ### Multi-models
 
-`minimalKB` is intended for dynamic environments, with possibly several
+`KnowledgeCore` is intended for dynamic environments, with possibly several
 contexts/agents requiring separate knowledge models.
 
 New models can be created at any time and each operation (like knowledge
@@ -130,13 +130,13 @@ Each models are also independently classified by the reasoner.
 
 ### Event system
 
-`minimalKB` provides a mechanism to *subscribe* to some conditions (like: an
+`KnowledgeCore` provides a mechanism to *subscribe* to some conditions (like: an
 instance of a given type is added to the knowledge base, some statement becomes
 true, etc.) and get notified back.
 
 ### Reasoning
 
-`minimalKB` provides RDFS/OWL reasoning capabilities via the
+`KnowledgeCore` provides RDFS/OWL reasoning capabilities via the
 [reasonable](https://github.com/gtfierro/reasonable) reasoner.
 
 See [reasonable README](https://github.com/gtfierro/reasonable#owl-2-rules) for
@@ -144,14 +144,15 @@ the exact level of support of the different OWL2 RL rules.
 
 ### Transient knowledge
 
-`minimalKB` allows to attach 'lifespans' to statements: after a given duration,
+`KnowledgeCore` allows to attach 'lifespans' to statements: after a given duration,
 they are automatically collected.
 
-**[this functionality is currently unavailable]**
+**[this functionality is currently disabled. Please open an issue of you need it
+urgently]**
 
 ### Ontology walking
 
-`minimalKB` exposes several methods to explore the different ontological models
+`KnowledgeCore` exposes several methods to explore the different ontological models
 of the knowledge base. It is compatible with the visualization tool
 [oro-view](https://github.com/severin-lemaignan/oro-view).
 

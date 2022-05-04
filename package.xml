@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="3">
-  <name>minimalkb</name>
+  <name>knowledge_core</name>
   <version>2.4.0</version>
-  <description>A service-based ROS wrapper around the minimalkb knowledge base</description>
+  <description>The KnowledgeCore knowledge base, including its service-based ROS API</description>
 
   <maintainer email="severin.lemaignan@pal-robotics.com">Séverin Lemaignan</maintainer>
 

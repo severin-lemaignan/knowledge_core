@@ -13,7 +13,7 @@ except ImportError:
     print("You must first install pykb")
     sys.exit(1)
 
-from minimalkb import __version__
+from knowledge_core import __version__
 
 from queue import Empty
 
@@ -389,20 +389,20 @@ class TestSequenceFunctions(unittest.TestCase):
 
 
 def version():
-    print("minimalKB tests %s" % __version__)
+    print("KnowledgeCore tests %s" % __version__)
 
 
 if __name__ == "__main__":
 
     import argparse
 
-    parser = argparse.ArgumentParser(description="Test suite for minimalKB.")
+    parser = argparse.ArgumentParser(description="Test suite for KnowledgeCore.")
     parser.add_argument(
         "-v",
         "--version",
         action="version",
         version=version(),
-        help="returns minimalKB version",
+        help="returns KnowledgeCore version",
     )
     parser.add_argument(
         "-f", "--failfast", action="store_true", help="stops at first failed test"

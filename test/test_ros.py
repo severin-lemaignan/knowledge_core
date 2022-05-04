@@ -1,14 +1,14 @@
 #!/usr/bin/env python
-PKG = "test_minimalkb"
+PKG = "test_knowledge_core"
 
 import rospy
 import unittest
 import json
 
-from minimalkb.srv import Manage, ManageRequest
-from minimalkb.srv import Revise, ReviseRequest
-from minimalkb.srv import Query
-from minimalkb.srv import Sparql
+from knowledge_core.srv import Manage, ManageRequest
+from knowledge_core.srv import Revise, ReviseRequest
+from knowledge_core.srv import Query
+from knowledge_core.srv import Sparql
 
 MANAGE_SRV = "/kb/manage"
 REVISE_SRV = "/kb/revise"
