@@ -3,6 +3,11 @@ Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
+Forthcoming
+-----------
+* add back missing files following project renaming
+* Contributors: Séverin Lemaignan
+
 2.5.1 (2022-05-04)
 ------------------
 * provide better feedback when running outside of ROS
