@@ -3,8 +3,8 @@ Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
-Forthcoming
------------
+2.5.1 (2022-05-04)
+------------------
 * provide better feedback when running outside of ROS
 * more minimalkb->KnowledgeCore
 * Contributors: Séverin Lemaignan
