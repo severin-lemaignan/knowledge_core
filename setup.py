@@ -32,10 +32,6 @@ setup(
     packages=["knowledge_core"],
     scripts=["bin/knowledge_core"],
     data_files=[
-        (
-            "share/ontologies",
-            ["share/ontologies/" + f for f in os.listdir("share/ontologies")],
-        ),
         ("share/doc/knowledge_core", ["LICENSE", "README.md"]),
     ],
 )
