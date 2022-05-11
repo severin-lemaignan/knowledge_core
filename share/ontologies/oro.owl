@@ -14,7 +14,8 @@
      xmlns:owl2xml="http://www.w3.org/2006/12/owl2-xml#">
     <owl:Ontology rdf:about="http://kb.openrobots.org">
         <dc:creator>CNRS-LAAS</dc:creator>
-        <dc:date>2008-2011</dc:date>
+        <dc:creator>PAL Robotics</dc:creator>
+        <dc:date>2008-2022</dc:date>
         <dc:rights>Creative Commons 3.0 by</dc:rights>
         <dc:title xml:lang="en">OpenRobots Ontology - Common Sense</dc:title>
         <rdfs:comment xml:lang="en">This ontology is a part of the OpenRobots Ontology (ORO) project.
