@@ -785,8 +785,8 @@ class KnowledgeCore:
         query on each models separately.
 
         A list of dictionaries is returned with possible combination of values
-        for the different variables. For instance, find(["?agent", "?action"],
-        ["?agent desires ?action", "?action rdf:type Jump"]) would return
+        for the different variables. For instance, find(["?agent desires
+        ?action", "?action rdf:type Jump"],["?agent","?action"]) would return
         something like: [{"agent":"james", "action": "jumpHigh"}, {"agent":
         "laurel", "action":"jumpHigher"}]
 
