@@ -179,7 +179,7 @@ if __name__ == "__main__":
         while True:
             asyncore.loop(
                 timeout=0.02, count=1
-            )  # event will be notified at worst 20ms after they are trigged
+            )  # event will be notified at worst 20ms after they are triggered
             kb.process()
     except KeyboardInterrupt:
         if args.no_ros:

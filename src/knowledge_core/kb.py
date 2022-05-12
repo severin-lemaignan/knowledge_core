@@ -314,6 +314,7 @@ class KnowledgeCore:
     def clear(self):
         logger.warn("Clearing the knowledge base!")
         self.active_evts.clear()
+        self.eventsubscriptions.clear()
 
         for m, g in self.models.items():
             self.ds.remove_graph(g.graph)
@@ -951,6 +952,15 @@ class KnowledgeCore:
                     self.active_evts.remove(e)
                     del self.eventsubscriptions[e.id]
 
+    def remove_event(self, evt_id):
+        del self.eventsubscriptions[evt_id]
+        evts_to_remove = []
+        for e in self.active_evts:
+            if e.id == evt_id:
+                evts_to_remove.append(e)
+        for e in evts_to_remove:
+            self.active_evts.remove(e)
+
     def materialise(self, models=None):
 
         start = time.time()
@@ -1056,13 +1066,7 @@ class KnowledgeCore:
                 logger.debug(
                     "No one interested in event %s anymore. Removing it" % evt_id
                 )
-                del self.eventsubscriptions[evt_id]
-                evts_to_remove = []
-                for e in self.active_evts:
-                    if e.id == evt_id:
-                        evts_to_remove.append(e)
-                for e in evts_to_remove:
-                    self.active_evts.remove(e)
+                self.remove_event(evt_id)
             ###############
 
             logger.info("Closing connection to client.")
