@@ -656,28 +656,12 @@ class KnowledgeCore:
 
         models = self.normalize_models(policy.get("models", []))
 
-        if policy["method"] in ["add", "safe_add"]:
+        if policy["method"] in ["update", "safe_update", "add", "safe_add", "revision"]:
 
-            lifespan = policy.get("lifespan", 0)
-
-            logger.info(
-                "Adding to "
-                + str(list(models))
-                + ":\n\t- "
-                + parsed_stmts
-                + (" (lifespan: %ssec)" % lifespan if lifespan else "")
-            )
-            for model in models:
-                self.models[model].graph += subgraph  # TODO: lifespan
-                self.models[model].is_dirty = True
-
-        elif policy["method"] == "retract":
-            logger.info("Deleting from " + str(list(models)) + ":\n\t- " + parsed_stmts)
-            for model in models:
-                self.models[model].graph -= subgraph
-                self.models[model].is_dirty = True
-
-        elif policy["method"] in ["update", "safe_update", "revision"]:
+            if policy["method"].startswith("safe"):
+                logger.warn("Warning: %s is not implemented. Performing %s instead." % (policy["method"], policy["method"][5:]))
+            if policy["method"].endswith("add"):
+                logger.warn("Warning: %s is deprecated. Performing update instead." % (policy["method"]))
 
             lifespan = policy.get("lifespan", 0)
 
@@ -696,15 +680,24 @@ class KnowledgeCore:
                     else:
                         self.models[model].graph.add((s, p, o))  # TODO: lifespan
                 self.models[model].is_dirty = True
+
+        elif policy["method"] == "retract":
+            logger.info("Deleting from " + str(list(models)) + ":\n\t- " + parsed_stmts)
+            for model in models:
+                self.models[model].graph -= subgraph
+                self.models[model].is_dirty = True
+
         else:
             raise KbServerError("Unknown method in revise: %s" % policy["method"])
 
         self.onupdate()
 
     @api
+    @compat
     def add(self, stmts, models=None, lifespan=0):
+        logger.warn("Warning: <add> is deprecated. Performing <update> instead.")
         return self.revise(
-            stmts, {"method": "add", "models": models, "lifespan": lifespan}
+            stmts, {"method": "update", "models": models, "lifespan": lifespan}
         )
 
     @api
