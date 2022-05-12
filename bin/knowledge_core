@@ -14,103 +14,7 @@ import socket
 
 import json
 
-from knowledge_core.exceptions import KbServerError
-
 PORT = 6969
-
-
-class KnowledgeCoreROS:
-    def __init__(self, kb):
-        self.kb = kb
-
-        try:
-            import rospy
-            from knowledge_core.srv import Manage, Revise, Query, Sparql
-        except ImportError:
-            print(
-                "Unable to load the ROS support. You might want to run with --no-ros"
-                " to use KnowledgeCore without ROS support enabled."
-            )
-            sys.exit(1)
-
-        rospy.init_node("knowledge_core", disable_signals=True)
-        self.services = {
-            "manage": rospy.Service("kb/manage", Manage, self.handle_manage),
-            "revise": rospy.Service("kb/revise", Revise, self.handle_revise),
-            "query": rospy.Service("kb/query", Query, self.handle_query),
-            "sparql": rospy.Service("kb/sparql", Sparql, self.handle_sparql),
-        }
-
-    def handle_manage(self, req):
-
-        from knowledge_core.srv import ManageResponse, ManageRequest
-
-        try:
-            if req.action == ManageRequest.CLEAR:
-                kb.clear()
-                return ManageResponse(success=True, error_msg="")
-
-            elif req.action == ManageRequest.LOAD:
-                if len(req.parameters) != 1:
-                    return ManageResponse(
-                        success=False,
-                        error_msg="'load' expects 'parameters' to contain exactly one URI pointing to the ontology to load",
-                    )
-                kb.load(req.parameters[0], models=req.models)
-                return ManageResponse(success=True, error_msg="")
-
-            elif req.action == ManageRequest.STATUS:
-                status = {
-                    "name": kb.hello(),
-                    "version": kb.version(),
-                    "reasoning_enabled": kb.reasoner_enabled,
-                }
-                return ManageResponse(
-                    success=True, json=json.dumps(status), error_msg=""
-                )
-            else:
-                return ManageResponse(
-                    success=False, error_msg="Unknown 'manage' action: %s" % req.action
-                )
-        except KbServerError as kbe:
-            return ManageResponse(success=False, error_msg=str(kbe))
-
-    def handle_revise(self, req):
-
-        from knowledge_core.srv import ReviseResponse
-
-        policy = {"method": req.method, "models": req.models}
-        try:
-            kb.revise(req.statements, policy)
-
-            return ReviseResponse(success=True, error_msg="")
-        except KbServerError as kbe:
-            return ReviseResponse(success=False, error_msg=str(kbe))
-
-    def handle_query(self, req):
-
-        from knowledge_core.srv import QueryResponse
-
-        try:
-            res = kb.find(req.patterns, req.vars, req.models)
-            return QueryResponse(success=True, error_msg="", json=json.dumps(res))
-        except KbServerError as kbe:
-            return QueryResponse(success=False, error_msg=str(kbe))
-
-    def handle_sparql(self, req):
-
-        from knowledge_core.srv import SparqlResponse
-
-        try:
-            res = kb.sparql(req.query, req.models)
-            return SparqlResponse(success=True, error_msg="", json=json.dumps(res))
-        except KbServerError as kbe:
-            return SparqlResponse(success=False, error_msg=str(kbe))
-
-    def shutdown(self):
-        import rospy
-
-        rospy.signal_shutdown("knowledge_core closing")
 
 
 class KnowledgeCoreChannel(asynchat.async_chat):
@@ -267,6 +171,8 @@ if __name__ == "__main__":
 
     if args.no_ros:
         logger.info("Initializing the ROS node...")
+        from knowledge_core.knowledge_core_ros import KnowledgeCoreROS
+
         ros = KnowledgeCoreROS(kb)
 
     try:
