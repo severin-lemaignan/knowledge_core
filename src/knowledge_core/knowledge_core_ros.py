@@ -13,7 +13,7 @@ import json
 
 from knowledge_core.exceptions import KbServerError
 
-from knowledge_core.srv import Manage, Revise, Query, Sparql
+from knowledge_core.srv import Manage, Revise, Query, Sparql, Event
 from std_msgs.msg import String
 
 
@@ -22,17 +22,19 @@ class KnowledgeCoreROS:
         self.kb = kb
 
         rospy.init_node("knowledge_core", disable_signals=True)
-        self.services = {
-            "manage": rospy.Service("kb/manage", Manage, self.handle_manage),
-            "revise": rospy.Service("kb/revise", Revise, self.handle_revise),
-            "query": rospy.Service("kb/query", Query, self.handle_query),
-            "sparql": rospy.Service("kb/sparql", Sparql, self.handle_sparql),
-        }
 
         self.update_sub = rospy.Subscriber("/kb/add_fact", String, self.on_update_fact)
         self.retract_sub = rospy.Subscriber(
             "/kb/remove_fact", String, self.on_retract_fact
         )
+
+        self.services = {
+            "manage": rospy.Service("kb/manage", Manage, self.handle_manage),
+            "revise": rospy.Service("kb/revise", Revise, self.handle_revise),
+            "query": rospy.Service("kb/query", Query, self.handle_query),
+            "event": rospy.Service("kb/events", Event, self.handle_new_event),
+            "sparql": rospy.Service("kb/sparql", Sparql, self.handle_sparql),
+        }
 
         rospy.loginfo(
             """
@@ -44,19 +46,24 @@ Knowledge base started.
 Available topics:
 - /kb/add_fact [std_msgs/String]
 - /kb/remove_fact [std_msgs/String]
+- /kb/events/<id> [std_msgs/String] for 
+  each subscribed event
 
 Available services:
 - /kb/manage [knowledge_core/Manage]
 - /kb/revise [knowledge_core/Revise]
 - /kb/query [knowledge_core/Query]
 - /kb/sparql [knowledge_core/Sparql]
-
-
-Available action servers:
-- /kb/events [knowledge_core/Events]
+- /kb/events [knowledge_core/Event]
 
 """
         )
+
+    def on_update_fact(self, msg):
+        self.kb.update([msg.data])
+
+    def on_retract_fact(self, msg):
+        self.kb.remove([msg.data])
 
     def handle_manage(self, req):
 
@@ -124,11 +131,47 @@ Available action servers:
         except KbServerError as kbe:
             return SparqlResponse(success=False, error_msg=str(kbe))
 
-    def on_update_fact(self, msg):
-        self.kb.update([msg.data])
+    def handle_new_event(self, req):
 
-    def on_retract_fact(self, msg):
-        self.kb.remove([msg.data])
+        from knowledge_core.srv import EventResponse
+
+        class EvtRelay:
+            def __init__(self, evt_id, kb):
+                self.evt = evt_id
+                self.kb = kb
+                self.has_been_subscribed = False
+                self.pub = rospy.Publisher("/kb/events/" + evt_id, String, latch=False)
+
+            def sendmsg(self, msg):
+
+                if self.pub.get_num_connections() == 0:
+                    if self.has_been_subscribed:
+                        rospy.logwarn(
+                            "No-one listing to event <%s> anymore; removing it."
+                            % self.evt
+                        )
+                        self.kb.remove_event(self.evt)
+                        self.pub.unregister()
+                else:
+                    self.has_been_subscribed = True
+
+                    evt = msg[1]
+                    rospy.loginfo(
+                        "Event <" + evt.id + "> triggered. Notifying ROS clients"
+                    )
+                    evt_msg = String()
+                    evt_msg.data = json.dumps(evt.content)
+                    self.pub.publish(evt_msg)
+
+        evt = self.kb.subscribe(req.patterns, req.one_shot, req.models)
+
+        evt_relay = EvtRelay(evt, self.kb)
+
+        rospy.logwarn("Subscribed to event " + evt)
+
+        self.kb.eventsubscriptions.setdefault(evt, []).append(evt_relay)
+
+        return EventResponse(id=evt)
 
     def shutdown(self):
 
