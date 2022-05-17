@@ -26,6 +26,9 @@ try:
     import reasonable
 
     has_reasoner = True
+    logger.info(
+        "reasonable OWL2 RL reasoner available. Running with reasoning enabled."
+    )
 except ImportError:
     logger.warning(
         "reasonable OWL2 RL reasoner not available. Install it with `pip install reasonable`. Running without reasoning."
@@ -855,7 +858,7 @@ class KnowledgeCore:
         evaluated against the set of asserted and inferred triples. If at least
         one triple is returned, the event is fired.
 
-        The terms bounded to the named variables in the patterns are attached to
+        The terms bound to the named variables in the patterns are attached to
         the fired event.
 
         For instance:
@@ -975,7 +978,7 @@ class KnowledgeCore:
         end = time.time()
 
         if end - start > 0.0001:  # did we actually classify anything?
-            logger.debug(
+            logger.info(
                 "Materialisation performed by reasoner in %.1fms"
                 % ((end - start) * 1000)
             )
