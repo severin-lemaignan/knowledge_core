@@ -4,7 +4,6 @@ PKG = "test_knowledge_core"
 import rospy
 import unittest
 import json
-
 from knowledge_core.srv import Manage, ManageRequest
 from knowledge_core.srv import Revise, ReviseRequest
 from knowledge_core.srv import Query
@@ -309,4 +308,6 @@ class TestKB(unittest.TestCase):
 if __name__ == "__main__":
     import rostest
 
-    rostest.rosrun(PKG, "test_kb", TestKB)
+    rospy.init_node("knowledge_core_ros_test")
+
+    rostest.rosrun(PKG, "test_kb_ros", TestKB)
