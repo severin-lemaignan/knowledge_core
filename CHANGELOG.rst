@@ -2,8 +2,8 @@
 Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.5.4 (2022-05-30)
+------------------
 * add missing dep on message_runtime
 * move ROS back to own file + add support for adding/removing facts via topics
 * [api] add now an alias for update
