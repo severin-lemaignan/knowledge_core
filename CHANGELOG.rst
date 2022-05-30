@@ -3,6 +3,13 @@ Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
+Forthcoming
+-----------
+* remove ontologies from this repo
+  Ontologies are stored in an independent repo (oro)
+* minor maintainance (doc, copyright...)
+* Contributors: Séverin Lemaignan
+
 2.5.2 (2022-05-04)
 ------------------
 * add back missing files following project renaming
