@@ -99,7 +99,7 @@ class TestKBEvents(unittest.TestCase):
         self.evt_active = False
 
         evt = self.events(patterns=["?human rdf:type Human"], one_shot=False)
-        rospy.Subscriber(EVENTS_NS + evt.id, String, self.on_evt, queue_size=10)
+        rospy.Subscriber(evt.topic, String, self.on_evt, queue_size=10)
 
         self.check_event(should_trigger=False)
 
@@ -165,7 +165,7 @@ class TestKBEvents(unittest.TestCase):
         self.evt_active = False
 
         evt = self.events(patterns=["?human rdf:type Human"], one_shot=True)
-        rospy.Subscriber(EVENTS_NS + evt.id, String, self.on_evt, queue_size=10)
+        rospy.Subscriber(evt.topic, String, self.on_evt, queue_size=10)
 
         self.revise(
             method=ReviseRequest.ADD,
@@ -191,7 +191,7 @@ class TestKBEvents(unittest.TestCase):
         self.evt_active = False
 
         evt = self.events(patterns=["?human rdf:type Human"], one_shot=False)
-        sub = rospy.Subscriber(EVENTS_NS + evt.id, String, self.on_evt, queue_size=10)
+        sub = rospy.Subscriber(evt.topic, String, self.on_evt, queue_size=10)
 
         self.revise(
             method=ReviseRequest.ADD,
@@ -234,10 +234,10 @@ class TestKBEvents(unittest.TestCase):
         self.evt_active = False
 
         evt = self.events(patterns=["?s rdf:type Human"], one_shot=False)
-        rospy.Subscriber(EVENTS_NS + evt.id, String, self.on_evt, queue_size=10)
+        rospy.Subscriber(evt.topic, String, self.on_evt, queue_size=10)
 
         evt2 = self.events(patterns=["?s rdf:type Robot"], one_shot=False)
-        rospy.Subscriber(EVENTS_NS + evt2.id, String, self.on_other_evt, queue_size=10)
+        rospy.Subscriber(evt2.topic, String, self.on_other_evt, queue_size=10)
 
         self.check_event(should_trigger=False)
         self.check_event(should_trigger=False, other_evt=True)
