@@ -5,6 +5,7 @@ KnowledgeCore
 
 KnowledgeCore is a RDFlib-backed minimalistic knowledge base, initially designed
 for robots (in particular human-robot interaction or multi-robot interaction).
+It features full [ROS](https://www.ros.org) support.
 
 It stores triples (like RDF/OWL triples), and provides an [API](doc/api.md)
 accessible via a simple socket protocol.
@@ -56,6 +57,10 @@ $ knowledge_core
 Documentation
 -------------
 
+### General usage
+
+**If you are a roboticist, [jump to ROS usage](#ros-usage)**
+
 You can use `KnowledgeCore` either as a server, accessible from multiple
 applications (clients), or in *embedded* mode (which does not require to start a
 server process, but is limited to one single client). Note that the embedded
@@ -65,7 +70,7 @@ In both case, and if your application is written in Python, it is highly recomme
 to use [pykb](https://github.com/severin-lemaignan/pykb) to interact the
 knowledge base.
 
-### Server mode
+#### Server mode
 
 
 To start the knowledge base as a server, simply type:
@@ -87,7 +92,7 @@ with kb.KB() as kb:
 
 See usage examples on the [pykb](https://github.com/severin-lemaignan/pykb) page, or in the `KnowledgeCore` [unit-tests](testing).
 
-### Embedded mode
+#### Embedded mode
 
 No need to start `KnowledgeCore`. Simply use the following code to start using the
 knowledge base in your code:
@@ -99,16 +104,41 @@ with kb.KB(embedded=True) as kb:
     #...
 ```
 
-### Interacting with KnowledgeCore from other languages
+#### Interacting with KnowledgeCore from other languages
 
 - from C++: check [liboro](https://github.com/severin-lemaignan/liboro)
 - from any other language: the communication with the server relies on a simply
   socket-based text protocol. Feel free to get in touch if you need help to add
   support for your favourite language!
 
-### How do I get that fancy image on top of the README?
+#### How do I get that fancy image on top of the README?
 
 Check [oro-view](https://github.com/severin-lemaignan/oro-view) ;-)
+
+### ROS usage
+
+To start:
+
+```
+rosrun knowledge_core knowledge_core
+```
+
+Then, `knowledge_core` exposes two topics, `/kb/add_facts` and
+`/kb/remove_facts`, to add/remove triples to the knowledge base. Both topics
+expect a simple string with 3 tokens separated by spaces (if the object is a
+literal string, use double quotes to escape it).
+
+It also exposes the following services:
+
+- `/kb/revise` to add/remove facts using a synchronous interface
+- `/kb/query` to perform simple queries
+- `/kb/sparql` to perform complex queries (full SPARQL end-point)
+- `/kb/events` to subscribe to 'events' by providing a (set of) partially-bound
+  triples. Calling the service returns an event *id*. Subscribe then to
+  `/kb/events/<id>` to be notified everytime a new instance/class match the
+  provided pattern
+- `/kb/manage` to manage the knowledge base (including eg clearing all the
+  facts)
 
 Features
 --------
