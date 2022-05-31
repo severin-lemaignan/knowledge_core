@@ -16,6 +16,8 @@ from knowledge_core.exceptions import KbServerError
 from knowledge_core.srv import Manage, Revise, Query, Sparql, Event
 from std_msgs.msg import String
 
+EVENTS_TOPIC_NS = "/kb/events/"
+
 
 class KnowledgeCoreROS:
     def __init__(self, kb):
@@ -140,7 +142,9 @@ Available services:
                 self.evt = evt_id
                 self.kb = kb
                 self.has_been_subscribed = False
-                self.pub = rospy.Publisher("/kb/events/" + evt_id, String, latch=False)
+                self.pub = rospy.Publisher(
+                    EVENTS_TOPIC_NS + evt_id, String, latch=False
+                )
 
             def sendmsg(self, msg):
 
@@ -171,7 +175,7 @@ Available services:
 
         self.kb.eventsubscriptions.setdefault(evt, []).append(evt_relay)
 
-        return EventResponse(id=evt)
+        return EventResponse(id=evt, topic=EVENTS_TOPIC_NS + evt)
 
     def shutdown(self):
 

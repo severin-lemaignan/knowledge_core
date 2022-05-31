@@ -8,8 +8,12 @@ bool one_shot
 string[] models
 
 ---
-# Result: the event id.
-# You can subscribe to the topic '/kb/events/<id>' to be notified 
-# every time the event is triggered.
+# Result:
+
+# the event id.
 string id
+
+# topic to subscribe to to be notified 
+# every time the event is triggered.
+string topic
 
