@@ -2,6 +2,21 @@
 Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* support events via ROS service + topics
+  One subscribe to an event via the /kb/events [Event.srv] service.
+  The service returns an event id corresponding to a topic (eg
+  /kb/events/evt_1234) that the client can subscribe to to be notified
+  when the event triggers.
+  /examples/kb_events_ros.py provides an example.
+* added initial unittests for events
+  Unit-tests includes a case for 2 events being subscribed to
+  simulteanously.
+* set the asyncore loop timeout to 20ms for much more responsive events
+* [doc] briefly document ROS support
+* Contributors: Séverin Lemaignan
+
 2.5.4 (2022-05-30)
 ------------------
 * add missing dep on message_runtime
