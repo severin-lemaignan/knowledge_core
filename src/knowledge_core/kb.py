@@ -809,7 +809,7 @@ class KnowledgeCore:
         if not vars:
             vars = get_all_variables(patterns)
             if len(vars) == 0:
-                return self.exist(patterns, models)
+                return patterns if self.exist(patterns, models) else []
 
         models = self.normalize_models(models)
 
