@@ -29,7 +29,7 @@ setup(
     url="https://github.com/severin-lemaignan/knowledge_core",
     requires=["rdflib"],
     package_dir={"": "src"},
-    packages=["knowledge_core"],
+    packages=["knowledge_core", "knowledge_core.api"],
     scripts=["bin/knowledge_core"],
     data_files=[
         ("share/doc/knowledge_core", ["LICENSE", "README.md"]),
