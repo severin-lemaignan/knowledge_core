@@ -13,7 +13,7 @@ import json
 
 from knowledge_core.exceptions import KbServerError
 
-from knowledge_core.srv import Manage, Revise, Query, Sparql, Event
+from knowledge_core.srv import Manage, Revise, Query, About, Sparql, Event
 from std_msgs.msg import String
 
 EVENTS_TOPIC_NS = "/kb/events/"
@@ -34,6 +34,7 @@ class KnowledgeCoreROS:
             "manage": rospy.Service("kb/manage", Manage, self.handle_manage),
             "revise": rospy.Service("kb/revise", Revise, self.handle_revise),
             "query": rospy.Service("kb/query", Query, self.handle_query),
+            "about": rospy.Service("kb/about", About, self.handle_about),
             "event": rospy.Service("kb/events", Event, self.handle_new_event),
             "sparql": rospy.Service("kb/sparql", Sparql, self.handle_sparql),
         }
@@ -55,6 +56,7 @@ Available services:
 - /kb/manage [knowledge_core/Manage]
 - /kb/revise [knowledge_core/Revise]
 - /kb/query [knowledge_core/Query]
+- /kb/about [knowledge_core/About]
 - /kb/sparql [knowledge_core/Sparql]
 - /kb/events [knowledge_core/Event]
 
@@ -122,6 +124,16 @@ Available services:
             return QueryResponse(success=True, error_msg="", json=json.dumps(res))
         except KbServerError as kbe:
             return QueryResponse(success=False, error_msg=str(kbe))
+
+    def handle_about(self, req):
+
+        from knowledge_core.srv import AboutResponse
+
+        try:
+            res = self.kb.about(req.term, req.models)
+            return AboutResponse(success=True, error_msg="", json=json.dumps(res))
+        except KbServerError as kbe:
+            return AboutResponse(success=False, error_msg=str(kbe))
 
     def handle_sparql(self, req):
 
