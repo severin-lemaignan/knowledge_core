@@ -74,7 +74,7 @@ N3_PROLOGUE += (
 from .exceptions import KbServerError
 from knowledge_core import __version__
 
-#from .services import lifespan
+# from .services import lifespan
 
 from .helpers import memoize
 
@@ -96,7 +96,10 @@ def parse_stmts_to_graph(stmts):
 
     for stmt in stmts:
         if " " not in stmt:
-            raise KbServerError("invalid syntax for statement %s: it should be formed of 3 terms." % stmt)
+            raise KbServerError(
+                "invalid syntax for statement %s: it should be formed of 3 terms."
+                % stmt
+            )
         data += " %s . " % stmt
 
     try:
@@ -165,12 +168,14 @@ def shorten_graph(graph):
 def get_variables(stmt):
     return [v for v in stmt if isinstance(v, Variable)]
 
+
 def get_all_variables(stmts):
     vars = []
     for p in stmts:
-       vars += [v.n3() for v in get_variables(parse_stmt(p))]
+        vars += [v.n3() for v in get_variables(parse_stmt(p))]
 
     return vars
+
 
 class dotdict(dict):
     """dot.notation access to dictionary attributes"""
@@ -208,7 +213,7 @@ class Event:
 
         self.previous_instances = set()
 
-        instances = self.kb.find( self.patterns, self.vars, frozenset(self.models))
+        instances = self.kb.find(self.patterns, self.vars, frozenset(self.models))
         logger.debug("Creating a event with initial instances %s" % instances)
 
         self.previous_instances = set([hashabledict(row) for row in instances])
@@ -327,6 +332,9 @@ class KnowledgeCore:
 
     @api
     def about(self, raw_term, models=None):
+        """returns the list of triples where `term` is either subject,
+        predicate or object
+        """
 
         result = []
 
@@ -663,9 +671,15 @@ class KnowledgeCore:
         if policy["method"] in ["update", "safe_update", "add", "safe_add", "revision"]:
 
             if policy["method"].startswith("safe"):
-                logger.warn("Warning: %s is not implemented. Performing %s instead." % (policy["method"], policy["method"][5:]))
+                logger.warn(
+                    "Warning: %s is not implemented. Performing %s instead."
+                    % (policy["method"], policy["method"][5:])
+                )
             if policy["method"].endswith("add"):
-                logger.warn("Warning: %s is deprecated. Performing update instead." % (policy["method"]))
+                logger.warn(
+                    "Warning: %s is deprecated. Performing update instead."
+                    % (policy["method"])
+                )
 
             lifespan = policy.get("lifespan", 0)
 
@@ -832,7 +846,6 @@ class KnowledgeCore:
         else:
             vars_naked = ["var%s" % (i + 1) for i in range(len(vars))]
 
-
         for model in models:
             q = "SELECT %s WHERE {\n" % " ".join(vars)
             for p in normalised_patterns:
@@ -843,9 +856,7 @@ class KnowledgeCore:
 
             res += [
                 dict(zip(vars_naked, r))
-                for r in [
-                    shorten(self.models[model].graph, row) for row in sparql_res
-                ]
+                for r in [shorten(self.models[model].graph, row) for row in sparql_res]
             ]
 
         logger.info("Found: " + str(res))
@@ -915,6 +926,7 @@ class KnowledgeCore:
         logger.debug("Executing SPARQL query in model: %s\n%s" % (model, q))
 
         import pyparsing
+
         try:
             return self.models[model].materialized_graph.query(q), q
         except pyparsing.ParseException:
