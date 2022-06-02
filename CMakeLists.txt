@@ -17,6 +17,7 @@ add_service_files(
   Revise.srv
   Query.srv
   About.srv
+  Lookup.srv
   Event.srv
   Sparql.srv
 )
