@@ -3,6 +3,7 @@ KnowledgeCore
 
 KnowledgeCore is a RDFlib-backed minimalistic knowledge base, initially designed
 for robots (in particular human-robot interaction or multi-robot interaction).
+It features full `ROS <https://www.ros.org>`__ support.
 
 It stores triples (like RDF/OWL triples), and provides an API accessible
 via a simple socket protocol.
@@ -11,12 +12,50 @@ via a simple socket protocol.
 idiomatic Python binding, making easy to integrate the knowledge base in
 your applications.
 
-It has almost no features, except it is fast and simple. Basic RDFS
-reasoning is provided.
+It integrates with the `reasonable <https://github.com/gtfierro/reasonable>`__ OWL2
+RL reasoner to provide OWL2 semantics and fast knowledge materialisation.
 
-Written in Python. The only required dependency is ``sqlite3``. If
-``rdflib`` is also available, you can easily import existing ontologies
-in RDF/OWL/n3/Turtle formats in the knowledge base.
+
+Installation
+------------
+
+**KnowledgeCore only supports Python 3**
+
+Prerequisite
+~~~~~~~~~~~~
+
+``rdlib >= 6.0.0``:
+
+::
+
+   $ pip install rdflib
+
+
+For reasoning (optional):
+
+::
+
+   $ pip install reasonable
+
+
+Installation
+~~~~~~~~~~~~
+
+From ``pypi``:
+
+::
+
+   $ pip install knowledge_core
+
+
+From source:
+
+::
+
+   $ git clone https://github.com/severin-lemaignan/knowledge_core.git
+   $ cd knowledge_core
+   $ python setup.py install
+   $ knowledge_core
 
 Documentation
 -------------
@@ -75,6 +114,33 @@ Interacting with KnowledgeCore from other languages
 -  from any other language: the communication with the server relies on
    a simply socket-based text protocol. Feel free to get in touch if you
    need help to add support for your favourite language!
+
+ROS usage
+~~~~~~~~~
+
+To start:
+
+::
+
+   rosrun knowledge_core knowledge_core
+
+
+Then, ``knowledge_core`` exposes two topics, ``/kb/add_facts`` and
+``/kb/remove_facts``, to add/remove triples to the knowledge base. Both topics
+expect a simple string with 3 tokens separated by spaces (if the object is a
+literal string, use double quotes to escape it).
+
+It also exposes the following services:
+
+- ``/kb/revise`` to add/remove facts using a synchronous interface
+- ``/kb/query`` to perform simple queries
+- ``/kb/sparql`` to perform complex queries (full SPARQL end-point)
+- ``/kb/events`` to subscribe to 'events' by providing a (set of) partially-bound
+  triples. Calling the service returns an event *id*. Subscribe then to
+  ``/kb/events/<id>`` to be notified everytime a new instance/class match the
+  provided pattern
+- ``/kb/manage`` to manage the knowledge base (including eg clearing all the
+  facts)
 
 Features
 --------
