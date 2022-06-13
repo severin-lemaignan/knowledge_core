@@ -2,8 +2,8 @@
 Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.6.1 (2022-06-13)
+------------------
 * [api] add (back) ability to save the knowledge base
 * Contributors: Séverin Lemaignan
 
