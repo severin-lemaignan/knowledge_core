@@ -3,6 +3,7 @@ import logging
 logger = logging.getLogger("KnowledgeCore." + __name__)
 
 import time
+import pathlib
 
 from queue import Queue, Empty
 import traceback
@@ -314,6 +315,16 @@ class KnowledgeCore:
             self.models[model].is_dirty = True
 
         self.onupdate()
+
+    @api
+    def save(self, path=None, basename="kb", models=None):
+
+        path = pathlib.Path(path)
+        models = self.normalize_models(models)
+        for model in models:
+            filename = path / (basename + "-" + model + ".rdf")
+            logger.info("Saving knowledge base (model <%s>) to %s" % (model, filename))
+            self.models[model].graph.serialize(str(filename), format="xml")
 
     @api
     def clear(self):

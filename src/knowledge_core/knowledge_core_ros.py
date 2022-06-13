@@ -84,9 +84,24 @@ Available services:
                 if len(req.parameters) != 1:
                     return ManageResponse(
                         success=False,
-                        error_msg="'load' expects 'parameters' to contain exactly one URI pointing to the ontology to load",
+                        error_msg="'load' expects 'parameters' to contain "
+                        "exactly one URI pointing to the ontology to load",
                     )
+
                 self.kb.load(req.parameters[0], models=req.models)
+                return ManageResponse(success=True, error_msg="")
+
+            elif req.action == ManageRequest.SAVE:
+                if len(req.parameters) != 2:
+                    return ManageResponse(
+                        success=False,
+                        error_msg="'save' expects 'parameters' to contain "
+                        "exactly two values: the path and the basename. The "
+                        "knowledge base will be saved as "
+                        "`path/basename-<model>.xml (one file per model)",
+                    )
+
+                self.kb.save(req.parameters[0], req.parameters[1], models=req.models)
                 return ManageResponse(success=True, error_msg="")
 
             elif req.action == ManageRequest.STATUS:
