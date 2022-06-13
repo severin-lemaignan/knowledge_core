@@ -4,17 +4,42 @@ Changelog for package knowledge_core
 
 Forthcoming
 -----------
+
+Major changes:
+
+* [api] pythonic API over ROS
+  To use:
+  ```
+  from knowledge_core.api import KB
+  kb = KB()
+  ```
+  then:
+  ```
+  kb += "ari rdf:type Human"
+  kb -= "ari rdf:type Human"
+  if "ari rdf:type Human":
+  print("come one, ARI is not a human!")
+  def on_robot(evt):
+  print("new robots! %s" % evt)
+  kb.subscribe("* rdf:type Robot", on_robot)
+  kb += ["tiago rdf:type Robot", "ari rdf:type Robot"]
+  ```
+  ...and more
 * support events via ROS service + topics
   One subscribe to an event via the /kb/events [Event.srv] service.
   The service returns an event id corresponding to a topic (eg
   /kb/events/evt_1234) that the client can subscribe to to be notified
   when the event triggers.
   /examples/kb_events_ros.py provides an example.
-* added initial unittests for events
-  Unit-tests includes a case for 2 events being subscribed to
-  simulteanously.
-* set the asyncore loop timeout to 20ms for much more responsive events
+* [api] add support for the 'lookup' API
+* [api] add support for the 'about' API
+
+Other changes:
+
+* [api] fix inconsistency in return type of 'find'
 * [doc] briefly document ROS support
+* set the asyncore loop timeout to 20ms for much more responsive events
+
 * Contributors: Séverin Lemaignan
 
 2.5.4 (2022-05-30)
