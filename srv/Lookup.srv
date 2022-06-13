@@ -1,0 +1,24 @@
+# Search the knowledge base for a term matching a string. The search is
+# performed both on terms' names and on label.
+#
+# Returns the list of found terms, alongside with their type (one of instance,
+# class, datatype_property, object_property, literal)
+
+
+string query
+
+string[] models
+
+---
+# Result:
+bool success
+
+# a JSON-encoded list of triples, representing the result of the ABOUT
+# method.
+string json
+
+# if success = False, error_msg might contain additional information about the
+# failure.
+string error_msg
+
+

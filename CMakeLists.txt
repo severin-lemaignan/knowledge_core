@@ -16,6 +16,8 @@ add_service_files(
   Manage.srv
   Revise.srv
   Query.srv
+  About.srv
+  Lookup.srv
   Event.srv
   Sparql.srv
 )
@@ -35,6 +37,7 @@ catkin_install_python(PROGRAMS bin/knowledge_core
 
 if(CATKIN_ENABLE_TESTING)
   find_package(rostest REQUIRED)
-  add_rostest(test/test_ros_events.test)
-  add_rostest(test/test_ros.test)
+  add_rostest(test/test_pythonic_api_ros.test)
+  #add_rostest(test/test_ros_events.test)
+  #add_rostest(test/test_ros.test)
 endif()
