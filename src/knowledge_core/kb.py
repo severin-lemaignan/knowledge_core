@@ -215,7 +215,7 @@ class Event:
         self.previous_instances = set()
 
         instances = self.kb.find(self.patterns, self.vars, frozenset(self.models))
-        logger.debug("Creating a event with initial instances %s" % instances)
+        logger.info("Creating a event with initial instances %s" % instances)
 
         self.previous_instances = set([hashabledict(row) for row in instances])
 
@@ -934,7 +934,7 @@ class KnowledgeCore:
         q = SPARQL_PREFIXES  # TODO: as a (potential?) optimization, pass initNs to graph.query, instead of adding the PREFIX strings to the query
         q += query
 
-        logger.debug("Executing SPARQL query in model: %s\n%s" % (model, q))
+        logger.info("Executing SPARQL query in model: %s\n%s" % (model, q))
 
         import pyparsing
 
@@ -1086,7 +1086,7 @@ class KnowledgeCore:
                 if len(clients) == 0:
                     evts_id_to_remove.append(evt_id)
             for evt_id in evts_id_to_remove:
-                logger.debug(
+                logger.info(
                     "No one interested in event %s anymore. Removing it" % evt_id
                 )
                 self.remove_event(evt_id)
@@ -1113,7 +1113,7 @@ class KnowledgeCore:
                 res = f()
             msg = ("ok", res)
         except Exception as e:
-            logger.debug(traceback.format_exc())
+            logger.info(traceback.format_exc())
             logger.error("request failed: %s" % e)
             msg = ("error", e)
 
