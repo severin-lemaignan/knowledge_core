@@ -194,6 +194,10 @@ Available services:
 
             def sendmsg(self, msg):
 
+                if self.pub.impl is None:
+                    # publisher already unregistered from a different thread -- just ignore that message
+                    return
+
                 if self.pub.get_num_connections() == 0:
                     if self.has_been_subscribed:
                         rospy.logwarn(
