@@ -214,8 +214,9 @@ class Event:
 
         self.previous_instances = set()
 
+        logger.info("Creating new event. Looking existing matchs...")
         instances = self.kb.find(self.patterns, self.vars, frozenset(self.models))
-        logger.info("Creating a event with initial instances %s" % instances)
+        logger.info("Event created with initial instances %s" % instances)
 
         self.previous_instances = set([hashabledict(row) for row in instances])
 
@@ -934,7 +935,7 @@ class KnowledgeCore:
         q = SPARQL_PREFIXES  # TODO: as a (potential?) optimization, pass initNs to graph.query, instead of adding the PREFIX strings to the query
         q += query
 
-        logger.info("Executing SPARQL query in model: %s\n%s" % (model, q))
+        logger.debug("Executing SPARQL query in model: %s\n%s" % (model, q))
 
         import pyparsing
 
@@ -962,6 +963,8 @@ class KnowledgeCore:
             self._instancesof("owl:FunctionalProperty", False)
         )
 
+        if self.active_evts:
+            logger.info("Checking the %s active event handler(s) against new facts" % len(self.active_evts))
         for e in list(self.active_evts):
             if e.evaluate():
                 clients = self.eventsubscriptions[e.id]
