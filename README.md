@@ -37,6 +37,10 @@ kb.subscribe(["?robot isIn ?place", "?place belongsTo antonio", "?robot rdf:type
 
 kb += "kitchen belongsTo antonio"
 
+# try as well:
+# kb -= "antonio looksAt ari" to remove facts
+# kb["* rdf:type Robot"] to query the knowledge base
+
 rospy.spin()
 ```
 
