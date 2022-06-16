@@ -16,6 +16,35 @@ binding, making easy to integrate the knowledge base in your applications.
 It integrates with the [reasonable](https://github.com/gtfierro/reasonable) OWL2
 RL reasoner to provide OWL2 semantics and fast knowledge materialisation.
 
+Example
+-------
+
+```python
+
+from knowledge_core.api import KB
+
+rospy.init_node("test_knowledge_base")
+
+kb = KB()
+
+def onRobotEnteringAntonioProperty(evt):
+  print("A robot entered Antonio's %s: %s" (evt[0]["place"], evt[0]["robot"]))
+
+kb += "ari rdf:type Robot"  
+kb += ["antonio looksAt ari", "ari isIn kitchen"]
+
+kb.subscribe(["?robot isIn ?place", "?place belongsTo antonio", "?robot rdf:type Robot"], onRobotEnteringAntonioProperty)
+
+kb += "kitchen belongsTo antonio"
+
+rospy.spin()
+```
+
+will print:
+
+```
+A robot entered Antonio's kitchen: ari
+```
 
 Installation
 ------------
