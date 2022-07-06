@@ -46,10 +46,13 @@ list of agents looking at 'something'.
 
 ### Models
 
+Models can be understood as independent knowledge bases, meant for instance to 
+store the (guessed) knowledge of the humans that are interacting with the robot.
+
 Several methods take an optional `models` parameter. If set to `None` or to an
 empty list, the method will update/query statements in the robot's base
 cognitive model. If set to a list containing a single string `all`, all the
-existing models are update/queried. Otherwise, you can pass a list of modelsyou
+existing models are update/queried. Otherwise, you can pass a list of models you
 want to update/query.
 
 ### Methods
