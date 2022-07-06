@@ -155,15 +155,17 @@ Check [oro-view](https://github.com/severin-lemaignan/oro-view) ;-)
 
 ### ROS usage
 
-To start:
+**Please first read the general [API introduction](doc/api.md), as this applies to the ROS interface as well.**
+
+To start the ROS node:
 
 ```
 rosrun knowledge_core knowledge_core
 ```
 
-**Note that, in general, you might want to use the 'Pythonic' wrapper built on top of the low-level ROS service API. See example above. This Pythonic interface follows the [`pykb`](https://gitlab/interaction/pykb/) API (except in a few corner case that are not supported by the ROS interface).**
+**Note that, in general, you want to use the 'Pythonic' wrapper built on top of the low-level ROS topics/services API. See example above. This Pythonic interface follows the [`pykb`](https://gitlab/interaction/pykb/) API (except in a few corner case that are not supported by the ROS interface).**
 
-Then, `knowledge_core` exposes two topics, `/kb/add_facts` and
+`knowledge_core` exposes two topics, `/kb/add_facts` and
 `/kb/remove_facts`, to add/remove triples to the knowledge base. Both topics
 expect a simple string with 3 tokens separated by spaces (if the object is a
 literal string, use double quotes to escape it).
