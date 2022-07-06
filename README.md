@@ -8,16 +8,19 @@ for robots (in particular human-robot interaction or multi-robot interaction).
 It features full [ROS](https://www.ros.org) support.
 
 It stores triples (like RDF/OWL triples), and provides an [API](doc/api.md)
-accessible via a simple socket protocol.
+accessible via a simple socket protocol or a ROS wrapper.
 
 [pykb](https://github.com/severin-lemaignan/pykb) provides an idiomatic Python
-binding, making easy to integrate the knowledge base in your applications.
+binding over the socket interface, making easy to integrate the knowledge base in your application.
+A similar API wrapper exists for ROS as well (see example below).
 
 It integrates with the [reasonable](https://github.com/gtfierro/reasonable) OWL2
 RL reasoner to provide OWL2 semantics and fast knowledge materialisation.
 
 Example
 -------
+
+This example uses the ROS API (see below), with some Pythonic syntatic sugar:
 
 ```python
 
@@ -27,7 +30,7 @@ rospy.init_node("test_knowledge_base")
 
 kb = KB()
 
-def onRobotEnteringAntonioProperty(evt):
+def on_robot_entering_antonio_property(evt):
   print("A robot entered Antonio's %s: %s" (evt[0]["place"], evt[0]["robot"]))
 
 kb += "ari rdf:type Robot"  
@@ -57,7 +60,7 @@ Installation
 
 ### Prerequisite
 
-`rdlib >= 6.0.0`:
+`rdflib >= 6.0.0`:
 
 ```
 $ pip install rdflib
@@ -85,6 +88,8 @@ $ cd knowledge_core
 $ python setup.py install
 $ knowledge_core
 ```
+
+If using ROS, you can also use your regular catkin workflow.
 
 
 Documentation
@@ -155,6 +160,9 @@ To start:
 ```
 rosrun knowledge_core knowledge_core
 ```
+
+**Note that, in general, you might want to use the 'Pythonic' wrapper built on top of the low-level ROS service API. See example above. This Pythonic interface follows the [`pykb`](https://gitlab/interaction/pykb/) API (except in a few corner case that are not supported by the ROS interface). 
+**
 
 Then, `knowledge_core` exposes two topics, `/kb/add_facts` and
 `/kb/remove_facts`, to add/remove triples to the knowledge base. Both topics
