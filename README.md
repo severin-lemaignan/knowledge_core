@@ -8,7 +8,7 @@ for robots (in particular human-robot interaction or multi-robot interaction).
 It features full [ROS](https://www.ros.org) support.
 
 It stores triples (like RDF/OWL triples), and provides an [API](doc/api.md)
-accessible via a simple socket protocol or a ROS wrapper.
+accessible via a simple socket protocol or a [ROS wrapper](#ros-usage).
 
 [pykb](https://github.com/severin-lemaignan/pykb) provides an idiomatic Python
 binding over the socket interface, making easy to integrate the knowledge base in your application.
