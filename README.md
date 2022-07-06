@@ -161,8 +161,7 @@ To start:
 rosrun knowledge_core knowledge_core
 ```
 
-**Note that, in general, you might want to use the 'Pythonic' wrapper built on top of the low-level ROS service API. See example above. This Pythonic interface follows the [`pykb`](https://gitlab/interaction/pykb/) API (except in a few corner case that are not supported by the ROS interface). 
-**
+**Note that, in general, you might want to use the 'Pythonic' wrapper built on top of the low-level ROS service API. See example above. This Pythonic interface follows the [`pykb`](https://gitlab/interaction/pykb/) API (except in a few corner case that are not supported by the ROS interface).**
 
 Then, `knowledge_core` exposes two topics, `/kb/add_facts` and
 `/kb/remove_facts`, to add/remove triples to the knowledge base. Both topics
