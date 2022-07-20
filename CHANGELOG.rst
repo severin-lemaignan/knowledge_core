@@ -2,8 +2,8 @@
 Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.7.0 (2022-07-20)
+------------------
 * add missing space in SPAQRL prefixes
 * [api] expose 'stats' to the ROS py wrapper
 * [minor] improve debug message experience
