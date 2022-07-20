@@ -55,6 +55,10 @@ class KB:
         res = self._manage_srv(action=ManageRequest.STATUS)
         return json.loads(res.json)["name"]
 
+    def stats(self):
+        res = self._manage_srv(action=ManageRequest.STATUS)
+        return json.loads(res.json)
+
     def clear(self):
         self._manage_srv(action=ManageRequest.CLEAR)
 
