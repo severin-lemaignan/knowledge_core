@@ -2,6 +2,16 @@
 Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* add missing space in SPAQRL prefixes
+* [api] expose 'stats' to the ROS py wrapper
+* [minor] improve debug message experience
+* Update README.md with example of how to use the ROS API
+* increase logging level of several msgs
+* fix corner case where trying to publish to unregistered evt topic
+* Contributors: Séverin Lemaignan
+
 2.6.1 (2022-06-13)
 ------------------
 * [api] add (back) ability to save the knowledge base
