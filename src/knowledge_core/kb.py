@@ -64,8 +64,10 @@ SPARQL_PREFIXES = "".join(["PREFIX %s: <%s>\n" % (p, iri) for p, iri in IRIS.ite
 SPARQL_PREFIXES += "PREFIX : <%s>\n" % IRIS[DEFAULT_PREFIX]
 SPARQL_PREFIXES += "BASE <%s>\n" % IRIS[DEFAULT_PREFIX]
 
+
+# reference: https://www.w3.org/TeamSubmission/n3/#syntax
 N3_PROLOGUE = " ".join(["@prefix %s: <%s>." % (p, iri) for p, iri in IRIS.items()])
-N3_PROLOGUE += "@prefix : <%s>. " % IRIS[DEFAULT_PREFIX]
+N3_PROLOGUE += " @prefix : <%s>. " % IRIS[DEFAULT_PREFIX]
 N3_PROLOGUE += "@base <%s>. " % IRIS[DEFAULT_PREFIX]
 N3_PROLOGUE += (
     "@keywords a,true,false. "  # see https://www.w3.org/TeamSubmission/n3/#keywords
