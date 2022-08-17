@@ -828,7 +828,7 @@ class KnowledgeCore:
         renamed `var1`, `var2`, etc.
         """
 
-        if not vars:
+        if not vars or (len(vars) == 1 and vars[0] == ""):
             vars = get_all_variables(patterns)
             if len(vars) == 0:
                 return patterns if self.exist(patterns, models) else []
