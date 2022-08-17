@@ -2,8 +2,8 @@
 Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.8.0 (2022-08-17)
+------------------
 * fix KB.find to properly handle ROS queries with no variable specified
   It now returns all present variables instead of an error
 * output literal as python/JSON literal instead of XSD ones
