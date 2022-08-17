@@ -782,6 +782,8 @@ class KnowledgeCore:
 
         model = list(models)[0]
 
+        logger.info("Executing SPARQL query in model: %s\n%s" % (model, query))
+
         sparql_res, query = self._sparql(model, query)
 
         import json
@@ -966,7 +968,10 @@ class KnowledgeCore:
         )
 
         if self.active_evts:
-            logger.info("Checking the %s active event handler(s) against new facts" % len(self.active_evts))
+            logger.info(
+                "Checking the %s active event handler(s) against new facts"
+                % len(self.active_evts)
+            )
         for e in list(self.active_evts):
             if e.evaluate():
                 clients = self.eventsubscriptions[e.id]

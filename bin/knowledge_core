@@ -175,6 +175,8 @@ if __name__ == "__main__":
 
         ros = KnowledgeCoreROS(kb)
 
+    logger.info("KnowledgeCore ready")
+
     try:
         while True:
             asyncore.loop(
