@@ -144,6 +144,8 @@ def shorten_term(graph, term):
 
     if isinstance(term, URIRef):
         return graph.qname(term)
+    elif isinstance(term, Literal):
+        return term.value()
     else:
         return term.n3()
 
@@ -154,6 +156,8 @@ def shorten(graph, stmt):
     for t in stmt:
         if isinstance(t, URIRef):
             res.append(graph.qname(t))
+        elif isinstance(t, Literal):
+            res.append(t.value)
         else:
             res.append(t.n3())
     return res
@@ -678,7 +682,9 @@ class KnowledgeCore:
             raise KbServerError("A list of statements is expected")
 
         subgraph = parse_stmts_to_graph(stmts)
-        parsed_stmts = "\n\t- ".join([" ".join(s) for s in shorten_graph(subgraph)])
+        parsed_stmts = "\n\t- ".join(
+            [" ".join([str(t) for t in s]) for s in shorten_graph(subgraph)]
+        )
 
         models = self.normalize_models(policy.get("models", []))
 
@@ -832,7 +838,7 @@ class KnowledgeCore:
         patterns = [parse_stmt(p) for p in patterns]
 
         parsed_patterns = "\n\t- ".join(
-            [" ".join(s) for s in shortenN(self.models[DEFAULT_MODEL].graph, patterns)]
+            [" ".join([str(t) for t in s]) for s in shortenN(self.models[DEFAULT_MODEL].graph, patterns)]
         )
 
         normalised_patterns = [" ".join([t.n3() for t in stmt]) for stmt in patterns]
