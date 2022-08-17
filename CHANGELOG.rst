@@ -2,6 +2,14 @@
 Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* fix KB.find to properly handle ROS queries with no variable specified
+  It now returns all present variables instead of an error
+* output literal as python/JSON literal instead of XSD ones
+* minor debug msg changes
+* Contributors: Séverin Lemaignan
+
 2.7.0 (2022-07-20)
 ------------------
 * add missing space in SPAQRL prefixes
