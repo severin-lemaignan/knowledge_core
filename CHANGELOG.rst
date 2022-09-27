@@ -2,6 +2,12 @@
 Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* add dependency on reasonable
+* update pypi doc
+* Contributors: Séverin Lemaignan
+
 2.8.0 (2022-08-17)
 ------------------
 * fix KB.find to properly handle ROS queries with no variable specified
