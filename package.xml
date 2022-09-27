@@ -7,6 +7,7 @@
   <maintainer email="severin.lemaignan@pal-robotics.com">Séverin Lemaignan</maintainer>
 
   <license>BSD</license>
+  <url>https://github.com/severin-lemaignan/knowledge_core</url>
   <author email="severin.lemaignan@pal-robotics.com">Séverin Lemaignan</author>
 
   <buildtool_depend>catkin</buildtool_depend>
@@ -16,6 +17,7 @@
   <build_depend>rostest</build_depend>
   <depend>std_msgs</depend>
   <depend>python3-rdflib</depend>
+  <depend>python3-reasonable</depend>
 
   <export>
   </export>
