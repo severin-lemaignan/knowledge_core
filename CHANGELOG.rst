@@ -2,8 +2,8 @@
 Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.8.1 (2022-09-27)
+------------------
 * add dependency on reasonable
 * update pypi doc
 * Contributors: Séverin Lemaignan
