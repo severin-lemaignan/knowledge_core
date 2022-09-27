@@ -16,6 +16,42 @@ It integrates with the `reasonable <https://github.com/gtfierro/reasonable>`__ O
 RL reasoner to provide OWL2 semantics and fast knowledge materialisation.
 
 
+Example
+-------
+
+This example uses the ROS API (see below), with some Pythonic syntatic sugar:
+
+.. code:: python
+
+   from knowledge_core.api import KB
+   
+   rospy.init_node("test_knowledge_base")
+   
+   kb = KB()
+   
+   def on_robot_entering_antonio_property(evt):
+     print("A robot entered Antonio's %s: %s" (evt[0]["place"], evt[0]["robot"]))
+   
+   kb += "ari rdf:type Robot"  
+   kb += ["antonio looksAt ari", "ari isIn kitchen"]
+   
+   kb.subscribe(["?robot isIn ?place", "?place belongsTo antonio", "?robot rdf:type Robot"], onRobotEnteringAntonioProperty)
+   
+   kb += "kitchen belongsTo antonio"
+   
+   # try as well:
+   # kb -= "antonio looksAt ari" to remove facts
+   # kb["* rdf:type Robot"] to query the knowledge base
+   
+   rospy.spin()
+
+
+will print:
+
+```
+A robot entered Antonio's kitchen: ari
+```
+
 Installation
 ------------
 
