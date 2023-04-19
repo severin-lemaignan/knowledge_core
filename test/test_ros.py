@@ -88,6 +88,81 @@ class TestKB(unittest.TestCase):
             ],
         )
 
+    def test_retract_wildcards(self):
+
+        self.assertTrue(
+            self.revise(
+                statements=[
+                    "ari rdf:type Robot",
+                    "ari isIn kitchen",
+                    "tiago rdf:type Robot",
+                    "tiago isIn living_room",
+                ],
+                method=ReviseRequest.ADD,
+            )
+        )
+
+        self.assertTrue(
+            self.revise(
+                statements=["ari ?p ?o"],
+                method=ReviseRequest.DELETE,
+            )
+        )
+
+        res = self.query(["ari ?p ?o"], None, None)
+        self.assertFalse(json.loads(res.json))
+
+        self.assertTrue(
+            self.revise(
+                statements=["tiago isIn ?loc"],
+                method=ReviseRequest.DELETE,
+            )
+        )
+
+        res = self.query(["tiago ?p ?o"], None, None)
+        self.assertCountEqual(
+            json.loads(res.json),
+            [{"p": "rdf:type", "o": "Robot"}, {"p": "rdf:type", "o": "owl:Thing"}],
+        )
+
+        self.assertTrue(
+            self.revise(
+                statements=["?robot rdf:type Robot"],
+                method=ReviseRequest.DELETE,
+            )
+        )
+
+        res = self.query(["?s rdf:type Robot"], None, None)
+        self.assertFalse(json.loads(res.json))
+
+        self.assertTrue(
+            self.revise(
+                statements=["stockbot rdf:type Robot", "talos rdf:type Robot"],
+                method=ReviseRequest.ADD,
+            )
+        )
+
+        self.assertTrue(
+            self.revise(
+                statements=["stockbot ?p ?o", "talos ?a ?b"],
+                method=ReviseRequest.DELETE,
+            )
+        )
+
+        res = self.query(["?s rdf:type Robot"], None, None)
+        self.assertFalse(json.loads(res.json))
+
+        self.assertTrue(
+            self.revise(
+                statements=[
+                    "stockbot rdf:type Robot",
+                    "talos rdf:type Robot",
+                    "talos isIn ",
+                ],
+                method=ReviseRequest.ADD,
+            )
+        )
+
     def test_errors(self):
 
         self.assertFalse(
