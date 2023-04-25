@@ -2,6 +2,11 @@
 Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* add launch file
+* Contributors: Séverin Lemaignan
+
 2.8.1 (2022-09-27)
 ------------------
 * add dependency on reasonable
