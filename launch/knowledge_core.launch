@@ -1,0 +1,8 @@
+<launch>
+
+  <arg name="default_kb" default="$(find knowledge_core)/../ontologies/oro.owl"/>
+
+  <node name="knowledge_core" pkg="knowledge_core" type="knowledge_core" args="$(arg default_kb)" output='screen'>
+  </node>
+
+</launch>
