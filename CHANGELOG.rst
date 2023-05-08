@@ -2,8 +2,8 @@
 Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.8.4 (2023-05-08)
+------------------
 * added test for wildcard retracting
 * wildcard retracting
   allowing wildcards when retracting entries from the knowledge
