@@ -2,6 +2,11 @@
 Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* add diagnostics publishing
+* Contributors: Séverin Lemaignan
+
 2.8.4 (2023-05-08)
 ------------------
 * added test for wildcard retracting
