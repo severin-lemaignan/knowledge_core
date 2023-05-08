@@ -11,6 +11,7 @@ except ImportError:
 
 import json
 
+from diagnostic_msgs.msg import DiagnosticArray, DiagnosticStatus
 from knowledge_core.exceptions import KbServerError
 
 from knowledge_core.srv import Manage, Revise, Query, About, Lookup, Sparql, Event
@@ -18,12 +19,19 @@ from std_msgs.msg import String
 
 EVENTS_TOPIC_NS = "/kb/events/"
 
+DIAGNOSTICS_FREQUENCY = 1  # Hz
+
 
 class KnowledgeCoreROS:
     def __init__(self, kb):
         self.kb = kb
 
         rospy.init_node("knowledge_core", disable_signals=True)
+
+        self.diagnostics_pub = rospy.Publisher(
+            "/diagnostics", DiagnosticArray, queue_size=1
+        )
+        self.last_diagnostics_ts = rospy.Time()
 
         self.update_sub = rospy.Subscriber("/kb/add_fact", String, self.on_update_fact)
         self.retract_sub = rospy.Subscriber(
@@ -226,6 +234,29 @@ Available services:
         self.kb.eventsubscriptions.setdefault(evt, []).append(evt_relay)
 
         return EventResponse(id=evt, topic=EVENTS_TOPIC_NS + evt)
+
+    def step(self):
+        now = rospy.Time.now()
+
+        if (now - self.last_diagnostics_ts).to_sec() > 1 / DIAGNOSTICS_FREQUENCY:
+            if self.kb.reasoner_enabled:
+                msg = DiagnosticStatus(
+                    level=DiagnosticStatus.OK,
+                    name="Reasoning: Knowledge base",
+                    message="Knowledge base running, with OWL/RDF reasoner enabled",
+                )
+            else:
+                msg = DiagnosticStatus(
+                    level=DiagnosticStatus.WARN,
+                    name="Reasoning: Knowledge base",
+                    message="Knowledge base running, but OWL/RDF reasoner not enabled",
+                )
+            arr = DiagnosticArray()
+            arr.header.stamp = rospy.Time.now()
+            arr.status = [msg]
+            self.diagnostics_pub.publish(arr)
+
+            self.last_diagnostics_ts = now
 
     def shutdown(self):
 

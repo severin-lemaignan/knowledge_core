@@ -183,6 +183,8 @@ if __name__ == "__main__":
                 timeout=0.02, count=1
             )  # event will be notified at worst 20ms after they are triggered
             kb.process()
+            ros.step()
+
     except KeyboardInterrupt:
         if args.no_ros:
             ros.shutdown()

@@ -6,6 +6,7 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   message_generation
   std_msgs
+  diagnostic_msgs
   rostest
 )
 
