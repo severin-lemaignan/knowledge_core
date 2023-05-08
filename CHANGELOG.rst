@@ -2,6 +2,16 @@
 Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* added test for wildcard retracting
+* wildcard retracting
+  allowing wildcards when retracting entries from the knowledge
+  base. E.g., retracting 'some_subj ?p ?o' will now delete any triplet
+  from the specified model in the knowledge base where the subject
+  is 'some_subj'.
+* Contributors: Séverin Lemaignan, lorenzoferrini
+
 2.8.3 (2023-04-25)
 ------------------
 * add launch file
