@@ -2,8 +2,8 @@
 Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.8.5 (2023-05-08)
+------------------
 * add diagnostics publishing
 * Contributors: Séverin Lemaignan
 
