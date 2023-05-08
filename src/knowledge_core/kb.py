@@ -681,6 +681,8 @@ class KnowledgeCore:
         if isinstance(stmts, str):
             raise KbServerError("A list of statements is expected")
 
+        vars = get_all_variables(stmts)
+
         subgraph = parse_stmts_to_graph(stmts)
         parsed_stmts = "\n\t- ".join(
             [" ".join([str(t) for t in s]) for s in shorten_graph(subgraph)]
@@ -689,6 +691,9 @@ class KnowledgeCore:
         models = self.normalize_models(policy.get("models", []))
 
         if policy["method"] in ["update", "safe_update", "add", "safe_add", "revision"]:
+
+            if len(vars) > 0:
+                raise KbServerError("You can not add/update statements containing variables: %s" % stmts)
 
             if policy["method"].startswith("safe"):
                 logger.warn(
@@ -720,6 +725,41 @@ class KnowledgeCore:
                 self.models[model].is_dirty = True
 
         elif policy["method"] == "retract":
+
+            if len(vars) > 0:
+
+                if len(stmts) > 1:
+                    raise KbServerError("Removing multiple statements that \
+                            include variables or wildcards is not supported. \
+                            Wildcards are only permitted with a single \
+                            pattern.")
+
+                # we've been provided with a pattern that contains at least one variable.
+                # find() all matching values for the varaible(s), and reconstruct the final
+                # list of statements to retract that match that pattern.
+
+                res = self.find(stmts)
+
+                for tok in stmts[0].split():
+                    # if the token is *not* a variable, add it to the find() results 'as it'
+                    if not tok.startswith("?"):
+                        for e in res:
+                            e[tok] = tok
+
+                # tok_order is a copy of the pattern, without the leading '?'
+                tok_order = [tok[1:] if tok.startswith("?") else tok for tok in stmts[0].split()]
+
+                # final list of statments to remove
+                new_stmts = []
+                for e in res:
+                    new_stmts.append(" ".join([e[tok_order[0]], e[tok_order[1]], e[tok_order[2]]]))
+                
+                subgraph = parse_stmts_to_graph(new_stmts)
+                parsed_stmts = "\n\t- ".join(
+                [" ".join([str(t) for t in s]) for s in shorten_graph(subgraph)]
+                )
+
+
             logger.info("Deleting from " + str(list(models)) + ":\n\t- " + parsed_stmts)
             for model in models:
                 self.models[model].graph -= subgraph
