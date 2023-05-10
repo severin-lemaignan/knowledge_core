@@ -2,8 +2,8 @@
 Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.8.6 (2023-05-10)
+------------------
 * fix bug in wildcard retract when objects are literals
 * Contributors: Séverin Lemaignan
 
