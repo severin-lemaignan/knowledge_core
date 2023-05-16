@@ -2,6 +2,11 @@
 Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* more robustely parse RDF terms
+* Contributors: Séverin Lemaignan
+
 2.8.7 (2023-05-11)
 ------------------
 * bump version
