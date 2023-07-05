@@ -2,6 +2,11 @@
 Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* bump version
+* Contributors: Séverin Lemaignan
+
 2.8.9 (2023-07-05)
 ------------------
 * fixed representation of string + fix logic of lookup() for RDFS.label
