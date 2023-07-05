@@ -2,8 +2,8 @@
 Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.8.10 (2023-07-05)
+-------------------
 * bump version
 * Contributors: Séverin Lemaignan
 
