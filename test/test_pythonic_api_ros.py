@@ -143,9 +143,10 @@ class TestPythonicROSKb(unittest.TestCase):
         self.assertCountEqual(self.kb.lookup("alfred"), [["alfred", "instance"]])
 
         self.kb += ['nono rdfs:label "alfred"']
+        self.kb += ['sentence rdfs:label "alfred is a charming person"']
         self.assertCountEqual(
             self.kb.lookup("alfred"), [["alfred", "instance"], ["nono", "undecided"]]
-        )
+        )  # 'sentence' should *not* be included
 
         self.kb += ['gerard rdfs:label "likes"']
         self.assertCountEqual(

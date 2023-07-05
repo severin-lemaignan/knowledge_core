@@ -160,7 +160,10 @@ def shorten(graph, stmt):
         if isinstance(t, URIRef):
             res.append(graph.qname(t))
         elif isinstance(t, Literal):
-            res.append(t.value)
+            lit = t.toPython()
+            if isinstance(lit, str):
+                lit = '"%s"' % lit
+            res.append(lit)
         else:
             res.append(t.n3())
     return res
@@ -412,7 +415,7 @@ class KnowledgeCore:
         for s, p, o in about:
             if s == resource or p == resource or o == resource:
                 matching_concepts.add(resource)
-            elif p == shorten_term(self.models[DEFAULT_MODEL].graph, RDFS.label):
+            elif p == shorten_term(self.models[DEFAULT_MODEL].graph, RDFS.label) and o == '"%s"' % resource:
                 matching_concepts.add(s)
 
         res = [(concept, self.typeof(concept, models)) for concept in matching_concepts]
