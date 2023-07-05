@@ -2,6 +2,13 @@
 Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* fixed representation of string + fix logic of lookup() for RDFS.label
+* fix exception when using wildcard statement retractation
+  While here, removed from the unittest the unsupported case of multiple statements with wildcards
+* Contributors: Séverin Lemaignan
+
 2.8.8 (2023-05-16)
 ------------------
 * more robustely parse RDF terms
