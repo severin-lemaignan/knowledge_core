@@ -2,8 +2,8 @@
 Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.8.9 (2023-07-05)
+------------------
 * fixed representation of string + fix logic of lookup() for RDFS.label
 * fix exception when using wildcard statement retractation
   While here, removed from the unittest the unsupported case of multiple statements with wildcards
