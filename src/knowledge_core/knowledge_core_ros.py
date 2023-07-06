@@ -18,6 +18,7 @@ from diagnostic_msgs.msg import DiagnosticArray, DiagnosticStatus
 from knowledge_core.exceptions import KbServerError
 
 from kb_msgs.srv import Manage, Revise, Query, About, Lookup, Sparql, Event
+from kb_msgs.msg import ActiveConcepts
 from std_msgs.msg import String
 
 EVENTS_TOPIC_NS = "events/"
@@ -114,6 +115,10 @@ class KnowledgeCoreROS(Node):
             String, "add_fact", self.on_update_fact, 10)
         self.retract_sub = self.create_subscription(
             String, "remove_fact", self.on_retract_fact, 10)
+
+        self.active_concepts_pub = self.create_publisher(
+            ActiveConcepts, "active_concepts", 1)
+        self._current_active_concepts = set()
 
         self.create_service(Manage, "manage",  self.handle_manage)
         self.create_service(Revise, "revise",  self.handle_revise)
@@ -388,6 +393,17 @@ Available services:
             self.diagnostics_pub.publish(arr)
 
             self.last_diagnostics_ts = now
+
+        active_concepts = set(self.kb.active_concepts)
+        if active_concepts != self._current_active_concepts:
+            active_concepts_msg = ActiveConcepts()
+
+            for c in active_concepts:
+                active_concepts_msg.concepts.append(c)
+                self.get_logger().info(f"marking {c} as active")
+
+            self.active_concepts_pub.publish(active_concepts_msg)
+            self._current_active_concepts = active_concepts
 
         rclpy.spin_once(self, timeout_sec=0)
 

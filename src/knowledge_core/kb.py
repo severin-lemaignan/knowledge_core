@@ -48,7 +48,7 @@ def stable_hash(s, p="", o="", model=""):
 DEFAULT_MODEL = "default"
 REASONER_RATE = 5  # Hz
 EXPIRED_STMTS_CHECK_RATE = 1  # Hz
-ACTIVE_CONCEPT_LIFESPAN = 5 #sec
+ACTIVE_CONCEPT_LIFESPAN = 5  # sec
 
 IRIS = {
     "oro": "http://kb.openrobots.org#",
@@ -78,10 +78,13 @@ N3_PROLOGUE += (
     "@keywords a,true,false. "  # see https://www.w3.org/TeamSubmission/n3/#keywords
 )
 
-def ORO(term : str):
+
+def ORO(term: str):
     return URIRef(IRIS[DEFAULT_PREFIX] + term)
 
+
 EXPIRES_ON_TERM = ORO("expiresOn")
+
 
 def api(fn):
     fn._api = True
@@ -296,7 +299,7 @@ class KnowledgeCore:
     MEMORYPROFILE_DEFAULT = ""
     MEMORYPROFILE_SHORTTERM = "SHORTTERM"
 
-    def __init__(self, filenames=None, enable_reasoner=True, auto_activeconcepts = False):
+    def __init__(self, filenames=None, enable_reasoner=True, auto_activeconcepts=False):
         """
         :param filenames: a list of path to ontologies to pre-load in the
         knowledge base
@@ -312,6 +315,7 @@ class KnowledgeCore:
             logger.warn("Running without OWL2 RL reasoner.")
 
         self.auto_activeconcepts = auto_activeconcepts
+        self.active_concepts = set()
 
         _api = [
             getattr(self, fn) for fn in dir(self) if hasattr(getattr(self, fn), "_api")
@@ -902,18 +906,20 @@ class KnowledgeCore:
 
         self.onupdate()
 
-    def mark_active_concept(self, term : Node, model : str):
+    def mark_active_concept(self, term: Node, model: str):
         expiry_date = date_time(time.time() + ACTIVE_CONCEPT_LIFESPAN)
         subgraph = Graph()
         for p, iri in IRIS.items():
             subgraph.bind(p, iri)
         subgraph.bind("", IRIS[DEFAULT_PREFIX])
-        
-        subgraph.add((term, RDF.type, ORO("ActiveConcept")))
-        logger.info("Marking <%s> as ActiveConcept" % shorten_term(subgraph,term))
-        self.models[model].graph += subgraph
-        self.models[model].metadata.add((subgraph, EXPIRES_ON_TERM, Literal(expiry_date,datatype=XSD.dateTime)))
 
+        subgraph.add((term, RDF.type, ORO("ActiveConcept")))
+        concept = shorten_term(subgraph, term)
+        logger.info("Marking <%s> as ActiveConcept" % concept)
+        self.active_concepts.add(concept)
+        self.models[model].graph += subgraph
+        self.models[model].metadata.add(
+            (subgraph, EXPIRES_ON_TERM, Literal(expiry_date, datatype=XSD.dateTime)))
 
     @api
     @compat
@@ -1280,8 +1286,12 @@ class KnowledgeCore:
                 for row in res:
                     graph = row[0]
                     date = row[1]
-                    for s, p, o in shorten_graph(graph):
-                        logger.warn(f"Removing expired statement <{s} {p} {o}>"
+                    for s, p, o in graph:
+                        ss, sp, so = shorten(graph, (s, p, o))
+                        if p == RDF.type and o == ORO("ActiveConcept"):
+                            if ss in self.active_concepts:
+                                self.active_concepts.remove(ss)
+                        logger.warn(f"Removing expired statement <{ss} {sp} {so}>"
                                     f" from <{name}> (expired on {date})")
                     model.metadata.remove((graph, None, None))
                     model.graph -= graph
