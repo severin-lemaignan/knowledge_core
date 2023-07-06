@@ -189,5 +189,4 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         if args.no_ros:
             ros.shutdown()
-        kb.stop_services()
         logger.info("Bye bye")

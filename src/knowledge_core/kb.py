@@ -46,6 +46,7 @@ def stable_hash(s, p="", o="", model=""):
 
 DEFAULT_MODEL = "default"
 REASONER_RATE = 5  # Hz
+EXPIRED_STMTS_CHECK_RATE = 1  # Hz
 
 
 IRIS = {
@@ -78,8 +79,6 @@ EXPIRES_ON_TERM = URIRef(IRIS[DEFAULT_PREFIX] + "expiresOn")
 
 from .exceptions import KbServerError
 from knowledge_core import __version__
-
-# from .services import lifespan
 
 from .helpers import memoize
 
@@ -299,14 +298,14 @@ class KnowledgeCore:
         self.active_evts = set()
         self.eventsubscriptions = {}
 
+        self._last_expired_stmts_check = time.time()
+
         # create a RDFlib dataset
         self.ds = Dataset()
         self.models = {}
         self.create_model(DEFAULT_MODEL)
 
         self._functionalproperties = frozenset()
-
-        self.start_services()
 
         if filenames:
             for filename in filenames:
@@ -940,34 +939,6 @@ class KnowledgeCore:
         logger.info("Found: " + str(res))
         return res
 
-    @api
-    def get_expired_statements(self):
-        logger.info("Retrieving the list of statements across all models that are expired")
-
-        q = SPARQL_PREFIXES  # TODO: as a (potential?) optimization, pass initNs to graph.query, instead of adding the PREFIX strings to the query
-        q += """
-        SELECT ?subgraph ?date
-        WHERE {
-           ?subgraph oro:expiresOn ?date .
-           FILTER (?date <= ?now)
-        }
-        """
-
-        now = Literal(date_time(time.time()),datatype=XSD.dateTime)
-        
-        for name, model in self.models.items():
-
-            logger.info("In model %s:" % name)
-            res = model.metadata.query(q, initBindings={"now": now})
-            if res:
-                for row in res:
-                    graph = row[0]
-                    date = row[1]
-                    for s,p,o in shorten_graph(graph):
-                        logger.info("<%s %s %s> (expired on %s)" % (s,p,o,date))
-            else:
-                logger.info("None")
-
 
     @api
     def subscribe(self, patterns, one_shot=False, models=None):
@@ -1119,18 +1090,34 @@ class KnowledgeCore:
                 % ((end - start) * 1000)
             )
 
-    def start_services(self, *args):
+    def check_expired_stmts(self):
+        logger.debug("Checking for expired statements...")
 
-        # self._lifespan_manager = Process(
-        #    target=lifespan.start_service, args=("kb.db",)
-        # )
-        # self._lifespan_manager.start()
-        pass
+        q = SPARQL_PREFIXES  # TODO: as a (potential?) optimization, pass initNs to graph.query, instead of adding the PREFIX strings to the query
+        q += """
+        SELECT ?subgraph ?date
+        WHERE {
+           ?subgraph oro:expiresOn ?date .
+           FILTER (?date <= ?now)
+        }
+        """
 
-    def stop_services(self):
+        now = Literal(date_time(time.time()),datatype=XSD.dateTime)
+        
+        for name, model in self.models.items():
 
-        # self._lifespan_manager.join()
-        pass
+            res = model.metadata.query(q, initBindings={"now": now})
+            if res:
+                for row in res:
+                    graph = row[0]
+                    date = row[1]
+                    for s,p,o in shorten_graph(graph):
+                        logger.warn("Removing expired statement <%s %s %s> from <%s> (expired on %s)" % (s,p,o,name,date))
+                    model.metadata.remove((graph,None, None))
+                    model.graph -= graph
+                    model.is_dirty = True
+
+                self.materialise(models=[name])
 
     def create_model(self, model):
         g = self.ds.graph(IRIS[DEFAULT_PREFIX] + model)
@@ -1247,3 +1234,10 @@ class KnowledgeCore:
         for client, pendingmsg in self.requestresults.items():
             while not pendingmsg.empty():
                 client.sendmsg(pendingmsg.get())
+
+
+        now = time.time()
+        if 1./(now - self._last_expired_stmts_check) < EXPIRED_STMTS_CHECK_RATE:
+            self.check_expired_stmts()
+            self._last_expired_stmts_check = time.time()
+
