@@ -22,6 +22,7 @@ ABOUT_SRV = "/kb/about"
 LOOKUP_SRV = "/kb/lookup"
 SPARQL_SRV = "/kb/sparql"
 EVENTS_SRV = "/kb/events"
+ACTIVE_CONCEPTS_TOPIC = "/kb/active_concepts"
 EVENTS_NS = EVENTS_SRV + "/"
 
 
@@ -35,6 +36,11 @@ class KbError(Exception):
 
 class KB:
     def __init__(self):
+
+        # if rospy.init_node has *not* been called yet, call it now
+        if rospy.client._init_node_args is None:
+            self.nh = rospy.init_node("kb_client", anonymous=True)
+
         rospy.wait_for_service(MANAGE_SRV)
         rospy.wait_for_service(REVISE_SRV)
         rospy.wait_for_service(QUERY_SRV)
@@ -52,6 +58,18 @@ class KB:
         self._events_srv = rospy.ServiceProxy(EVENTS_SRV, Event)
 
         self._evt_subscribers = {}
+
+        self._active_concepts_sub = rospy.Subscriber(
+            ACTIVE_CONCEPTS_TOPIC, String, self._on_active_concept
+        )
+        self._active_concepts_callbacks = []
+
+    def on_active_concept(self, callback):
+        self._active_concepts_callbacks.append(callback)
+
+    def _on_active_concept(self, msg):
+        for cb in self._active_concepts_callbacks:
+            cb(msg.data)
 
     def hello(self):
         res = self._manage_srv(action=ManageRequest.STATUS)
@@ -74,11 +92,14 @@ class KB:
         """Allows to subscribe to an event, and get notified when the event is
         triggered.
 
+        >>> from knowledge_core.api import KB
+        >>> kb = KB()
+        >>>
         >>> def onevent(evt):
         >>>     print("In callback. Got evt %s" % evt)
         >>>
-        >>> self.kb.subscribe(["?o isIn room"], onevent)
-        >>> self.kb += ["alfred isIn room"]
+        >>> kb.subscribe(["?o isIn room"], onevent)
+        >>> kb += ["alfred isIn room"]
         >>> # 'onevent' get called
         In callback. Got evt [u'alfred']
 
@@ -121,7 +142,6 @@ class KB:
                 "Same event already subscribed to with same callback. Skipping."
             )
             return evt.id
-
         evt_relay = EvtRelay(callback)
         self._evt_subscribers.setdefault(evt.id, []).append(
             (
