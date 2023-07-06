@@ -8,6 +8,7 @@ from kb_msgs.srv import About
 from kb_msgs.srv import Lookup
 from kb_msgs.srv import Sparql
 from kb_msgs.srv import Event
+from kb_msgs.msg import ActiveConcepts
 from std_msgs.msg import String
 
 import rclpy
@@ -25,6 +26,7 @@ ABOUT_SRV = About, "/kb/about"
 LOOKUP_SRV = Lookup, "/kb/lookup"
 SPARQL_SRV = Sparql, "/kb/sparql"
 EVENTS_SRV = Event, "/kb/events"
+ACTIVE_CONCEPTS_TOPIC = "/kb/active_concepts"
 EVENTS_NS = EVENTS_SRV[1] + "/"
 
 
@@ -94,6 +96,18 @@ class KB:
                 f'service {EVENTS_SRV[1]} not available, waiting again...')
 
         self._evt_subscribers = {}
+
+        self._active_concepts_sub = self.node.create_subscription(
+            ActiveConcepts, ACTIVE_CONCEPTS_TOPIC, self._on_active_concept, 1
+        )
+        self._active_concepts_callbacks = []
+
+    def on_active_concept(self, callback):
+        self._active_concepts_callbacks.append(callback)
+
+    def _on_active_concept(self, msg):
+        for cb in self._active_concepts_callbacks:
+            cb(msg.concepts)
 
     def hello(self):
         future = self._manage_srv.call_async(
