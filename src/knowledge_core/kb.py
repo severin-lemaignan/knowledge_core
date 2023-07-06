@@ -49,7 +49,7 @@ def stable_hash(s, p="", o="", model=""):
 DEFAULT_MODEL = "default"
 REASONER_RATE = 5  # Hz
 EXPIRED_STMTS_CHECK_RATE = 1  # Hz
-
+ACTIVE_CONCEPT_LIFESPAN = 5 #sec
 
 IRIS = {
     "oro": "http://kb.openrobots.org#",
@@ -77,13 +77,16 @@ N3_PROLOGUE += (
     "@keywords a,true,false. "  # see https://www.w3.org/TeamSubmission/n3/#keywords
 )
 
-EXPIRES_ON_TERM = URIRef(IRIS[DEFAULT_PREFIX] + "expiresOn")
 
 from .exceptions import KbServerError
 from knowledge_core import __version__
 
 from .helpers import memoize
 
+def ORO(term : str):
+    return URIRef(IRIS[DEFAULT_PREFIX] + term)
+
+EXPIRES_ON_TERM = ORO("expiresOn")
 
 def api(fn):
     fn._api = True
@@ -292,11 +295,22 @@ class KnowledgeCore:
     MEMORYPROFILE_DEFAULT = ""
     MEMORYPROFILE_SHORTTERM = "SHORTTERM"
 
-    def __init__(self, filenames=None, enable_reasoner=True):
+    def __init__(self, filenames=None, enable_reasoner=True, auto_activeconcepts = False):
+        """
+        :param filenames: a list of path to ontologies to pre-load in the
+        knowledge base
+        :param enable_reasoner: if True, enable automatic knowledge base
+        materialisation using the 'reasonable' RDF/OWL reasoner
+        :param auto_activeconcepts: if True, every subject of a statement added
+        to the knowledge base is also marked as an instance of 'ActiveConcept'
+        for ACTIVE_CONCEPT_LIFESPAN seconds (default to 5 sec)
+        """
 
         self.reasoner_enabled = has_reasoner and enable_reasoner
         if not self.reasoner_enabled:
             logger.warn("Running without OWL2 RL reasoner.")
+
+        self.auto_activeconcepts = auto_activeconcepts
 
         _api = [
             getattr(self, fn) for fn in dir(self) if hasattr(getattr(self, fn), "_api")
@@ -778,10 +792,24 @@ class KnowledgeCore:
             for model in models:
                 for s, p, o in subgraph.triples([None, None, None]):
 
-                    if p in self._functionalproperties:
-                        self.models[model].graph.set((s, p, o))
+                    # special-case <subject rdf:type ActiveConcept>:
+                    # when seeing this kind of statement, mark the subject as
+                    # an active concept for ACTIVE_CONCEPT_LIFESPAN seconds.
+                    #
+                    # Note that if a lifespan was associated to this statement, and
+                    # that lifespan is smaller than ACTIVE_CONCEPT_LIFESPAN,
+                    # the given lifespan is used instead.
+                    if p == RDF.type and o == ORO("ActiveConcept"):
+                        self.mark_active_concept(s, model)
+
                     else:
-                        self.models[model].graph.add((s, p, o))
+                        if p in self._functionalproperties:
+                            self.models[model].graph.set((s, p, o))
+                        else:
+                            self.models[model].graph.add((s, p, o))
+
+                        if self.auto_activeconcepts:
+                            self.mark_active_concept(s, model)
 
                 if lifespan:
 
@@ -848,6 +876,19 @@ class KnowledgeCore:
             raise KbServerError("Unknown method in revise: %s" % policy["method"])
 
         self.onupdate()
+
+    def mark_active_concept(self, term : Node, model : str):
+        expiry_date = date_time(time.time() + ACTIVE_CONCEPT_LIFESPAN)
+        subgraph = Graph()
+        for p, iri in IRIS.items():
+            subgraph.bind(p, iri)
+        subgraph.bind("", IRIS[DEFAULT_PREFIX])
+        
+        subgraph.add((term, RDF.type, ORO("ActiveConcept")))
+        logger.info("Marking <%s> as ActiveConcept" % shorten_term(subgraph,term))
+        self.models[model].graph += subgraph
+        self.models[model].metadata.add((subgraph, EXPIRES_ON_TERM, Literal(expiry_date,datatype=XSD.dateTime)))
+
 
     @api
     @compat
