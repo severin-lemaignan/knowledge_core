@@ -255,7 +255,10 @@ class KB:
     def update(self, stmts, models=[], lifespan=0):
 
         res = self._revise_srv(
-            method=ReviseRequest.UPDATE, statements=stmts, models=models
+            method=ReviseRequest.UPDATE,
+            statements=stmts,
+            models=models,
+            lifespan=rospy.Time(lifespan),
         )
 
         if not res.success:

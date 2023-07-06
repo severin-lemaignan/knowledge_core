@@ -132,7 +132,11 @@ Available services:
 
         from knowledge_core.srv import ReviseResponse
 
-        policy = {"method": req.method, "models": req.models}
+        policy = {
+            "method": req.method,
+            "models": req.models,
+            "lifespan": req.lifespan.to_sec(),
+        }
         try:
             self.kb.revise(req.statements, policy)
 

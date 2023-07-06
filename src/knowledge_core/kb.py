@@ -20,7 +20,8 @@ except ImportError:
 
 from rdflib import Graph, Dataset
 from rdflib.term import Node, BNode, Literal, URIRef, Variable
-from rdflib.namespace import Namespace, RDF, RDFS, OWL
+from rdflib.namespace import Namespace, RDF, RDFS, OWL, XSD
+from rdflib.util import date_time
 
 has_reasoner = False
 try:
@@ -73,6 +74,7 @@ N3_PROLOGUE += (
     "@keywords a,true,false. "  # see https://www.w3.org/TeamSubmission/n3/#keywords
 )
 
+EXPIRES_ON_TERM = URIRef(IRIS[DEFAULT_PREFIX] + "expiresOn")
 
 from .exceptions import KbServerError
 from knowledge_core import __version__
@@ -725,9 +727,15 @@ class KnowledgeCore:
                 for s, p, o in subgraph.triples([None, None, None]):
 
                     if p in self._functionalproperties:
-                        self.models[model].graph.set((s, p, o))  # TODO: lifespan
+                        self.models[model].graph.set((s, p, o))
                     else:
-                        self.models[model].graph.add((s, p, o))  # TODO: lifespan
+                        self.models[model].graph.add((s, p, o))
+
+                if lifespan:
+                    expiry_date = date_time(time.time() + lifespan)
+                    logger.info("This statement will expire on %s" % expiry_date)
+                    self.models[model].metadata.add((subgraph, EXPIRES_ON_TERM, Literal(expiry_date,datatype=XSD.dateTime)))
+
                 self.models[model].is_dirty = True
 
         elif policy["method"] == "retract":
@@ -933,6 +941,35 @@ class KnowledgeCore:
         return res
 
     @api
+    def get_expired_statements(self):
+        logger.info("Retrieving the list of statements across all models that are expired")
+
+        q = SPARQL_PREFIXES  # TODO: as a (potential?) optimization, pass initNs to graph.query, instead of adding the PREFIX strings to the query
+        q += """
+        SELECT ?subgraph ?date
+        WHERE {
+           ?subgraph oro:expiresOn ?date .
+           FILTER (?date <= ?now)
+        }
+        """
+
+        now = Literal(date_time(time.time()),datatype=XSD.dateTime)
+        
+        for name, model in self.models.items():
+
+            logger.info("In model %s:" % name)
+            res = model.metadata.query(q, initBindings={"now": now})
+            if res:
+                for row in res:
+                    graph = row[0]
+                    date = row[1]
+                    for s,p,o in shorten_graph(graph):
+                        logger.info("<%s %s %s> (expired on %s)" % (s,p,o,date))
+            else:
+                logger.info("None")
+
+
+    @api
     def subscribe(self, patterns, one_shot=False, models=None):
         """Subscribes to a specified event in the ontology.
 
@@ -1097,16 +1134,20 @@ class KnowledgeCore:
 
     def create_model(self, model):
         g = self.ds.graph(IRIS[DEFAULT_PREFIX] + model)
+        metadata_g = self.ds.graph(IRIS[DEFAULT_PREFIX] + model + "_metadata")
 
         # configure our namespace prefixes
         for p, iri in IRIS.items():
             g.bind(p, iri)
+            metadata_g.bind(p, iri)
 
         g.bind("", IRIS[DEFAULT_PREFIX])
+        metadata_g.bind("", IRIS[DEFAULT_PREFIX])
 
         self.models[model] = dotdict(
             {
                 "graph": g,
+                "metadata": metadata_g,
                 "is_dirty": True,  # stores whether models have changes that would require re-classification
                 "materialized_graph": Graph(),
             }
