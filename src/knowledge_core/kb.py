@@ -311,6 +311,7 @@ class KnowledgeCore:
             logger.warn("Running without OWL2 RL reasoner.")
 
         self.auto_activeconcepts = auto_activeconcepts
+        self.active_concepts = set()
 
         _api = [
             getattr(self, fn) for fn in dir(self) if hasattr(getattr(self, fn), "_api")
@@ -885,7 +886,9 @@ class KnowledgeCore:
         subgraph.bind("", IRIS[DEFAULT_PREFIX])
         
         subgraph.add((term, RDF.type, ORO("ActiveConcept")))
-        logger.info("Marking <%s> as ActiveConcept" % shorten_term(subgraph,term))
+        concept = shorten_term(subgraph,term)
+        logger.info("Marking <%s> as ActiveConcept" % concept)
+        self.active_concepts.add(concept)
         self.models[model].graph += subgraph
         self.models[model].metadata.add((subgraph, EXPIRES_ON_TERM, Literal(expiry_date,datatype=XSD.dateTime)))
 
@@ -1249,8 +1252,12 @@ class KnowledgeCore:
                 for row in res:
                     graph = row[0]
                     date = row[1]
-                    for s,p,o in shorten_graph(graph):
-                        logger.warn("Removing expired statement <%s %s %s> from <%s> (expired on %s)" % (s,p,o,name,date))
+                    for s,p,o in graph:
+                        ss,sp,so = shorten(graph, (s,p,o))
+                        if p == RDF.type and o == ORO("ActiveConcept"):
+                            if ss in self.active_concepts:
+                                self.active_concepts.remove(ss)
+                        logger.warn("Removing expired statement <%s %s %s> from <%s> (expired on %s)" % (ss,sp,so,name,date))
                     model.metadata.remove((graph,None, None))
                     model.graph -= graph
                     model.is_dirty = True

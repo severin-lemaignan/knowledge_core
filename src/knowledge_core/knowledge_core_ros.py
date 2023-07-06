@@ -39,6 +39,11 @@ class KnowledgeCoreROS:
             "/kb/remove_fact", String, self.on_retract_fact
         )
 
+        self.active_concepts_pub = rospy.Publisher(
+            "/kb/active_concepts", String, queue_size=1
+        )
+        self._current_active_concepts = set()
+
         self.services = {
             "manage": rospy.Service("kb/manage", Manage, self.handle_manage),
             "revise": rospy.Service("kb/revise", Revise, self.handle_revise),
@@ -276,6 +281,14 @@ Available services:
             self.diagnostics_pub.publish(arr)
 
             self.last_diagnostics_ts = now
+
+        active_concepts = set(self.kb.active_concepts)
+        if active_concepts != self._current_active_concepts:
+            new_active_concepts = active_concepts - self._current_active_concepts
+            for c in new_active_concepts:
+                self.active_concepts_pub.publish(c)
+                rospy.loginfo("marking %s as active" % c)
+            self._current_active_concepts = active_concepts
 
     def shutdown(self):
 
