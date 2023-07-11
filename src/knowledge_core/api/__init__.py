@@ -19,6 +19,7 @@ MANAGE_SRV = "/kb/manage"
 REVISE_SRV = "/kb/revise"
 QUERY_SRV = "/kb/query"
 ABOUT_SRV = "/kb/about"
+DETAILS_SRV = "/kb/details"
 LOOKUP_SRV = "/kb/lookup"
 SPARQL_SRV = "/kb/sparql"
 EVENTS_SRV = "/kb/events"
@@ -45,6 +46,7 @@ class KB:
         rospy.wait_for_service(REVISE_SRV)
         rospy.wait_for_service(QUERY_SRV)
         rospy.wait_for_service(ABOUT_SRV)
+        rospy.wait_for_service(DETAILS_SRV)
         rospy.wait_for_service(LOOKUP_SRV)
         rospy.wait_for_service(SPARQL_SRV)
         rospy.wait_for_service(EVENTS_SRV)
@@ -53,6 +55,7 @@ class KB:
         self._revise_srv = rospy.ServiceProxy(REVISE_SRV, Revise)
         self._query_srv = rospy.ServiceProxy(QUERY_SRV, Query)
         self._about_srv = rospy.ServiceProxy(ABOUT_SRV, About)
+        self._details_srv = rospy.ServiceProxy(DETAILS_SRV, About)
         self._lookup_srv = rospy.ServiceProxy(LOOKUP_SRV, Lookup)
         self._sparql_srv = rospy.ServiceProxy(SPARQL_SRV, Sparql)
         self._events_srv = rospy.ServiceProxy(EVENTS_SRV, Event)
@@ -164,6 +167,14 @@ class KB:
 
     def about(self, term, models=[]):
         res = self._about_srv(term=term, models=models)
+
+        if not res.success:
+            raise KbError(res.error_msg)
+
+        return json.loads(res.json)
+
+    def details(self, term, models=[]):
+        res = self._details_srv(term=term, models=models)
 
         if not res.success:
             raise KbError(res.error_msg)

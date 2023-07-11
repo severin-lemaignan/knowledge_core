@@ -49,6 +49,7 @@ class KnowledgeCoreROS:
             "revise": rospy.Service("kb/revise", Revise, self.handle_revise),
             "query": rospy.Service("kb/query", Query, self.handle_query),
             "about": rospy.Service("kb/about", About, self.handle_about),
+            "details": rospy.Service("kb/details", About, self.handle_details),
             "lookup": rospy.Service("kb/lookup", Lookup, self.handle_lookup),
             "event": rospy.Service("kb/events", Event, self.handle_new_event),
             "sparql": rospy.Service("kb/sparql", Sparql, self.handle_sparql),
@@ -72,6 +73,7 @@ Available services:
 - /kb/revise [knowledge_core/Revise]
 - /kb/query [knowledge_core/Query]
 - /kb/about [knowledge_core/About]
+- /kb/details [knowledge_core/About]
 - /kb/lookup [knowledge_core/Lookup]
 - /kb/sparql [knowledge_core/Sparql]
 - /kb/events [knowledge_core/Event]
@@ -167,6 +169,18 @@ Available services:
 
         try:
             res = self.kb.about(req.term, req.models)
+            return AboutResponse(success=True, error_msg="", json=json.dumps(res))
+        except KbServerError as kbe:
+            return AboutResponse(success=False, error_msg=str(kbe))
+
+    def handle_details(self, req):
+
+        from knowledge_core.srv import AboutResponse
+
+        rospy.loginfo("Get request for details on <%s>" % req.term)
+
+        try:
+            res = self.kb.details(req.term, req.models)
             return AboutResponse(success=True, error_msg="", json=json.dumps(res))
         except KbServerError as kbe:
             return AboutResponse(success=False, error_msg=str(kbe))
@@ -287,7 +301,6 @@ Available services:
             new_active_concepts = active_concepts - self._current_active_concepts
             for c in new_active_concepts:
                 self.active_concepts_pub.publish(c)
-                rospy.loginfo("marking %s as active" % c)
             self._current_active_concepts = active_concepts
 
     def shutdown(self):
