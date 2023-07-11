@@ -124,6 +124,7 @@ class KnowledgeCoreROS(Node):
         self.create_service(Revise, "revise",  self.handle_revise)
         self.create_service(Query, "query",  self.handle_query)
         self.create_service(About, "about",  self.handle_about)
+        self.create_service(About, "details",  self.handle_details)
         self.create_service(Lookup, "lookup",  self.handle_lookup)
         self.create_service(Event, "events",  self.handle_new_event)
         self.create_service(Sparql, "sparql",  self.handle_sparql)
@@ -138,6 +139,7 @@ Knowledge base started.
 Available topics:
 - /kb/add_fact [std_msgs/String]
 - /kb/remove_fact [std_msgs/String]
+- /kb/active_concepts [kb_msgs/ActiveConcepts]
 - /kb/events/<id> [std_msgs/String] for
   each subscribed event
 
@@ -146,6 +148,7 @@ Available services:
 - /kb/revise [kb_msgs/Revise]
 - /kb/query [kb_msgs/Query]
 - /kb/about [kb_msgs/About]
+- /kb/details [kb_msgs/About]
 - /kb/lookup [kb_msgs/Lookup]
 - /kb/sparql [kb_msgs/Sparql]
 - /kb/events [kb_msgs/Event]
@@ -260,6 +263,20 @@ Available services:
 
         try:
             res = self.kb.about(req.term, req.models)
+            response.success = True
+            response.json = json.dumps(res)
+            response.error_msg = ""
+            return response
+
+        except KbServerError as kbe:
+            response.success = False
+            response.error_msg = str(kbe)
+            return response
+
+    def handle_details(self, req, response):
+
+        try:
+            res = self.kb.details(req.term, req.models)
             response.success = True
             response.json = json.dumps(res)
             response.error_msg = ""
@@ -400,7 +417,6 @@ Available services:
 
             for c in active_concepts:
                 active_concepts_msg.concepts.append(c)
-                self.get_logger().info(f"marking {c} as active")
 
             self.active_concepts_pub.publish(active_concepts_msg)
             self._current_active_concepts = active_concepts
