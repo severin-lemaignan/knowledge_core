@@ -505,7 +505,7 @@ class KnowledgeCore:
             else:
                 result += self.models[model].materialized_graph.subjects(RDF.type, term)
 
-        return result
+        return list(filter(lambda t: type(t)!=BNode, result))
 
     @api
     def classesof(self, term, direct=False, models=[]):
@@ -528,7 +528,7 @@ class KnowledgeCore:
             else:
                 result += self.models[model].materialized_graph.objects(term, RDF.type)
 
-        return result
+        return list(filter(lambda t: type(t)!=BNode, result))
 
     def _subclassesof(self, term, direct=False, models=[]):
 
@@ -546,7 +546,7 @@ class KnowledgeCore:
                     RDFS.subClassOf, term
                 )
 
-        return result
+        return list(filter(lambda t: type(t)!=BNode, result))
 
     def _superclassesof(self, term, direct=False, models=[]):
 
@@ -564,7 +564,7 @@ class KnowledgeCore:
                     term, RDFS.subClassOf
                 )
 
-        return result
+        return list(filter(lambda t: type(t)!=BNode, result))
 
     @api
     def label(self, term, models=[]):
@@ -638,7 +638,7 @@ class KnowledgeCore:
         return "undecided"
 
     @api
-    def details(self, resource, models=None):
+    def details(self, raw_term, model=None):
         """
         Returns a dictionary containing the following details on a given resource:
         - 'label': resource label, if any, literal value for literals, else resource ID.
@@ -654,22 +654,36 @@ class KnowledgeCore:
             - for instances, a list of one dictionary:
                 {"name": "Classes","id": "classes", "values":[ids...]}
                 (only direct classes)
+        - 'relations': a list of statements in which the term is one of subject, predicate, object (similar to about())
         """
-        models = self.normalize_models(models)
-        res = {}
-        res["label"] = self.label(resource, models)
-        res["id"] = resource
-        res["type"] = self.typeof(resource, models)
+        models = self.normalize_models(model)
+        if len(models) != 1:
+            raise KbServerError("the details() method can only operate on a single model. Got: %s" % models)
 
+        model = list(models)[0]
+
+        try:
+            term = parse_term(raw_term)
+        except KbServerError:
+            raise KbServerError("<%s> is an invalid n3 term." % raw_term)
+
+        g = self.models[model].materialized_graph
+
+
+        res = {}
+        res["id"] = shorten_term(g, term)
+        res["label"] = self.label(term, models)
+        res["type"] = self.typeof(term, models)
+
+        res["attributes"] = []
         if res["type"] == "class":
-            res["attributes"] = []
             res["attributes"].append(
                 {
                     "name": "Parents",
                     "id": "superClasses",
                     "values": [
-                        {"id": r, "name": self.label(r, models)}
-                        for r in self._superclassesof(resource, True, models)
+                        {"id": shorten_term(g, r), "name": self.label(r, models)}
+                        for r in self._superclassesof(term, True, models)
                     ],
                 }
             )
@@ -679,8 +693,8 @@ class KnowledgeCore:
                     "name": "Children",
                     "id": "subClasses",
                     "values": [
-                        {"id": r, "label": setermlabel(r, models)}
-                        for r in self._subclassesof(resource, True, models)
+                        {"id": shorten_term(g,r), "label": self.label(r, models)}
+                        for r in self._subclassesof(term, True, models)
                     ],
                 }
             )
@@ -690,8 +704,8 @@ class KnowledgeCore:
                     "name": "Instances",
                     "id": "instances",
                     "values": [
-                        {"id": r, "label": self.label(r, models)}
-                        for r in self._instancesof(resource, True, models)
+                        {"id": shorten_term(g,r), "label": self.label(r, models)}
+                        for r in self._instancesof(term, True, models)
                     ],
                 }
             )
@@ -702,12 +716,35 @@ class KnowledgeCore:
                     "name": "Classes",
                     "id": "classes",
                     "values": [
-                        {"id": r, "label": self.label(r, models)}
-                        for r in self._classesof(resource, True, models)
+                        {"id": shorten_term(g,r), "label": self.label(r, models)}
+                        for r in self._classesof(term, True, models) if r not in [ORO("ActiveConcept"), OWL.NamedIndividual]
                     ],
                 }
             ]
+
+        stmts = []
+        for triple in g.triples((term, None, None)):
+            if self.is_fact(triple):
+                stmts.append(shorten(g, triple))
+        for triple in g.triples((None, term, None)):
+            stmts.append(shorten(g, triple))
+        for triple in g.triples((None, None, term)):
+            if self.is_fact(triple):
+                stmts.append(shorten(g, triple))
+        res["relations"] = stmts
+
         return res
+
+    def is_fact(self, triple):
+
+        if not all(type(t) != BNode for t in triple):
+            return False
+
+        if triple[1] in [RDF.type, RDFS.subClassOf, RDFS.label, ORO("openCycUri"), OWL.disjointWith, RDF.first, RDFS.domain, RDFS.range, RDFS.comment]:
+            return False
+
+        return True
+
 
     @api
     def exist(self, raw_stmts, models=None):
