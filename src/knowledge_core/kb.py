@@ -1097,7 +1097,7 @@ class KnowledgeCore:
         q += """
         SELECT ?subgraph ?date
         WHERE {
-           ?subgraph oro:expiresOn ?date .
+           ?subgraph :expiresOn ?date .
            FILTER (?date <= ?now)
         }
         """
