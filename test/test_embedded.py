@@ -42,7 +42,7 @@ class TestSequenceFunctions(unittest.TestCase):
         # check no exception is raised
         self.kb.add(["johnny rdf:type Human", 'johnny rdfs:label "A que Johnny"'])
         self.kb += ["alfred rdf:type Human", "alfred likes icecream"]
-        self.kb.retract(["alfred rdf:type Human", "alfred likes icecream"])
+        self.kb.remove(["alfred rdf:type Human", "alfred likes icecream"])
         self.kb -= ["johnny rdf:type Human"]
 
     def test_modifications(self):
@@ -300,7 +300,7 @@ class TestSequenceFunctions(unittest.TestCase):
 
     def test_complex_events(self):
 
-        evtid = self.kb.subscribe(["?a desires ?act", "?act rdf:type Action"], var="a")
+        evtid = self.kb.subscribe(["?a desires ?act", "?act rdf:type Action"])
 
         # should not trigger an event
         self.kb += ["alfred desires ragnagna"]
@@ -326,7 +326,7 @@ class TestSequenceFunctions(unittest.TestCase):
 
     def test_complex_events_rdfs(self):
         """Requires a RDFS reasoner to run."""
-        evtid = self.kb.subscribe(["?a desires ?act", "?act rdf:type Action"], var="a")
+        evtid = self.kb.subscribe(["?a desires ?act", "?act rdf:type Action"])
 
         # should not trigger an event
         self.kb += ["alfred desires ragnagna"]
