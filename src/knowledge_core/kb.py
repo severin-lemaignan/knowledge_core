@@ -3,6 +3,7 @@ import logging
 logger = logging.getLogger("KnowledgeCore." + __name__)
 
 import time
+from datetime import datetime
 import pathlib
 
 from queue import Queue, Empty
@@ -731,9 +732,22 @@ class KnowledgeCore:
                         self.models[model].graph.add((s, p, o))
 
                 if lifespan:
-                    expiry_date = date_time(time.time() + lifespan)
-                    logger.info("This statement will expire on %s" % expiry_date)
-                    self.models[model].metadata.add((subgraph, EXPIRES_ON_TERM, Literal(expiry_date,datatype=XSD.dateTime)))
+
+                    expiry_ts = time.time() + lifespan
+                    expiry_date = datetime.fromtimestamp(expiry_ts).strftime("%d/%m/%Y, %H:%M:%S")
+                    expiry_date_xsd = date_time(expiry_ts)
+
+                    # do we already have lifespan information for these facts?
+                    # if so, we update
+                    gr = [g for g in self.models[model].metadata.subjects() if len(subgraph-g) == 0]
+                    if gr:
+                        gr = gr[0]
+                        logger.info("Updating expiry date to %s" % expiry_date)
+                    else:
+                        gr = subgraph
+                        logger.info("This statement will expire on %s" % expiry_date)
+
+                    self.models[model].metadata.set((gr, EXPIRES_ON_TERM, Literal(expiry_date_xsd,datatype=XSD.dateTime)))
 
                 self.models[model].is_dirty = True
 
