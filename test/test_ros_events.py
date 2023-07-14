@@ -52,7 +52,7 @@ class TestKBEvents(unittest.TestCase):
 
         elapsed = 0
 
-        rospy.logwarn("Starting to wait for event...")
+        rospy.logwarn("Starting to wait for event (max %sms)..." % MAX_WAIT)
         if not other_evt:
             while elapsed < MAX_WAIT:
                 if self.evt_semaphore:
@@ -61,12 +61,12 @@ class TestKBEvents(unittest.TestCase):
                 elapsed += 10
 
             if self.evt_semaphore ^ should_trigger:
+                msg = "The event did not trigger after %sms" % MAX_WAIT if should_trigger else "The event should *not* have triggered!"
+                rospy.logerr(msg)
                 self.assertTrue(
                     False,
-                    "The event did not trigger after %sms" % MAX_WAIT
-                    if should_trigger
-                    else "The event should *not* have triggered!",
-                )
+                    msg)
+
             if should_trigger:
                 rospy.logwarn("Event triggered after %sms" % elapsed)
             else:
@@ -98,7 +98,7 @@ class TestKBEvents(unittest.TestCase):
         self.evt_semaphore = False
         self.evt_active = False
 
-        evt = self.events(patterns=["?human rdf:type Human"], one_shot=False)
+        evt = self.events(patterns=["?robot rdf:type Robot"], one_shot=False)
         rospy.Subscriber(evt.topic, String, self.on_evt, queue_size=10)
 
         self.check_event(should_trigger=False)
@@ -106,18 +106,27 @@ class TestKBEvents(unittest.TestCase):
         self.revise(
             method=ReviseRequest.ADD,
             statements=[
-                "joe rdf:type Human",
+                "joe rdf:type Robot",
             ],
         )
 
         self.check_event(should_trigger=True)
 
-        self.assertCountEqual(self.last_evt, [{"human": "joe"}])
+        self.assertCountEqual(self.last_evt, [{"robot": "joe"}])
 
         self.revise(
             method=ReviseRequest.ADD,
             statements=[
-                "joe rdf:type Human",
+                "joe rdf:type Robot",
+            ],
+        )
+
+        self.check_event(should_trigger=False)
+
+        self.revise(
+            method=ReviseRequest.ADD,
+            statements=[
+                "bill rdf:type Human",
             ],
         )
 
@@ -130,34 +139,25 @@ class TestKBEvents(unittest.TestCase):
             ],
         )
 
-        self.check_event(should_trigger=False)
-
-        self.revise(
-            method=ReviseRequest.ADD,
-            statements=[
-                "bill rdf:type Human",
-            ],
-        )
-
         self.check_event(should_trigger=True)
-        self.assertCountEqual(self.last_evt, [{"human": "bill"}])
+        self.assertCountEqual(self.last_evt, [{"robot": "ari"}])
 
         self.revise(
             method=ReviseRequest.REMOVE,
             statements=[
-                "bill rdf:type Human",
+                "ari rdf:type Robot",
             ],
         )
 
         self.revise(
             method=ReviseRequest.ADD,
             statements=[
-                "bill rdf:type Human",
+                "ari rdf:type Robot",
             ],
         )
 
         self.check_event(should_trigger=True)
-        self.assertCountEqual(self.last_evt, [{"human": "bill"}])
+        self.assertCountEqual(self.last_evt, [{"robot": "ari"}])
 
     def test_oneshot_event(self):
 
@@ -191,7 +191,7 @@ class TestKBEvents(unittest.TestCase):
         self.evt_active = False
 
         evt = self.events(patterns=["?human rdf:type Human"], one_shot=False)
-        sub = rospy.Subscriber(evt.topic, String, self.on_evt, queue_size=10)
+        sub = rospy.Subscriber(evt.topic, String, self.on_evt, queue_size=1)
 
         self.revise(
             method=ReviseRequest.ADD,
@@ -203,7 +203,8 @@ class TestKBEvents(unittest.TestCase):
         self.check_event(should_trigger=True)
 
         sub.unregister()
-        rospy.sleep(0.4)
+        # time it takes for the topic to be unsubscribe, and for that information to be propagated to the knowledge base's topic's 'num_subscription'
+        rospy.sleep(0.5)
 
         self.revise(
             method=ReviseRequest.ADD,
@@ -214,8 +215,7 @@ class TestKBEvents(unittest.TestCase):
 
         self.check_event(should_trigger=False)
 
-        sub = rospy.Subscriber(EVENTS_NS + evt.id, String,
-                               self.on_evt, queue_size=10)
+        sub = rospy.Subscriber(evt.topic, String, self.on_evt, queue_size=1)
 
         self.revise(
             method=ReviseRequest.ADD,
@@ -226,7 +226,8 @@ class TestKBEvents(unittest.TestCase):
 
         # as we have previously un-registered from the event topic, the
         # knowledge base should have seen that no-one is listening to the topic
-        # anymore, and should disable the event.
+        # anymore, and should have disabled the event.
+        # -> nothing should be published on the event topic
         self.check_event(should_trigger=False)
 
     def test_two_events(self):

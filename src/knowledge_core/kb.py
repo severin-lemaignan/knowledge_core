@@ -247,14 +247,17 @@ class Event:
 
         self.previous_instances = set()
 
-        logger.info("Creating new event. Looking existing matchs...")
+        logger.debug("Creating new event. Looking existing matchs...")
         instances = self.kb.find(self.patterns, self.vars, frozenset(self.models))
-        logger.info("Event created with initial instances %s" % instances)
+        logger.debug("Event created with initial instances %s" % instances)
 
         self.previous_instances = set([hashabledict(row) for row in instances])
 
     def __hash__(self):
         return hash(self.id)
+
+    def __eq__(self, other):
+        return hash(self) == hash(other)
 
     def __cmp__(self, other):
         return hash(self).__cmp__(hash(other))
@@ -1017,16 +1020,18 @@ class KnowledgeCore:
 
         For instance:
         ```
-        from kb import KB
+        import time
+        from knowledge_core.api import KB
 
         def on_new_robot_instance(instances):
             print("New robots: " + ", ".join(instances))
+        
+        kb = KB()
+        kb.subscribe(["?robot rdf:type Robot"], callback=on_new_robot_instance)
 
-        with KB() as kb:
-            kb.subscribe(["?robot rdf:type Robot"])
-
-            kb += ["myself rdf:type Robot"] # should print "New robots: myself"
-            time.sleep()
+        kb += ["myself rdf:type Robot"]
+        time.sleep(1)
+        # should print "New robots: myself"
         ```
 
         If `one_shot` is set to true, the event is discarded once it has fired
@@ -1036,11 +1041,17 @@ class KnowledgeCore:
 
         models = self.normalize_models(models)
 
-        logger.info("Registering a new event: %s" % patterns + " in " + str(models))
 
         event = Event(self, patterns, one_shot, models)
 
+        nb_prev_evt = len(self.active_evts)
+
         self.active_evts.add(event)
+
+        if len(self.active_evts) > nb_prev_evt:
+            logger.info("Registered a new event: %s" % patterns + " in " + str(models))
+        else:
+            logger.info("Event handler already existing for %s. No need to add it." % patterns)
 
         return event.id
 
@@ -1111,6 +1122,11 @@ class KnowledgeCore:
         self._functionalproperties = frozenset(
             self._instancesof("owl:FunctionalProperty", False)
         )
+
+        to_remove = [e_id for e_id, clients in self.eventsubscriptions.items() if len(clients) == 0]
+        for e_id in to_remove:
+            logger.info(f"Removing handler for event {e_id} as no clients anymore")
+            self.remove_event(e_id)
 
         if self.active_evts:
             logger.info(
@@ -1314,7 +1330,9 @@ class KnowledgeCore:
 
         for client, pendingmsg in self.requestresults.items():
             while not pendingmsg.empty():
-                client.sendmsg(pendingmsg.get())
+                msg = pendingmsg.get()
+                logger.debug("sending %s to %s" % (msg, client))
+                client.sendmsg(msg)
 
 
         now = time.time()

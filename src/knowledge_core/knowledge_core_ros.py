@@ -33,7 +33,8 @@ class KnowledgeCoreROS:
         )
         self.last_diagnostics_ts = rospy.Time()
 
-        self.update_sub = rospy.Subscriber("/kb/add_fact", String, self.on_update_fact)
+        self.update_sub = rospy.Subscriber(
+            "/kb/add_fact", String, self.on_update_fact)
         self.retract_sub = rospy.Subscriber(
             "/kb/remove_fact", String, self.on_retract_fact
         )
@@ -109,7 +110,8 @@ Available services:
                         "`path/basename-<model>.xml (one file per model)",
                     )
 
-                self.kb.save(req.parameters[0], req.parameters[1], models=req.models)
+                self.kb.save(
+                    req.parameters[0], req.parameters[1], models=req.models)
                 return ManageResponse(success=True, error_msg="")
 
             elif req.action == ManageRequest.STATUS:
@@ -204,6 +206,12 @@ Available services:
                     EVENTS_TOPIC_NS + evt_id, String, queue_size=10, latch=False
                 )
 
+            def __eq__(self, other):
+                return self.evt == other.evt
+
+            def __hash__(self):
+                return hash(self.evt)
+
             def sendmsg(self, msg):
 
                 if self.pub.impl is None:
@@ -213,17 +221,18 @@ Available services:
                 if self.pub.get_num_connections() == 0:
                     if self.has_been_subscribed:
                         rospy.logwarn(
-                            "No-one listing to event <%s> anymore; removing it."
+                            "No one listing to event <%s> anymore; removing it."
                             % self.evt
                         )
-                        self.kb.remove_event(self.evt)
                         self.pub.unregister()
+                        self.kb.eventsubscriptions[self.evt].remove(self)
                 else:
                     self.has_been_subscribed = True
 
                     evt = msg[1]
                     rospy.loginfo(
-                        "Event <" + evt.id + "> triggered. Notifying ROS clients"
+                        "Event <" + evt.id +
+                        f"> triggered. Notifying ROS clients."
                     )
                     evt_msg = String()
                     evt_msg.data = json.dumps(evt.content)
@@ -233,9 +242,15 @@ Available services:
 
         evt_relay = EvtRelay(evt, self.kb)
 
-        rospy.logwarn("Subscribed to event " + evt)
+        prev_nb_cb = len(self.kb.eventsubscriptions.setdefault(evt, set()))
 
-        self.kb.eventsubscriptions.setdefault(evt, []).append(evt_relay)
+        self.kb.eventsubscriptions[evt].add(evt_relay)
+
+        if len(self.kb.eventsubscriptions[evt]) > prev_nb_cb:
+            rospy.logwarn("Subscribed to event " + evt)
+        else:
+            rospy.loginfo(
+                "Event %s already subscribed to. Nothing to do." % evt)
 
         return EventResponse(id=evt, topic=EVENTS_TOPIC_NS + evt)
 

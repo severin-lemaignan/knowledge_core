@@ -51,6 +51,8 @@ class KB:
         self._sparql_srv = rospy.ServiceProxy(SPARQL_SRV, Sparql)
         self._events_srv = rospy.ServiceProxy(EVENTS_SRV, Event)
 
+        self._evt_subscribers = {}
+
     def hello(self):
         res = self._manage_srv(action=ManageRequest.STATUS)
         return json.loads(res.json)["name"]
@@ -105,8 +107,28 @@ class KB:
         evt = self._events_srv(
             patterns=pattern, one_shot=one_shot, models=models)
 
+        # check if we already have a registered an identical event pattern,
+        # with an identifical callback
+
+        if evt.id in self._evt_subscribers and [
+            x
+            for x in filter(
+                lambda cb, callback=callback: cb[0] == callback,
+                self._evt_subscribers[evt.id],
+            )
+        ]:
+            rospy.logwarn(
+                "Same event already subscribed to with same callback. Skipping."
+            )
+            return evt.id
+
         evt_relay = EvtRelay(callback)
-        rospy.Subscriber(evt.topic, String, evt_relay.callback, queue_size=10)
+        self._evt_subscribers.setdefault(evt.id, []).append(
+            (
+                callback,
+                rospy.Subscriber(evt.topic, String, evt_relay.callback, queue_size=10),
+            )
+        )
 
         rospy.logdebug("New event successfully registered with ID " + evt.id)
 

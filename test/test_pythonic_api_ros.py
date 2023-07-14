@@ -380,6 +380,67 @@ class TestPythonicROSKb(unittest.TestCase):
         rospy.sleep(0.1)
         self.assertTrue(eventtriggered[0])
 
+    def test_events_multi_clients(self):
+
+        evt_triggers_count = [0]
+        evt_triggers_count_other = [0]
+
+        def onevent(evt):
+            print("onevent callback triggered")
+            evt_triggers_count[0] += 1
+
+        def onevent_other(evt):
+            print("onevent_other callback triggered")
+            evt_triggers_count_other[0] += 1
+
+        evtid = self.kb.subscribe(["?o isIn room"], onevent)
+
+        evtid2 = self.kb.subscribe(["?o isIn room"], onevent)
+
+        self.assertEqual(evtid, evtid2)
+
+        # should trigger only one event
+        self.kb += ["alfred isIn room"]
+        rospy.sleep(0.1)
+        self.assertEqual(evt_triggers_count[0], 1)
+
+        evt_triggers_count = [0]
+
+        ##########################################################
+        evtid2 = self.kb.subscribe(["?o isIn room"], onevent_other)
+
+        # each callback should be called once
+        self.kb += ["catwoman isIn room"]
+        rospy.sleep(0.1)
+        self.assertEqual(evt_triggers_count[0], 1)
+        self.assertEqual(evt_triggers_count_other[0], 1)
+
+        evt_triggers_count = [0]
+        evt_triggers_count_other = [0]
+
+        ##########################################################
+        kb2 = KB()
+        evtid3 = kb2.subscribe(["?o isIn room"], onevent)
+        self.assertEqual(evtid, evtid3)
+
+        # should trigger two event (two independent instances of KB(), that
+        # happen to call the same callback)
+        self.kb += ["batman isIn room"]
+        rospy.sleep(0.1)
+        self.assertEqual(evt_triggers_count[0], 2)
+
+        evt_triggers_count = [0]
+
+        evtid3 = kb2.subscribe(["?o isIn room"], lambda x: x)
+
+        # should again trigger two event (two independent instances of KB(), that
+        # happen to call the same callback)
+        #
+        # adding another event listener should not cause the callbacks to be
+        # called yet another time
+        self.kb += ["wonderwoman isIn room"]
+        rospy.sleep(0.1)
+        self.assertEqual(evt_triggers_count[0], 2)
     def test_complex_events(self):
 
         eventtriggered = [False]
