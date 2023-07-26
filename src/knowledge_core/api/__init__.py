@@ -23,7 +23,8 @@ MANAGE_SRV = Manage, "/kb/manage"
 REVISE_SRV = Revise, "/kb/revise"
 QUERY_SRV = Query, "/kb/query"
 ABOUT_SRV = About, "/kb/about"
-DETAILS_SRV = "/kb/details"
+LABEL_SRV = About, "/kb/label"
+DETAILS_SRV = About, "/kb/details"
 LOOKUP_SRV = Lookup, "/kb/lookup"
 SPARQL_SRV = Sparql, "/kb/sparql"
 EVENTS_SRV = Event, "/kb/events"
@@ -70,6 +71,7 @@ class KB:
         self._revise_srv = node.create_client(*REVISE_SRV)
         self._query_srv = node.create_client(*QUERY_SRV)
         self._about_srv = node.create_client(*ABOUT_SRV)
+        self._label_srv = node.create_client(*LABEL_SRV)
         self._details_srv = node.create_client(*DETAILS_SRV)
         self._lookup_srv = node.create_client(*LOOKUP_SRV)
         self._sparql_srv = node.create_client(*SPARQL_SRV)
@@ -87,6 +89,9 @@ class KB:
         while not self._about_srv.wait_for_service(timeout_sec=1.0):
             node.get_logger().info(
                 f'service {ABOUT_SRV[1]} not available, waiting again...')
+        while not self._label_srv.wait_for_service(timeout_sec=1.0):
+            node.get_logger().info(
+                f'service {LABEL_SRV[1]} not available, waiting again...')
         while not self._details_srv.wait_for_service(timeout_sec=1.0):
             node.get_logger().info(
                 f'service {DETAILS_SRV[1]} not available, waiting again...')
@@ -226,6 +231,34 @@ class KB:
             raise KbError(res.error_msg)
 
         return json.loads(res.json)
+
+    def label(self, term, lang=None, models=[]):
+        """returns the label associated to the term.
+
+        If no label, returns the term itself.
+
+        If lang is specified (2 letter code, eg `en`, `fr`), returns the label
+        translated in that language, if available.
+
+        If not specified, or if the desired language is not available, fallback
+        to English.
+
+        """
+
+        future = self._label_srv.call_async(
+            About.Request(term=term, models=models))
+        rclpy.spin_until_future_complete(self.node, future)
+        res = future.result()
+
+        if not res.success:
+            raise KbError(res.error_msg)
+
+        labels = json.loads(res.json)
+
+        if lang is None:
+            return labels["default"]
+        else:
+            return labels.get(lang, labels["default"])
 
     def details(self, term, models=[]):
         future = self._details_srv.call_async(

@@ -124,6 +124,7 @@ class KnowledgeCoreROS(Node):
         self.create_service(Revise, "revise",  self.handle_revise)
         self.create_service(Query, "query",  self.handle_query)
         self.create_service(About, "about",  self.handle_about)
+        self.create_service(About, "label",  self.handle_details)
         self.create_service(About, "details",  self.handle_details)
         self.create_service(Lookup, "lookup",  self.handle_lookup)
         self.create_service(Event, "events",  self.handle_new_event)
@@ -263,6 +264,20 @@ Available services:
 
         try:
             res = self.kb.about(req.term, req.models)
+            response.success = True
+            response.json = json.dumps(res)
+            response.error_msg = ""
+            return response
+
+        except KbServerError as kbe:
+            response.success = False
+            response.error_msg = str(kbe)
+            return response
+
+    def handle_label(self, req, response):
+
+        try:
+            res = self.kb.label(req.term, req.models)
             response.success = True
             response.json = json.dumps(res)
             response.error_msg = ""

@@ -671,7 +671,8 @@ class KnowledgeCore:
             - for instances, a list of one dictionary:
                 {"name": "Classes", "id": "classes", "values": [ids...]}
                 (only direct classes)
-        - 'relations': a list of statements in which the term is one of subject, predicate, object (similar to about())
+        - 'relations': a list of statements in which the term is one of
+          subject, predicate, object (similar to about())
         """
         models = self.normalize_models(model)
         if len(models) != 1:
@@ -738,7 +739,11 @@ class KnowledgeCore:
                     "values": [
                         {"id": shorten_term(
                             g, r), "label": self.label(r, models)}
-                        for r in self._classesof(term, True, models) if r not in [ORO("ActiveConcept"), OWL.NamedIndividual]
+                        for r in self._classesof(term, True, models)
+                        if r not in [
+                            ORO("ActiveConcept"),
+                            OWL.NamedIndividual
+                        ]
                     ],
                 }
             ]
@@ -761,7 +766,16 @@ class KnowledgeCore:
         if not all(type(t) != BNode for t in triple):
             return False
 
-        if triple[1] in [RDF.type, RDFS.subClassOf, RDFS.label, ORO("openCycUri"), OWL.disjointWith, RDF.first, RDFS.domain, RDFS.range, RDFS.comment]:
+        if triple[1] in [RDF.type,
+                         RDFS.subClassOf,
+                         RDFS.label,
+                         ORO("openCycUri"),
+                         OWL.disjointWith,
+                         RDF.first,
+                         RDFS.domain,
+                         RDFS.range,
+                         RDFS.comment,
+                         ]:
             return False
 
         return True
