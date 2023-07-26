@@ -238,6 +238,25 @@ class TestPythonicROSKb(unittest.TestCase):
             with self.assertRaises(KbError):
                 self.kb += ["robert rel%s %s" % (i, val)]
 
+    def test_labels(self):
+
+        self.kb += ["johnny rdf:type Human"]
+
+        self.assertEquals(self.kb.label("johnny"), "johnny")
+
+        self.kb += ['johnny rdfs:label "A que Johnny"']
+
+        self.assertEquals(self.kb.label("johnny"), "A que Johnny")
+        self.assertEquals(self.kb.label("johnny", "en"), "A que Johnny")
+        self.assertEquals(self.kb.label("johnny", "fr"), "A que Johnny")
+        self.assertEquals(self.kb.label("johnny", "unknown_language"), "A que Johnny")
+
+        self.kb += ['johnny rdfs:label "Jojo"@fr']
+
+        self.assertEquals(self.kb.label("johnny"), "A que Johnny")
+        self.assertEquals(self.kb.label("johnny", "en"), "A que Johnny")
+        self.assertEquals(self.kb.label("johnny", "fr"), "Jojo")
+
     def test_retrieval(self):
 
         self.assertFalse(self.kb.about("Human"))
