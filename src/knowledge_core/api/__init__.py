@@ -19,6 +19,7 @@ MANAGE_SRV = "/kb/manage"
 REVISE_SRV = "/kb/revise"
 QUERY_SRV = "/kb/query"
 ABOUT_SRV = "/kb/about"
+LABEL_SRV = "/kb/label"
 DETAILS_SRV = "/kb/details"
 LOOKUP_SRV = "/kb/lookup"
 SPARQL_SRV = "/kb/sparql"
@@ -46,6 +47,7 @@ class KB:
         rospy.wait_for_service(REVISE_SRV)
         rospy.wait_for_service(QUERY_SRV)
         rospy.wait_for_service(ABOUT_SRV)
+        rospy.wait_for_service(LABEL_SRV)
         rospy.wait_for_service(DETAILS_SRV)
         rospy.wait_for_service(LOOKUP_SRV)
         rospy.wait_for_service(SPARQL_SRV)
@@ -55,6 +57,7 @@ class KB:
         self._revise_srv = rospy.ServiceProxy(REVISE_SRV, Revise)
         self._query_srv = rospy.ServiceProxy(QUERY_SRV, Query)
         self._about_srv = rospy.ServiceProxy(ABOUT_SRV, About)
+        self._label_srv = rospy.ServiceProxy(LABEL_SRV, About)
         self._details_srv = rospy.ServiceProxy(DETAILS_SRV, About)
         self._lookup_srv = rospy.ServiceProxy(LOOKUP_SRV, Lookup)
         self._sparql_srv = rospy.ServiceProxy(SPARQL_SRV, Sparql)
@@ -172,6 +175,26 @@ class KB:
             raise KbError(res.error_msg)
 
         return json.loads(res.json)
+
+    def label(self, term, lang=None, models=[]):
+        """returns the label associated to the term.
+
+        If no label, returns the term itself.
+        If lang is specified (2 letter code, eg `en`, `fr`), returns the label translated in that language, if available.
+        If not specified, or if the desired language is not available, fallback to English.
+        """
+
+        res = self._label_srv(term=term, models=models)
+
+        if not res.success:
+            raise KbError(res.error_msg)
+
+        labels = json.loads(res.json)
+
+        if lang is None:
+            return labels["default"]
+        else:
+            return labels.get(lang, labels["default"])
 
     def details(self, term, models=[]):
         res = self._details_srv(term=term, models=models)

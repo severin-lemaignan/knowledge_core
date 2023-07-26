@@ -49,6 +49,7 @@ class KnowledgeCoreROS:
             "revise": rospy.Service("kb/revise", Revise, self.handle_revise),
             "query": rospy.Service("kb/query", Query, self.handle_query),
             "about": rospy.Service("kb/about", About, self.handle_about),
+            "label": rospy.Service("kb/label", About, self.handle_label),
             "details": rospy.Service("kb/details", About, self.handle_details),
             "lookup": rospy.Service("kb/lookup", Lookup, self.handle_lookup),
             "event": rospy.Service("kb/events", Event, self.handle_new_event),
@@ -169,6 +170,16 @@ Available services:
 
         try:
             res = self.kb.about(req.term, req.models)
+            return AboutResponse(success=True, error_msg="", json=json.dumps(res))
+        except KbServerError as kbe:
+            return AboutResponse(success=False, error_msg=str(kbe))
+
+    def handle_label(self, req):
+
+        from knowledge_core.srv import AboutResponse
+
+        try:
+            res = self.kb.label(req.term, req.models)
             return AboutResponse(success=True, error_msg="", json=json.dumps(res))
         except KbServerError as kbe:
             return AboutResponse(success=False, error_msg=str(kbe))
