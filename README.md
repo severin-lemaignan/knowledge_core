@@ -172,16 +172,21 @@ the low-level ROS topics/services API. See example above. This Pythonic
 interface follows the [`pykb`](https://gitlab/interaction/pykb/) API (except in
 a few corner case that are not supported by the ROS interface).**
 
-`knowledge_core` exposes two topics, `/kb/add_facts` and
-`/kb/remove_facts`, to add/remove triples to the knowledge base. Both topics
-expect a simple string with 3 tokens separated by spaces (if the object is a
-literal string, use double quotes to escape it).
+`knowledge_core` exposes two topics, `/kb/add_facts` and `/kb/remove_facts`, to
+add/remove triples to the knowledge base. Both topics expect a simple string
+with 3 tokens separated by spaces (if the object is a literal string, use double
+quotes to escape it).
 
 It also exposes the following services:
 
 - `/kb/revise` to add/remove facts using a synchronous interface
 - `/kb/query` to perform simple queries
 - `/kb/sparql` to perform complex queries (full SPARQL end-point)
+- `/kb/about` to return the list of all statements involving a specific concept
+- `/kb/label` to return the of a specific concept (or the concept name if no
+  label available)
+- `/kb/details` to return details about one specific concept (for instance,
+  parents classes, instances,...)
 - `/kb/events` to subscribe to 'events' by providing a (set of) partially-bound
   triples. Calling the service returns an event *id*. Subscribe then to
   `/kb/events/<id>` to be notified everytime a new instance/class match the
