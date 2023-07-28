@@ -122,7 +122,7 @@ class TestKB(unittest.TestCase):
         res = self.query(["tiago ?p ?o"], None, None)
         self.assertCountEqual(
             json.loads(res.json),
-            [{"p": "rdf:type", "o": "Robot"}, {"p": "rdf:type", "o": "owl:Thing"}],
+            [{"p": "rdf:type", "o": "Robot"}],
         )
 
         self.assertTrue(
