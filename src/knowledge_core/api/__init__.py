@@ -102,7 +102,8 @@ class KB:
         if isinstance(pattern, str):
             pattern = [pattern]
 
-        evt = self._events_srv(patterns=pattern, one_shot=one_shot, models=models)
+        evt = self._events_srv(
+            patterns=pattern, one_shot=one_shot, models=models)
 
         evt_relay = EvtRelay(callback)
         rospy.Subscriber(evt.topic, String, evt_relay.callback, queue_size=10)
@@ -332,3 +333,12 @@ class KB:
             else:
                 res.append(tok)
         return tuple(res)
+
+    def sparql(self, query, models=[]):
+
+        res = self._sparql_srv(query=query, models=models)
+
+        if not res.success:
+            raise KbError(res.error_msg)
+
+        return json.loads(res.json)

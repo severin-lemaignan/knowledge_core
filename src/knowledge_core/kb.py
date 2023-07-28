@@ -875,19 +875,20 @@ class KnowledgeCore:
         serialization of SPARQL Results
         (https://www.w3.org/TR/2013/REC-sparql11-results-json-20130321/)
 
-        Example:
+        Example (using the `knowledge_core.api.KB` Python wrapper):
         ```
         >>> kb += ["myself age 40"]
         >>> kb.sparql("SELECT ?age WHERE { :myself :age ?age . }")
         {'results':
             {'bindings': [
                 {'age':
-                    {'type': 'literal',
+                    {'type': 'typed-literal',
                      'value': '40',
                      'datatype': 'http://www.w3.org/2001/XMLSchema#integer'}
                 }]
             },
           'head': {'vars': ['age']}
+          'query': # original query
          }
 
         """
@@ -901,7 +902,7 @@ class KnowledgeCore:
 
         logger.info("Executing SPARQL query in model: %s\n%s" % (model, query))
 
-        sparql_res, query = self._sparql(model, query)
+        sparql_res, query = self._sparql(model, query, raw=True)
 
         import json
 
@@ -1055,7 +1056,17 @@ class KnowledgeCore:
     ################################################################################
     ################################################################################
 
-    def _sparql(self, model, query):
+    def _sparql(self, model, query, raw=False):
+        """
+
+        :param raw: if True, returns the raw SPARQLResult object; if False,
+        returns a list of triples fulfulling the query.
+
+        :return: result of the query (see `raw` parameter) and original query,
+        augmented with standard SPARQL prefixes.
+
+        """
+
         q = SPARQL_PREFIXES  # TODO: as a (potential?) optimization, pass initNs to graph.query, instead of adding the PREFIX strings to the query
         q += query
 
@@ -1065,10 +1076,17 @@ class KnowledgeCore:
 
         try:
             res = self.models[model].materialized_graph.query(q)
-            no_bnode = [stmt for stmt in filter(lambda s: all(type(t) != BNode for t in s), res)]
-            return no_bnode, q
+
+            if raw:
+                return res, q
+            else:
+                no_bnode = [stmt for stmt in filter(lambda s: all(type(t) != BNode for t in s), res)]
+                return no_bnode, q
         except pyparsing.ParseException:
             raise KbServerError("Syntax error while parsing SPARQL query:\n%s" % q)
+        except TypeError as te:
+            raise KbServerError("Syntax error while parsing SPARQL query:\n%s\nException was: %s" % (q, te))
+
 
     def named_variables(self, vars):
         """
