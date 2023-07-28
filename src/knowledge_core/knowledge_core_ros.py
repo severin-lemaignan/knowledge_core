@@ -74,6 +74,7 @@ Available services:
 - /kb/revise [knowledge_core/Revise]
 - /kb/query [knowledge_core/Query]
 - /kb/about [knowledge_core/About]
+- /kb/label [knowledge_core/About]
 - /kb/details [knowledge_core/About]
 - /kb/lookup [knowledge_core/Lookup]
 - /kb/sparql [knowledge_core/Sparql]
