@@ -1,3 +1,4 @@
+from decimal import Decimal
 import logging
 
 logger = logging.getLogger("KnowledgeCore." + __name__)
@@ -155,29 +156,42 @@ def shorten_term(graph, term):
         return term.n3()
 
 
-def shorten(graph, stmt):
+def shorten(graph, stmt, double_quote_for_str=False):
+
+    is_single_term = isinstance(stmt, str)
+
+    if is_single_term:
+        stmt = [stmt]
 
     res = []
     for t in stmt:
         if isinstance(t, URIRef):
             res.append(graph.qname(t))
         elif isinstance(t, Literal):
-            lit = t.toPython()
-            if isinstance(lit, str):
-                lit = '"%s"' % lit
-            res.append(lit)
+            val = t.toPython()
+
+            # workaround: decimal.Decimal is not JSON-serializable -> convert it to a float
+            if type(val) == Decimal:
+                val = float(val)
+
+            if double_quote_for_str and isinstance(val, str):
+                val = f'"{val}"'
+            res.append(val)
         else:
             res.append(t.n3())
-    return res
+    if is_single_term:
+        return res[0]
+    else:
+        return res
 
 
 def shortenN(graph, stmts):
     return [shorten(graph, s) for s in stmts]
 
 
-def shorten_graph(graph):
+def shorten_graph(graph, double_quote_for_str=False):
     """returns a list of s,p,o statements contained in a graph, with their URIs shorten (eg, using prefixes when possible)"""
-    return [shorten(graph, s) for s in graph.triples([None, None, None])]
+    return [shorten(graph, s, double_quote_for_str) for s in graph.triples([None, None, None])]
 
 
 def get_variables(stmt):
@@ -392,7 +406,7 @@ class KnowledgeCore:
         return result
 
     @api
-    def lookup(self, resource, models=None):
+    def lookup(self, term, models=None):
         """Search the knowledge base for a term matching a string. The search is
         performed both on terms' names and on label.
 
@@ -402,27 +416,57 @@ class KnowledgeCore:
         models = self.normalize_models(models)
         logger.info(
             "Lookup for "
-            + str(resource)
+            + str(term)
             + " in "
             + (str(models) if models else "default model.")
         )
-        about = self.about(resource, models)
 
-        if not about:
-            logger.info("'%s' not found." % str(resource))
-            return []
+        exact_match = set()
+        approximate_match = set()
 
-        matching_concepts = set()
+        for model in models:
+            g = self.models[model].materialized_graph
 
-        for s, p, o in about:
-            if s == resource or p == resource or o == resource:
-                matching_concepts.add(resource)
-            elif p == shorten_term(self.models[DEFAULT_MODEL].graph, RDFS.label) and o == '"%s"' % resource:
-                matching_concepts.add(s)
+            for s,p,o in g:
+                ss, sp, so = [str(x) for x in shorten(g,[s,p,o])]
 
-        res = [(concept, self.typeof(concept, models)) for concept in matching_concepts]
-        logger.info("Found: " + str(res))
-        return res
+                if term == ss:
+                    exact_match.add((ss,s))
+                elif term.lower() in ss.lower():
+                    approximate_match.add((ss,s))
+
+                if term == sp:
+                    exact_match.add((sp,p))
+                elif term.lower() in sp.lower():
+                    approximate_match.add((sp,p))
+
+
+
+                if term == so:
+                    # the term is the label of a node? add the node
+                    if p == RDFS.label:
+                        exact_match.add((ss,s))
+                    else: # otherwise, add the literal
+                        exact_match.add((so,o))
+
+                elif term.lower() in so.lower():
+                    # the term is the label of a node? add the node
+                    if p == RDFS.label:
+                        approximate_match.add((ss,s))
+                    else: # otherwise, add the literal
+                        approximate_match.add((so,o))
+
+
+        exact_match = [(s, self.typeof(t, models)) for s, t in exact_match]
+        approximate_match = [(s, self.typeof(t, models)) for s, t in approximate_match]
+        if exact_match:
+            logger.info("Found exact match: " + str(exact_match))
+        if approximate_match:
+            logger.info("Found approximate match: " + str(approximate_match))
+        if not exact_match and not approximate_match:
+            logger.info("No match found")
+
+        return exact_match + approximate_match
 
     def _instancesof(self, term, direct=False, models=[]):
 
@@ -693,7 +737,7 @@ class KnowledgeCore:
 
         subgraph = parse_stmts_to_graph(stmts)
         parsed_stmts = "\n\t- ".join(
-            [" ".join([str(t) for t in s]) for s in shorten_graph(subgraph)]
+            [" ".join([str(t) for t in s]) for s in shorten_graph(subgraph, double_quote_for_str=True)]
         )
 
         models = self.normalize_models(policy.get("models", []))

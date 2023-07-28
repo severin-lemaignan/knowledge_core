@@ -145,13 +145,30 @@ class TestPythonicROSKb(unittest.TestCase):
         self.kb += ['nono rdfs:label "alfred"']
         self.kb += ['sentence rdfs:label "alfred is a charming person"']
         self.assertCountEqual(
-            self.kb.lookup("alfred"), [["alfred", "instance"], ["nono", "undecided"]]
-        )  # 'sentence' should *not* be included
+            self.kb.lookup("alfred"),
+            [["alfred", "instance"], ["nono", "undecided"], ["sentence", "undecided"]],
+        )
+
+        # as 'sentence' is only a partial match, it should be listed last
+        self.assertEquals(self.kb.lookup("alfred")
+                          [-1], ["sentence", "undecided"])
+
+        self.kb.clear()
+
+        # same test as above, but different insertion order
+        self.kb += ['sentence rdfs:label "alfred is a charming person"']
+        self.kb += ['nono rdfs:label "alfred"']
+        self.kb += ['alfred likes icecream']
+        self.kb += ["alfred rdf:type Robot"]
+        self.assertCountEqual(
+            self.kb.lookup("alfred"),
+            [["alfred", "instance"], ["nono", "undecided"], ["sentence", "undecided"]],
+        )
 
         self.kb += ['gerard rdfs:label "likes"']
         self.assertCountEqual(
-            self.kb.lookup('"likes"'),
-            [['"likes"', "literal"]],
+            self.kb.lookup("likes"),
+            [["gerard", "undecided"], ["likes", "object_property"]],
         )
 
         self.kb += ["gerard age 18"]
@@ -159,46 +176,48 @@ class TestPythonicROSKb(unittest.TestCase):
 
     def test_literals(self):
 
-        literals = [
-            '"test"',
-            '"""test"""',
-            '"""toto\ntata"""',
-            '"test"@fr',
-            '"foo"^^<http://example.org/my/datatype>',
-            '"""10"""^^xsd:decimal',
-            "-5",
-            "0",
-            "1",
-            "10",
-            "+1",
-            '"-5"^^xsd:integer',
-            '"10"^^<http://www.w3.org/2001/XMLSchema#integer>',
-            "1.3e2",
-            "10e0",
-            "-12.5e10",
-            '"1.3e2"^^xsd:double',
-            '"-12.5e10"^^<http://www.w3.org/2001/XMLSchema#double>',
-            "0.0",
-            "1.0",
-            "1.234567890123456789",
-            "-5.0",
-            '"0.0"^^xsd:decimal',
-            '"-5.0"^^<http://www.w3.org/2001/XMLSchema#decimal>',
-            "true",
-            "false",
-            '"true"^^xsd:boolean',
-            '"false"^^<http://www.w3.org/2001/XMLSchema#boolean>',
-        ]
+        literals = {
+            '"test"': "test",
+            '"""test"""': "test",
+            '"""toto\ntata"""': "toto\ntata",
+            '"test"@fr': "test",
+            '"foo"^^<http://example.org/my/datatype>': "foo",
+            '"""10"""^^xsd:decimal': 10,
+            "-5": -5,
+            "0": 0,
+            "1": 1,
+            "10": 10,
+            "+1": 1,
+            '"-5"^^xsd:integer': -5,
+            '"10"^^<http://www.w3.org/2001/XMLSchema#integer>': 10,
+            "1.3e2": 1.3e2,
+            "10e0": 10,
+            "-12.5e10": -12.5e10,
+            '"1.3e2"^^xsd:double': 1.3e2,
+            '"-12.5e10"^^<http://www.w3.org/2001/XMLSchema#double>': -12.5e10,
+            "0.0": 0.0,
+            "1.0": 1.0,
+            "1.234567890123456789": 1.234567890123456789,
+            "-5.0": -5.0,
+            '"0.0"^^xsd:decimal': 0.0,
+            '"-5.0"^^<http://www.w3.org/2001/XMLSchema#decimal>': -5.0,
+            "true": True,
+            "false": False,
+            '"true"^^xsd:boolean': True,
+            '"false"^^<http://www.w3.org/2001/XMLSchema#boolean>': False,
+        }
 
         malformed = ["'test'", '"toto\ntata"']
 
         objects = ["test", "False", "True"]
 
-        for i, val in enumerate(literals):
-            self.kb += ["robert rel%s %s" % (i, val)]
+        for i, kv in enumerate(literals.items()):
+            lit, py = kv
+            self.kb += ["robert rel%s %s" % (i, lit)]
             self.assertCountEqual(
                 self.kb.lookup("rel%s" % i), [["rel%s" % i, "datatype_property"]]
             )
+            self.assertEquals(self.kb["* rel%s ?lit" % i][0]["lit"], py)
 
         for i, val in enumerate(objects):
             self.kb += ["robert relobj%s %s" % (i, val)]
