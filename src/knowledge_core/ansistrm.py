@@ -79,7 +79,7 @@ class ColorizingStreamHandler(logging.StreamHandler):
         try:
             message = self.format(record)
             # Don't do anything if the StreamHandler does not exist
-            if message == None:
+            if message is None:
                 return
             stream = self.stream
             if not self.is_tty:
@@ -90,8 +90,6 @@ class ColorizingStreamHandler(logging.StreamHandler):
             self.flush()
         except (KeyboardInterrupt, SystemExit):
             raise
-        except:
-            self.handleError(record)
 
     if os.name != "nt":
 
@@ -141,7 +139,8 @@ class ColorizingStreamHandler(logging.StreamHandler):
                                 color = 0x07
                             else:
                                 pass  # error condition ignored
-                        ctypes.windll.kernel32.SetConsoleTextAttribute(h, color)
+                        ctypes.windll.kernel32.SetConsoleTextAttribute(
+                            h, color)
 
     def colorize(self, message, record):
         if record.levelno in self.level_map:
@@ -167,7 +166,7 @@ class ColorizingStreamHandler(logging.StreamHandler):
         # Catch the case when there is a zombie logger, when re-launching
         #  the simulation with 'p'.
         # This seems to be caused by an incorrect cleaning on the Builder
-        except AttributeError as detail:
+        except AttributeError:
             return None
         if self.is_tty:
             message = self.colorize(message, record)

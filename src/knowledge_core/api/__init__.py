@@ -1,28 +1,31 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import rospy
-from knowledge_core.srv import Manage, ManageRequest
-from knowledge_core.srv import Revise, ReviseRequest
-from knowledge_core.srv import Query
-from knowledge_core.srv import About
-from knowledge_core.srv import Lookup
-from knowledge_core.srv import Sparql
-from knowledge_core.srv import Event
+from kb_msgs.srv import Manage
+from kb_msgs.srv import Revise
+from kb_msgs.srv import Query
+from kb_msgs.srv import About
+from kb_msgs.srv import Lookup
+from kb_msgs.srv import Sparql
+from kb_msgs.srv import Event
 from std_msgs.msg import String
+
+import rclpy
+from rclpy.node import Node
+from rclpy.duration import Duration
 
 import json
 import random
 import shlex
 
-MANAGE_SRV = "/kb/manage"
-REVISE_SRV = "/kb/revise"
-QUERY_SRV = "/kb/query"
-ABOUT_SRV = "/kb/about"
-LOOKUP_SRV = "/kb/lookup"
-SPARQL_SRV = "/kb/sparql"
-EVENTS_SRV = "/kb/events"
-EVENTS_NS = EVENTS_SRV + "/"
+MANAGE_SRV = Manage, "/kb/manage"
+REVISE_SRV = Revise, "/kb/revise"
+QUERY_SRV = Query, "/kb/query"
+ABOUT_SRV = About, "/kb/about"
+LOOKUP_SRV = Lookup, "/kb/lookup"
+SPARQL_SRV = Sparql, "/kb/sparql"
+EVENTS_SRV = Event, "/kb/events"
+EVENTS_NS = EVENTS_SRV[1] + "/"
 
 
 class KbError(Exception):
@@ -34,45 +37,91 @@ class KbError(Exception):
 
 
 class KB:
-    def __init__(self):
-        rospy.wait_for_service(MANAGE_SRV)
-        rospy.wait_for_service(REVISE_SRV)
-        rospy.wait_for_service(QUERY_SRV)
-        rospy.wait_for_service(ABOUT_SRV)
-        rospy.wait_for_service(LOOKUP_SRV)
-        rospy.wait_for_service(SPARQL_SRV)
-        rospy.wait_for_service(EVENTS_SRV)
+    """
+    Pythonic wrapper around the ROS API of KnowledgeCore.
 
-        self._manage_srv = rospy.ServiceProxy(MANAGE_SRV, Manage)
-        self._revise_srv = rospy.ServiceProxy(REVISE_SRV, Revise)
-        self._query_srv = rospy.ServiceProxy(QUERY_SRV, Query)
-        self._about_srv = rospy.ServiceProxy(ABOUT_SRV, About)
-        self._lookup_srv = rospy.ServiceProxy(LOOKUP_SRV, Lookup)
-        self._sparql_srv = rospy.ServiceProxy(SPARQL_SRV, Sparql)
-        self._events_srv = rospy.ServiceProxy(EVENTS_SRV, Event)
+    To try it:
+
+    ```
+    import rclpy
+    from rclpy.node import Node
+    from knowledge_core.api import KB
+
+    rclpy.init()
+    node = Node("test_kb")
+    kb = KB(node)
+    ```
+
+    Then:
+
+    >>> kb += ["john rdf:type Human", "tiago rdf:type Robot", "john likes tiago"]
+    >>> kb["?human rdf:type Human", "?human likes ?robot", "?robot rdf:type Robot"]
+
+    """
+
+    def __init__(self, node: Node):
+
+        self.node = node
+
+        self._manage_srv = node.create_client(*MANAGE_SRV)
+        self._revise_srv = node.create_client(*REVISE_SRV)
+        self._query_srv = node.create_client(*QUERY_SRV)
+        self._about_srv = node.create_client(*ABOUT_SRV)
+        self._lookup_srv = node.create_client(*LOOKUP_SRV)
+        self._sparql_srv = node.create_client(*SPARQL_SRV)
+        self._events_srv = node.create_client(*EVENTS_SRV)
+
+        while not self._manage_srv.wait_for_service(timeout_sec=1.0):
+            node.get_logger().info(
+                f'service {MANAGE_SRV[1]} not available, waiting again...')
+        while not self._revise_srv.wait_for_service(timeout_sec=1.0):
+            node.get_logger().info(
+                f'service {REVISE_SRV[1]} not available, waiting again...')
+        while not self._query_srv.wait_for_service(timeout_sec=1.0):
+            node.get_logger().info(
+                f'service {QUERY_SRV[1]} not available, waiting again...')
+        while not self._about_srv.wait_for_service(timeout_sec=1.0):
+            node.get_logger().info(
+                f'service {ABOUT_SRV[1]} not available, waiting again...')
+        while not self._lookup_srv.wait_for_service(timeout_sec=1.0):
+            node.get_logger().info(
+                f'service {LOOKUP_SRV[1]} not available, waiting again...')
+        while not self._sparql_srv.wait_for_service(timeout_sec=1.0):
+            node.get_logger().info(
+                f'service {SPARQL_SRV[1]} not available, waiting again...')
+        while not self._events_srv.wait_for_service(timeout_sec=1.0):
+            node.get_logger().info(
+                f'service {EVENTS_SRV[1]} not available, waiting again...')
 
         self._evt_subscribers = {}
 
     def hello(self):
-        res = self._manage_srv(action=ManageRequest.STATUS)
-        return json.loads(res.json)["name"]
+        future = self._manage_srv.call_async(
+            Manage.Request(action=Manage.Request.STATUS))
+        rclpy.spin_until_future_complete(self.node, future)
+
+        return json.loads(future.result().json)["name"]
 
     def stats(self):
-        res = self._manage_srv(action=ManageRequest.STATUS)
-        return json.loads(res.json)
+        future = self._manage_srv.call_async(
+            Manage.Request(action=Manage.Request.STATUS))
+        rclpy.spin_until_future_complete(self.node, future)
+        return json.loads(future.result().json)
 
     def clear(self):
-        self._manage_srv(action=ManageRequest.CLEAR)
+        future = self._manage_srv.call_async(
+            Manage.Request(action=Manage.Request.CLEAR))
+        rclpy.spin_until_future_complete(self.node, future)
 
     def subscribe(
         self,
         pattern,
         callback,
         one_shot=False,
-        models=None,
+        models=[],
     ):
-        """Allows to subscribe to an event, and get notified when the event is
-        triggered.
+        """
+        Allow to subscribe to an event, and get notified when the event is triggered.
 
         >>> def onevent(evt):
         >>>     print("In callback. Got evt %s" % evt)
@@ -93,7 +142,7 @@ class KB:
         """
 
         class EvtRelay:
-            """small callback wrapper to load the json event into a python object"""
+            """Small callback wrapper to load the json event into a python object."""
 
             def __init__(self, cb):
                 self.cb = cb
@@ -104,8 +153,10 @@ class KB:
         if isinstance(pattern, str):
             pattern = [pattern]
 
-        evt = self._events_srv(
-            patterns=pattern, one_shot=one_shot, models=models)
+        future = self._events_srv.call_async(Event.Request(
+            patterns=pattern, one_shot=one_shot, models=models))
+        rclpy.spin_until_future_complete(self.node, future)
+        evt = future.result()
 
         # check if we already have a registered an identical event pattern,
         # with an identifical callback
@@ -117,7 +168,7 @@ class KB:
                 self._evt_subscribers[evt.id],
             )
         ]:
-            rospy.logwarn(
+            self.node.get_logger().warn(
                 "Same event already subscribed to with same callback. Skipping."
             )
             return evt.id
@@ -126,16 +177,20 @@ class KB:
         self._evt_subscribers.setdefault(evt.id, []).append(
             (
                 callback,
-                rospy.Subscriber(evt.topic, String, evt_relay.callback, queue_size=10),
+                self.node.create_subscription(
+                    String, evt.topic, evt_relay.callback, 10)
             )
         )
 
-        rospy.logdebug("New event successfully registered with ID " + evt.id)
+        self.node.get_logger().debug("New event successfully registered with ID " + evt.id)
 
         return evt.id
 
     def find(self, patterns, vars=[], models=[]):
-        res = self._query_srv(patterns=patterns, vars=vars, models=models)
+        future = self._query_srv.call_async(Query.Request(
+            patterns=patterns, vars=vars, models=models))
+        rclpy.spin_until_future_complete(self.node, future)
+        res = future.result()
 
         if not res.success:
             raise KbError(res.error_msg)
@@ -143,7 +198,10 @@ class KB:
         return json.loads(res.json)
 
     def about(self, term, models=[]):
-        res = self._about_srv(term=term, models=models)
+        future = self._about_srv.call_async(
+            About.Request(term=term, models=models))
+        rclpy.spin_until_future_complete(self.node, future)
+        res = future.result()
 
         if not res.success:
             raise KbError(res.error_msg)
@@ -151,7 +209,10 @@ class KB:
         return json.loads(res.json)
 
     def lookup(self, query, models=[]):
-        res = self._lookup_srv(query=query, models=models)
+        future = self._lookup_srv.call_async(
+            Lookup.Request(query=query, models=models))
+        rclpy.spin_until_future_complete(self.node, future)
+        res = future.result()
 
         if not res.success:
             raise KbError(res.error_msg)
@@ -159,7 +220,9 @@ class KB:
         return json.loads(res.json)
 
     def __getitem__(self, *args):
-        """This method introduces a different way of querying the ontology server.
+        """
+        Offer idiomatic Python syntax (accessors) to querying the ontology server.
+
         It uses the args (be it a string or a set of strings) to find concepts
         that match the pattern.
         An optional 'models' parameter can be given to specify the list of models the
@@ -208,7 +271,7 @@ class KB:
         args = args[0]
 
         # First, take care of models
-        models = None
+        models = []
         if len(args) > 1 and isinstance(args[-1], list):
             models = args[-1]
             args = args[:-1]
@@ -241,9 +304,11 @@ class KB:
         return len(self.find(pattern, models)) != 0
 
     def __contains__(self, pattern):
-        """This will return 'True' is either a concept - described by its ID or
-        label- or a statement or a set of statement is present (or can be infered)
-        in the ontology.
+        """
+        Check if a concept or statement(s) is asserted/infered in the knowledge base.
+
+        The concept can be referenced by its URI or label; the statement or a
+        set of statement is present are passed as a list of strings ("s p o")
 
         This allows syntax like:
 
@@ -277,12 +342,19 @@ class KB:
 
     def update(self, stmts, models=[], lifespan=0):
 
-        res = self._revise_srv(
-            method=ReviseRequest.UPDATE,
-            statements=stmts,
-            models=models,
-            lifespan=rospy.Time(lifespan),
-        )
+        if not (type(stmts) == list):
+            stmts = [stmts]
+
+        future = self._revise_srv.call_async(
+            Revise.Request(
+                method=Revise.Request.UPDATE,
+                statements=stmts,
+                models=models,
+                lifespan=Duration(seconds=lifespan).to_msg(),
+            ))
+        rclpy.spin_until_future_complete(self.node, future)
+
+        res = future.result()
 
         if not res.success:
             raise KbError(res.error_msg)
@@ -292,16 +364,21 @@ class KB:
 
     def remove(self, stmts, models=[]):
 
-        res = self._revise_srv(
-            method=ReviseRequest.REMOVE, statements=stmts, models=models
-        )
+        future = self._revise_srv.call_async(
+            Revise.Request(
+                method=Revise.Request.REMOVE, statements=stmts, models=models
+            ))
+        rclpy.spin_until_future_complete(self.node, future)
+
+        res = future.result()
 
         if not res.success:
             raise KbError(res.error_msg)
 
     def __iadd__(self, stmts):
-        """This method allows to easily add new statements to the ontology
-        with the ``+=`` operator.
+        """
+        Allow to easily add new statements to the ontology with the ``+=`` operator.
+
         It can only add statement to the default robot's model (other agents' model are
         not accessible).
 
@@ -320,11 +397,12 @@ class KB:
         return self
 
     def __isub__(self, stmts):
-        """This method allows to easily retract statements from the ontology
-        with the ``-=`` operator.
-        It can only add statement to the robot's model (other agents' model are
-        not accessible).
-        If a statement doesn't exist, it is silently skipped.
+        """
+        Allow to easily retract statements from the ontology with the ``-=`` operator.
+
+        It can only retract statements from the robot's model (other agents'
+        model are not accessible).  If a statement doesn't exist, it is
+        silently skipped.
 
         .. code:: python
 
@@ -355,12 +433,3 @@ class KB:
             else:
                 res.append(tok)
         return tuple(res)
-
-    def sparql(self, query, models=[]):
-
-        res = self._sparql_srv(query=query, models=models)
-
-        if not res.success:
-            raise KbError(res.error_msg)
-
-        return json.loads(res.json)

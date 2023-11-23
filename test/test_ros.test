@@ -1,7 +1,0 @@
-<launch>
-
-	<node pkg="knowledge_core" type="knowledge_core" name="knowledge_core" args="--debug --no-reasoner" output="screen"/>
-
-	<!-- Run ROS test -->
-	<test test-name="ros_test" pkg="knowledge_core" type="test_ros.py"/>
-</launch>

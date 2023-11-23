@@ -38,7 +38,7 @@ facts_pub = rospy.Publisher("/kb/add_fact", String, queue_size=1)
 
 rospy.sleep(0.5)
 
-## this should trigger the event!
+# this should trigger the event!
 facts_pub.publish("john rdf:type Human")
 
 rospy.sleep(0.5)
@@ -48,7 +48,7 @@ facts_pub.publish("ari rdf:type Robot")
 
 rospy.sleep(0.5)
 
-## this should trigger the event!
+# this should trigger the event!
 facts_pub.publish("bill rdf:type Human")
 
 rospy.sleep(0.5)

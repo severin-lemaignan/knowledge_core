@@ -1,17 +1,22 @@
+from knowledge_core import __version__
+from .exceptions import KbServerError
+import hashlib
+import traceback
+from queue import Queue, Empty
+import pathlib
+from datetime import datetime
+import time
 from decimal import Decimal
 import logging
 
 logger = logging.getLogger("KnowledgeCore." + __name__)
 
-import time
-from datetime import datetime
-import pathlib
-
-from queue import Queue, Empty
-import traceback
-
 try:
     import rdflib
+    from rdflib.util import date_time
+    from rdflib.namespace import Namespace, RDF, RDFS, OWL, XSD
+    from rdflib.term import Node, BNode, Literal, URIRef, Variable
+    from rdflib import Graph, Dataset
 
     logger.info("Using RDFlib %s" % rdflib.__version__)
 except ImportError:
@@ -20,10 +25,6 @@ except ImportError:
 
     sys.exit(1)
 
-from rdflib import Graph, Dataset
-from rdflib.term import Node, BNode, Literal, URIRef, Variable
-from rdflib.namespace import Namespace, RDF, RDFS, OWL, XSD
-from rdflib.util import date_time
 
 has_reasoner = False
 try:
@@ -35,11 +36,9 @@ try:
     )
 except ImportError:
     logger.warning(
-        "reasonable OWL2 RL reasoner not available. Install it with `pip install reasonable`. Running without reasoning."
+        "reasonable OWL2 RL reasoner not available. Install it with "
+        "`pip install reasonable`. Running without reasoning."
     )
-
-
-import hashlib
 
 
 def stable_hash(s, p="", o="", model=""):
@@ -64,13 +63,15 @@ DEFAULT_PREFIX = "oro"
 
 default_ns = Namespace(IRIS[DEFAULT_PREFIX])
 
-SPARQL_PREFIXES = "".join(["PREFIX %s: <%s>\n" % (p, iri) for p, iri in IRIS.items()])
+SPARQL_PREFIXES = "".join(["PREFIX %s: <%s>\n" % (p, iri)
+                          for p, iri in IRIS.items()])
 SPARQL_PREFIXES += "PREFIX : <%s>\n" % IRIS[DEFAULT_PREFIX]
 SPARQL_PREFIXES += "BASE <%s>\n" % IRIS[DEFAULT_PREFIX]
 
 
 # reference: https://www.w3.org/TeamSubmission/n3/#syntax
-N3_PROLOGUE = " ".join(["@prefix %s: <%s>." % (p, iri) for p, iri in IRIS.items()])
+N3_PROLOGUE = " ".join(["@prefix %s: <%s>." % (p, iri)
+                       for p, iri in IRIS.items()])
 N3_PROLOGUE += " @prefix : <%s>. " % IRIS[DEFAULT_PREFIX]
 N3_PROLOGUE += "@base <%s>. " % IRIS[DEFAULT_PREFIX]
 N3_PROLOGUE += (
@@ -78,11 +79,6 @@ N3_PROLOGUE += (
 )
 
 EXPIRES_ON_TERM = URIRef(IRIS[DEFAULT_PREFIX] + "expiresOn")
-
-from .exceptions import KbServerError
-from knowledge_core import __version__
-
-from .helpers import memoize
 
 
 def api(fn):
@@ -110,7 +106,7 @@ def parse_stmts_to_graph(stmts):
 
     try:
         return Graph().parse(data=data, format="n3")
-    except rdflib.plugins.parsers.notation3.BadSyntax as bs:
+    except rdflib.plugins.parsers.notation3.BadSyntax:
         raise KbServerError("invalid syntax for statements %s" % stmts)
 
 
@@ -162,7 +158,6 @@ def shorten(graph, stmt, double_quote_for_str=False):
 
     Optionally, ensure that strings are double-quoted, for further JSON serialization.
     """
-
     is_single_term = isinstance(stmt, str)
 
     if is_single_term:
@@ -195,7 +190,11 @@ def shortenN(graph, stmts):
 
 
 def shorten_graph(graph, double_quote_for_str=False):
-    """returns a list of s,p,o statements contained in a graph, with their URIs shorten (eg, using prefixes when possible)"""
+    """
+    Return a list of s, p, o statements contained in a graph, with their URIs shorten.
+
+    (eg, using prefixes when possible).
+    """
     return [shorten(graph, s, double_quote_for_str) for s in graph.triples([None, None, None])]
 
 
@@ -212,7 +211,7 @@ def get_all_variables(stmts):
 
 
 class dotdict(dict):
-    """dot.notation access to dictionary attributes"""
+    """dot.notation access to dictionary attributes."""
 
     __getattr__ = dict.get
     __setattr__ = dict.__setitem__
@@ -235,7 +234,8 @@ class Event:
 
         self.id = "evt_" + str(
             stable_hash(
-                str(sorted(self.patterns)) + str(one_shot) + str(sorted(self.models))
+                str(sorted(self.patterns)) +
+                str(one_shot) + str(sorted(self.models))
             )
         )
 
@@ -248,7 +248,8 @@ class Event:
         self.previous_instances = set()
 
         logger.debug("Creating new event. Looking existing matchs...")
-        instances = self.kb.find(self.patterns, self.vars, frozenset(self.models))
+        instances = self.kb.find(
+            self.patterns, self.vars, frozenset(self.models))
         logger.debug("Event created with initial instances %s" % instances)
 
         self.previous_instances = set([hashabledict(row) for row in instances])
@@ -269,7 +270,8 @@ class Event:
         if self.one_shot:
             self.valid = False
 
-        instances = self.kb.find(self.patterns, self.vars, frozenset(self.models))
+        instances = self.kb.find(
+            self.patterns, self.vars, frozenset(self.models))
 
         instances = set([hashabledict(row) for row in instances])
 
@@ -303,7 +305,8 @@ class KnowledgeCore:
         ]
         import inspect
 
-        self._api = {fn.__name__ + str(inspect.signature(fn)): fn for fn in _api}
+        self._api = {fn.__name__ +
+                     str(inspect.signature(fn)): fn for fn in _api}
 
         apilist = [
             key + (" (compatibility)" if hasattr(val, "_compat") else "")
@@ -348,7 +351,8 @@ class KnowledgeCore:
         models = self.normalize_models(models)
         for model in models:
             logger.info("Loading file <%s> in model <%s>" % (filename, model))
-            self.models[model].graph.parse(filename, publicID=IRIS[DEFAULT_PREFIX])
+            self.models[model].graph.parse(
+                filename, publicID=IRIS[DEFAULT_PREFIX])
             self.models[model].is_dirty = True
 
         self.onupdate()
@@ -360,7 +364,8 @@ class KnowledgeCore:
         models = self.normalize_models(models)
         for model in models:
             filename = path / (basename + "-" + model + ".rdf")
-            logger.info("Saving knowledge base (model <%s>) to %s" % (model, filename))
+            logger.info("Saving knowledge base (model <%s>) to %s" %
+                        (model, filename))
             self.models[model].graph.serialize(str(filename), format="xml")
 
     @api
@@ -380,10 +385,7 @@ class KnowledgeCore:
 
     @api
     def about(self, raw_term, models=None):
-        """returns the list of triples where `term` is either subject,
-        predicate or object
-        """
-
+        """Return the list of triples where `term` is either subject, predicate or object."""
         result = []
 
         models = self.normalize_models(models)
@@ -415,11 +417,13 @@ class KnowledgeCore:
 
     @api
     def lookup(self, term, models=None):
-        """Search the knowledge base for a term matching a string. The search is
-        performed both on terms' names and on label.
+        """
+        Search the knowledge base for a term matching a string.
 
-        Returns the list of found terms, alongside with their type (one of instance, class,
-        datatype_property, object_property, literal)
+        The search is performed both on terms' names and on label.
+
+        Returns the list of found terms, alongside with their type (one of
+        instance, class, datatype_property, object_property, literal)
         """
         models = self.normalize_models(models)
         logger.info(
@@ -435,38 +439,36 @@ class KnowledgeCore:
         for model in models:
             g = self.models[model].materialized_graph
 
-            for s,p,o in g:
-                ss, sp, so = [str(x) for x in shorten(g,[s,p,o])]
+            for s, p, o in g:
+                ss, sp, so = [str(x) for x in shorten(g, [s, p, o])]
 
                 if term == ss:
-                    exact_match.add((ss,s))
+                    exact_match.add((ss, s))
                 elif term.lower() in ss.lower():
-                    approximate_match.add((ss,s))
+                    approximate_match.add((ss, s))
 
                 if term == sp:
-                    exact_match.add((sp,p))
+                    exact_match.add((sp, p))
                 elif term.lower() in sp.lower():
-                    approximate_match.add((sp,p))
-
-
+                    approximate_match.add((sp, p))
 
                 if term == so:
                     # the term is the label of a node? add the node
                     if p == RDFS.label:
-                        exact_match.add((ss,s))
-                    else: # otherwise, add the literal
-                        exact_match.add((so,o))
+                        exact_match.add((ss, s))
+                    else:  # otherwise, add the literal
+                        exact_match.add((so, o))
 
                 elif term.lower() in so.lower():
                     # the term is the label of a node? add the node
                     if p == RDFS.label:
-                        approximate_match.add((ss,s))
-                    else: # otherwise, add the literal
-                        approximate_match.add((so,o))
-
+                        approximate_match.add((ss, s))
+                    else:  # otherwise, add the literal
+                        approximate_match.add((so, o))
 
         exact_match = [(s, self.typeof(t, models)) for s, t in exact_match]
-        approximate_match = [(s, self.typeof(t, models)) for s, t in approximate_match]
+        approximate_match = [(s, self.typeof(t, models))
+                             for s, t in approximate_match]
         if exact_match:
             logger.info("Found exact match: " + str(exact_match))
         if approximate_match:
@@ -488,7 +490,8 @@ class KnowledgeCore:
             if direct:
                 result += self.models[model].graph.subjects(RDF.type, term)
             else:
-                result += self.models[model].materialized_graph.subjects(RDF.type, term)
+                result += self.models[model].materialized_graph.subjects(
+                    RDF.type, term)
 
         return result
 
@@ -511,7 +514,8 @@ class KnowledgeCore:
             if direct:
                 result += self.models[model].graph.objects(term, RDF.type)
             else:
-                result += self.models[model].materialized_graph.objects(term, RDF.type)
+                result += self.models[model].materialized_graph.objects(
+                    term, RDF.type)
 
         return result
 
@@ -525,7 +529,8 @@ class KnowledgeCore:
 
         for model in models:
             if direct:
-                result += self.models[model].graph.subjects(RDFS.subClassOf, term)
+                result += self.models[model].graph.subjects(
+                    RDFS.subClassOf, term)
             else:
                 result += self.models[model].materialized_graph.subjects(
                     RDFS.subClassOf, term
@@ -543,7 +548,8 @@ class KnowledgeCore:
 
         for model in models:
             if direct:
-                result += self.models[model].graph.objects(term, RDFS.subClassOf)
+                result += self.models[model].graph.objects(
+                    term, RDFS.subClassOf)
             else:
                 result += self.models[model].materialized_graph.objects(
                     term, RDFS.subClassOf
@@ -553,11 +559,15 @@ class KnowledgeCore:
 
     @api
     def label(self, term, models=[]):
-        """returns the labels attached to a term, as a dictionary `{"default":"label1", "lang_code1": label1,
-        "lang_code2": "label2",...}` where the 'default' key returns either the
-        English version of the label, or the name of the term, if no label is
-        available, and the other keys provide localised version of the label, if
-        available in the knowledge base.
+        """
+        Return the labels attached to a term, as a dictionary.
+
+        Example return value:
+         `{"default": "label1", "lang_code1": label1, "lang_code2": "label2", ...}`
+        where the 'default' key returns either the English version of the
+        label, or the name of the term, if no label is available, and the other
+        keys provide localised version of the label, if available in the
+        knowledge base.
         """
         models = self.normalize_models(models)
         result = {}
@@ -567,18 +577,20 @@ class KnowledgeCore:
 
         for model in models:
 
-            labels = self.models[model].materialized_graph.objects(term, RDFS.label)
+            labels = self.models[model].materialized_graph.objects(
+                term, RDFS.label)
             for label in labels:
                 if label.language:
                     result[label.language] = label
                 else:
                     result["default"] = label
 
-        if not "default" in result:
+        if "default" not in result:
             if "en" in result:
                 result["default"] = result["en"]
             else:
-                result["default"] = shorten_term(self.models[DEFAULT_MODEL].graph, term)
+                result["default"] = shorten_term(
+                    self.models[DEFAULT_MODEL].graph, term)
 
         return result
 
@@ -610,7 +622,8 @@ class KnowledgeCore:
 
         for model in models:
             stmts_if_predicate = list(
-                self.models[model].materialized_graph.triples([None, term, None])
+                self.models[model].materialized_graph.triples(
+                    [None, term, None])
             )
 
             if stmts_if_predicate:
@@ -625,19 +638,21 @@ class KnowledgeCore:
     @api
     def details(self, resource, models=None):
         """
-        Returns a dictionary containing the following details on a given resource:
+        Return a dictionary containing the details on a given resource.
+
+        The following information is returned:
         - 'label': resource label, if any, literal value for literals, else resource ID.
         - 'id': resource ID or 'literal' for literals
         - 'type': one of ['instance', 'class', 'object_property', 'datatype_property', 'undecided']
         - 'sameAs': list of equivalent classes or instances, if any
         - 'attributes':
             - for classes, a list of three dictionaries:
-                {"name": "Parents","id": "superClasses", "values":[ids...]}
-                {"name": "Children","id": "subClasses", "values":[ids...]}
-                {"name": "Instances","id": "instances", "values":[ids...]}
+                {"name": "Parents", "id": "superClasses", "values": [ids...]}
+                {"name": "Children", "id": "subClasses", "values": [ids...]}
+                {"name": "Instances", "id": "instances", "values": [ids...]}
                 (only direct super/sub-classes and instances)
             - for instances, a list of one dictionary:
-                {"name": "Classes","id": "classes", "values":[ids...]}
+                {"name": "Classes", "id": "classes", "values": [ids...]}
                 (only direct classes)
         """
         models = self.normalize_models(models)
@@ -664,7 +679,7 @@ class KnowledgeCore:
                     "name": "Children",
                     "id": "subClasses",
                     "values": [
-                        {"id": r, "label": setermlabel(r, models)}
+                        {"id": r, "label": self.label(r, models)}
                         for r in self._subclassesof(resource, True, models)
                     ],
                 }
@@ -696,10 +711,7 @@ class KnowledgeCore:
 
     @api
     def exist(self, raw_stmts, models=None):
-        """Returns True if all the statements exist (eg, are materialised) in
-        all the given models.
-        """
-
+        """Check if all the statements exist -- eg, are materialised -- in all the given models."""
         models = self.normalize_models(models)
 
         logger.info(
@@ -716,7 +728,7 @@ class KnowledgeCore:
         if len(vars) == 0:
             for model in models:
                 for stmt in stmts:
-                    if not stmt in self.models[model].materialized_graph:
+                    if stmt not in self.models[model].materialized_graph:
                         return False
 
             return True
@@ -727,6 +739,7 @@ class KnowledgeCore:
     @api
     def revise(self, stmts, policy):
         """
+        Revise (add, retract, update) statements in the knowledge base.
 
         Supported policy options:
         - method: string in [add, safe_add, retract, update, safe_update, revision]
@@ -734,18 +747,22 @@ class KnowledgeCore:
         - lifespan: duration before automatic removal of statements, in
           seconds, float
         """
-
         if type(policy) != dict:
             raise KbServerError("Expected a dictionary as policy")
 
         if isinstance(stmts, str):
             raise KbServerError("A list of statements is expected")
 
+        if not policy["method"]:
+            raise KbServerError(
+                "No policy specified for method in revise. Expected one of update, add, retract")
+
         vars = get_all_variables(stmts)
 
         subgraph = parse_stmts_to_graph(stmts)
         parsed_stmts = "\n\t- ".join(
-            [" ".join([str(t) for t in s]) for s in shorten_graph(subgraph, double_quote_for_str=True)]
+            [" ".join([str(t) for t in s])
+             for s in shorten_graph(subgraph, double_quote_for_str=True)]
         )
 
         models = self.normalize_models(policy.get("models", []))
@@ -753,7 +770,8 @@ class KnowledgeCore:
         if policy["method"] in ["update", "safe_update", "add", "safe_add", "revision"]:
 
             if len(vars) > 0:
-                raise KbServerError("You can not add/update statements containing variables: %s" % stmts)
+                raise KbServerError(
+                    "You can not add/update statements containing variables: %s" % stmts)
 
             if policy["method"].startswith("safe"):
                 logger.warn(
@@ -786,20 +804,24 @@ class KnowledgeCore:
                 if lifespan:
 
                     expiry_ts = time.time() + lifespan
-                    expiry_date = datetime.fromtimestamp(expiry_ts).strftime("%d/%m/%Y, %H:%M:%S")
+                    expiry_date = datetime.fromtimestamp(
+                        expiry_ts).strftime("%d/%m/%Y, %H:%M:%S")
                     expiry_date_xsd = date_time(expiry_ts)
 
                     # do we already have lifespan information for these facts?
                     # if so, we update
-                    gr = [g for g in self.models[model].metadata.subjects() if len(subgraph-g) == 0]
+                    gr = [g for g in self.models[model].metadata.subjects()
+                          if len(subgraph-g) == 0]
                     if gr:
                         gr = gr[0]
                         logger.info("Updating expiry date to %s" % expiry_date)
                     else:
                         gr = subgraph
-                        logger.info("This statement will expire on %s" % expiry_date)
+                        logger.info(
+                            "This statement will expire on %s" % expiry_date)
 
-                    self.models[model].metadata.set((gr, EXPIRES_ON_TERM, Literal(expiry_date_xsd,datatype=XSD.dateTime)))
+                    self.models[model].metadata.set(
+                        (gr, EXPIRES_ON_TERM, Literal(expiry_date_xsd, datatype=XSD.dateTime)))
 
                 self.models[model].is_dirty = True
 
@@ -826,33 +848,38 @@ class KnowledgeCore:
                             e[tok] = tok
 
                 # tok_order is a copy of the pattern, without the leading '?'
-                tok_order = [tok[1:] if tok.startswith("?") else tok for tok in stmts[0].split()]
+                tok_order = [tok[1:] if tok.startswith(
+                    "?") else tok for tok in stmts[0].split()]
 
                 # final list of statments to remove
                 new_stmts = []
                 for e in res:
-                    new_stmts.append(" ".join([str(e[tok_order[0]]), str(e[tok_order[1]]), parse_term(e[tok_order[2]]).n3()]))
-                
+                    new_stmts.append(" ".join([str(e[tok_order[0]]), str(
+                        e[tok_order[1]]), parse_term(e[tok_order[2]]).n3()]))
+
                 subgraph = parse_stmts_to_graph(new_stmts)
                 parsed_stmts = "\n\t- ".join(
-                [" ".join([str(t) for t in s]) for s in shorten_graph(subgraph)]
+                    [" ".join([str(t) for t in s])
+                     for s in shorten_graph(subgraph)]
                 )
 
-
-            logger.info("Deleting from " + str(list(models)) + ":\n\t- " + parsed_stmts)
+            logger.info("Deleting from " + str(list(models)) +
+                        ":\n\t- " + parsed_stmts)
             for model in models:
                 self.models[model].graph -= subgraph
                 self.models[model].is_dirty = True
 
         else:
-            raise KbServerError("Unknown method in revise: %s" % policy["method"])
+            raise KbServerError(
+                "Unknown method in revise: %s" % policy["method"])
 
         self.onupdate()
 
     @api
     @compat
     def add(self, stmts, models=None, lifespan=0):
-        logger.warn("Warning: <add> is deprecated. Performing <update> instead.")
+        logger.warn(
+            "Warning: <add> is deprecated. Performing <update> instead.")
         return self.revise(
             stmts, {"method": "update", "models": models, "lifespan": lifespan}
         )
@@ -870,7 +897,8 @@ class KnowledgeCore:
     @api
     def sparql(self, query, model=None):
         """
-        performs a raw SPARQL query on a given model ('default' by default).
+        Perform a raw SPARQL query on a given model ('default' by default).
+
         The SPARQL PREFIX and BASE are automatically added, no need to do it
         manually (even though you can if you want to use non-standard
         prefixes).
@@ -883,7 +911,8 @@ class KnowledgeCore:
         serialization of SPARQL Results
         (https://www.w3.org/TR/2013/REC-sparql11-results-json-20130321/)
 
-        Example (using the `knowledge_core.api.KB` Python wrapper):
+        Example:
+        -------
         ```
         >>> kb += ["myself age 40"]
         >>> kb.sparql("SELECT ?age WHERE { :myself :age ?age . }")
@@ -900,7 +929,6 @@ class KnowledgeCore:
          }
 
         """
-
         models = self.normalize_models(model)
         if len(models) != 1:
             logger.error("sparql() can only be executed on a single model")
@@ -922,7 +950,7 @@ class KnowledgeCore:
     @api
     def find(self, patterns, vars=None, models=None):
         """
-        Performs a query on one or several models.
+        Perform a query on one or several models.
 
         `patterns`: a list of triples containing unbound terms (eg, variables).
         As a convenience, if the patterns do not contain any variable, `find`
@@ -940,8 +968,8 @@ class KnowledgeCore:
         A list of dictionaries is returned with possible combination of values
         for the different variables. For instance, find(["?agent desires
         ?action", "?action rdf:type Jump"],["?agent","?action"]) would return
-        something like: [{"agent":"james", "action": "jumpHigh"}, {"agent":
-        "laurel", "action":"jumpHigher"}]
+        something like: [{"agent": "james", "action": "jumpHigh"}, {"agent":
+        "laurel", "action": "jumpHigher"}]
 
         If you were using anonymous variables (starting with ?__) in your query
         (eg generated by `pykb` when using a `*` wildcard), they will be
@@ -949,7 +977,6 @@ class KnowledgeCore:
 
         Note that RDF blank nodes (BNode) are not returned.
         """
-
         if not vars or (len(vars) == 1 and vars[0] == ""):
             vars = get_all_variables(patterns)
             if len(vars) == 0:
@@ -960,10 +987,12 @@ class KnowledgeCore:
         patterns = [parse_stmt(p) for p in patterns]
 
         parsed_patterns = "\n\t- ".join(
-            [" ".join([str(t) for t in s]) for s in shortenN(self.models[DEFAULT_MODEL].graph, patterns)]
+            [" ".join([str(t) for t in s]) for s in shortenN(
+                self.models[DEFAULT_MODEL].graph, patterns)]
         )
 
-        normalised_patterns = [" ".join([t.n3() for t in stmt]) for stmt in patterns]
+        normalised_patterns = [
+            " ".join([t.n3() for t in stmt]) for stmt in patterns]
 
         logger.info(
             "Searching "
@@ -1006,12 +1035,12 @@ class KnowledgeCore:
         logger.info("Found: " + str(res))
         return res
 
-
     @api
     def subscribe(self, patterns, one_shot=False, models=None):
-        """Subscribes to a specified event in the ontology.
+        """
+        Subscribe to a specified event in the ontology.
 
-        Every time the model(s) is(are) updated, the provided `patterns` are
+        Every time the model(s) is (are) updated, the provided `patterns` are
         evaluated against the set of asserted and inferred triples. If at least
         one triple is returned, the event is fired.
 
@@ -1025,7 +1054,7 @@ class KnowledgeCore:
 
         def on_new_robot_instance(instances):
             print("New robots: " + ", ".join(instances))
-        
+
         kb = KB()
         kb.subscribe(["?robot rdf:type Robot"], callback=on_new_robot_instance)
 
@@ -1036,31 +1065,27 @@ class KnowledgeCore:
 
         If `one_shot` is set to true, the event is discarded once it has fired
         once.
-
         """
-
         models = self.normalize_models(models)
-
 
         event = Event(self, patterns, one_shot, models)
 
         nb_prev_evt = len(self.active_evts)
-
         self.active_evts.add(event)
-
         if len(self.active_evts) > nb_prev_evt:
-            logger.info("Registered a new event: %s" % patterns + " in " + str(models))
+            logger.info("Registered a new event: %s" %
+                        patterns + " in " + str(models))
         else:
-            logger.info("Event handler already existing for %s. No need to add it." % patterns)
+            logger.info(
+                "Event handler already existing for %s. No need to add it." % patterns)
 
         return event.id
 
     @api
     def close(self):
-        """This code should actually never be called: the 'close' request
-        is intercepted at the front-end level (eg, socket server) to close
-        the connection.
-        """
+        # This code should actually never be called: the 'close' request
+        # is intercepted at the front-end level (eg, socket server) to close
+        # the connection.
         raise NotImplementedError
 
     @api
@@ -1069,21 +1094,23 @@ class KnowledgeCore:
 
         pdb.set_trace()
 
-    ################################################################################
-    ################################################################################
+    ############################################################################
+    ############################################################################
 
     def _sparql(self, model, query, raw=False):
         """
+        Private method to query the knowledge graph with SPARQL queries.
 
         :param raw: if True, returns the raw SPARQLResult object; if False,
         returns a list of triples fulfulling the query.
 
-        :return: result of the query (see `raw` parameter) and original query,
+        :return: result of the query(see `raw` parameter) and original query,
         augmented with standard SPARQL prefixes.
 
+        TODO: as a(potential?) optimization, pass initNs to graph.query,
+              instead of adding the PREFIX strings to the query
         """
-
-        q = SPARQL_PREFIXES  # TODO: as a (potential?) optimization, pass initNs to graph.query, instead of adding the PREFIX strings to the query
+        q = SPARQL_PREFIXES
         q += query
 
         logger.debug("Executing SPARQL query in model: %s\n%s" % (model, q))
@@ -1092,25 +1119,26 @@ class KnowledgeCore:
 
         try:
             res = self.models[model].materialized_graph.query(q)
-
             if raw:
                 return res, q
             else:
-                no_bnode = [stmt for stmt in filter(lambda s: all(type(t) != BNode for t in s), res)]
+                no_bnode = [stmt for stmt in filter(
+                    lambda s: all(type(t) != BNode for t in s), res)]
                 return no_bnode, q
         except pyparsing.ParseException:
-            raise KbServerError("Syntax error while parsing SPARQL query:\n%s" % q)
+            raise KbServerError(
+                "Syntax error while parsing SPARQL query:\n%s" % q)
         except TypeError as te:
-            raise KbServerError("Syntax error while parsing SPARQL query:\n%s\nException was: %s" % (q, te))
-
+            raise KbServerError(
+                "Syntax error while parsing SPARQL query:\n%s\nException was: %s" % (q, te))
 
     def named_variables(self, vars):
         """
-        Returns the list of variable that have been explicitely named (eg,
-        not the 'stars' wildcards, that would have been replaced by anonymous
-        variable starting with '__' by pykb)
-        """
+        Return the list of variable that have been explicitely named.
 
+        eg, not the 'stars' wildcards, that would have been replaced by anonymous
+        variable starting with '__' by pykb.
+        """
         return [v for v in vars if not v.startswith("?__")]
 
     def onupdate(self):
@@ -1123,11 +1151,12 @@ class KnowledgeCore:
             self._instancesof("owl:FunctionalProperty", False)
         )
 
-        to_remove = [e_id for e_id, clients in self.eventsubscriptions.items() if len(clients) == 0]
+        to_remove = [
+            e_id for e_id, clients in self.eventsubscriptions.items() if len(clients) == 0]
         for e_id in to_remove:
-            logger.info(f"Removing handler for event {e_id} as no clients anymore")
+            logger.info(
+                f"Removing handler for event {e_id} as no clients anymore")
             self.remove_event(e_id)
-
         if self.active_evts:
             logger.info(
                 "Checking the %s active event handler(s) against new facts"
@@ -1137,7 +1166,8 @@ class KnowledgeCore:
             if e.evaluate():
                 clients = self.eventsubscriptions[e.id]
                 logger.info(
-                    "Event %s triggered. Informing %s clients." % (e.id, len(clients))
+                    "Event %s triggered. Informing %s clients." % (
+                        e.id, len(clients))
                 )
                 for client in clients:
                     msg = ("event", e)
@@ -1190,7 +1220,9 @@ class KnowledgeCore:
     def check_expired_stmts(self):
         logger.debug("Checking for expired statements...")
 
-        q = SPARQL_PREFIXES  # TODO: as a (potential?) optimization, pass initNs to graph.query, instead of adding the PREFIX strings to the query
+        # TODO: as a (potential?) optimization, pass initNs to graph.query,
+        # instead of adding the PREFIX strings to the query
+        q = SPARQL_PREFIXES
         q += """
         SELECT ?subgraph ?date
         WHERE {
@@ -1199,8 +1231,8 @@ class KnowledgeCore:
         }
         """
 
-        now = Literal(date_time(time.time()),datatype=XSD.dateTime)
-        
+        now = Literal(date_time(time.time()), datatype=XSD.dateTime)
+
         for name, model in self.models.items():
 
             res = model.metadata.query(q, initBindings={"now": now})
@@ -1208,9 +1240,10 @@ class KnowledgeCore:
                 for row in res:
                     graph = row[0]
                     date = row[1]
-                    for s,p,o in shorten_graph(graph):
-                        logger.warn("Removing expired statement <%s %s %s> from <%s> (expired on %s)" % (s,p,o,name,date))
-                    model.metadata.remove((graph,None, None))
+                    for s, p, o in shorten_graph(graph):
+                        logger.warn(f"Removing expired statement <{s} {p} {o}>"
+                                    f" from <{name}> (expired on {date})")
+                    model.metadata.remove((graph, None, None))
                     model.graph -= graph
                     model.is_dirty = True
 
@@ -1232,13 +1265,17 @@ class KnowledgeCore:
             {
                 "graph": g,
                 "metadata": metadata_g,
-                "is_dirty": True,  # stores whether models have changes that would require re-classification
+                # stores whether models have changes that would require re-classification
+                "is_dirty": True,
                 "materialized_graph": Graph(),
             }
         )
 
     def normalize_models(self, models):
-        """If 'models' is None or [], returns the default model (ie, the
+        """
+        Normalise a list of models.
+
+        If 'models' is None or [], returns the default model (ie, the
         base model of the robot). If 'models' is 'all', then
         returns the set of all models known to the KB.
         Else, add the models to the list of all models, and return
@@ -1266,7 +1303,7 @@ class KnowledgeCore:
 
         if name == "close":
 
-            ### Event-related housekepping
+            # Event-related housekepping
             evts_id_to_remove = []
             for evt_id, clients in self.eventsubscriptions.items():
                 if client in clients:
@@ -1314,6 +1351,11 @@ class KnowledgeCore:
         self.incomingrequests.put((client, name, args, kwargs))
 
     def process(self):
+        now = time.time()
+        if 1./(now - self._last_expired_stmts_check) < EXPIRED_STMTS_CHECK_RATE:
+            self.check_expired_stmts()
+            self._last_expired_stmts_check = time.time()
+
         try:
             client, name, args, kwargs = self.incomingrequests.get(True, 0.05)
             logger.debug(
@@ -1321,7 +1363,8 @@ class KnowledgeCore:
                 % (
                     name,
                     ", ".join([str(a) for a in args]),
-                    ", ".join(str(k) + "=" + str(v) for k, v in kwargs.items()),
+                    ", ".join(str(k) + "=" + str(v)
+                              for k, v in kwargs.items()),
                 )
             )
             self.execute(client, name, *args, **kwargs)
@@ -1333,10 +1376,3 @@ class KnowledgeCore:
                 msg = pendingmsg.get()
                 logger.debug("sending %s to %s" % (msg, client))
                 client.sendmsg(msg)
-
-
-        now = time.time()
-        if 1./(now - self._last_expired_stmts_check) < EXPIRED_STMTS_CHECK_RATE:
-            self.check_expired_stmts()
-            self._last_expired_stmts_check = time.time()
-

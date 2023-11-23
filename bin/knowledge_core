@@ -1,18 +1,17 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import asynchat
+import asyncore
+import json
+import socket
+import sys
 from knowledge_core import __version__
 
 import logging
 
 logger = logging.getLogger("KnowledgeCore")
 
-
-import sys
-import asyncore, asynchat
-import socket
-
-import json
 
 PORT = 6969
 
@@ -105,12 +104,13 @@ def version():
     print("KnowledgeCore %s" % __version__)
 
 
-if __name__ == "__main__":
+def main():
 
     from knowledge_core.ansistrm import ColorizingStreamHandler
     import argparse
 
-    parser = argparse.ArgumentParser(description="A minimal knowledge base for robots.")
+    parser = argparse.ArgumentParser(
+        description="A minimal knowledge base for robots.")
     parser.add_argument(
         "-v",
         "--version",
@@ -145,7 +145,10 @@ if __name__ == "__main__":
     )
 
     # filter out possible ROS remapping args
-    argv = [a for a in sys.argv if not a.startswith("__")]
+    argv = sys.argv[0:sys.argv.index("--ros-args")] \
+        if "--ros-args" in sys.argv \
+        else sys.argv
+
     args = parser.parse_args(argv[1:])
 
     console = ColorizingStreamHandler()
@@ -173,6 +176,10 @@ if __name__ == "__main__":
         logger.info("Initializing the ROS node...")
         from knowledge_core.knowledge_core_ros import KnowledgeCoreROS
 
+        import rclpy
+        from rclpy.signals import SignalHandlerOptions
+        rclpy.init(args=sys.argv, signal_handler_options=SignalHandlerOptions.NO)
+
         ros = KnowledgeCoreROS(kb)
 
     logger.info("KnowledgeCore ready")
@@ -190,3 +197,7 @@ if __name__ == "__main__":
         if args.no_ros:
             ros.shutdown()
         logger.info("Bye bye")
+
+
+if __name__ == "__main__":
+    main()

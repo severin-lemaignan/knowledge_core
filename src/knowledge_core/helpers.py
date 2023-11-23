@@ -3,6 +3,8 @@ import functools
 
 def memoize(obj):
     """
+    Cache results of previous method invokation.
+
     Taken from https://wiki.python.org/moin/PythonDecoratorLibrary#Memoize
     """
     cache = obj.cache = {}

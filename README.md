@@ -20,23 +20,25 @@ RL reasoner to provide OWL2 semantics and fast knowledge materialisation.
 Example
 -------
 
-This example uses the ROS API (see below), with some Pythonic syntatic sugar:
+This example uses the ROS 2 API (see below), with some Pythonic syntatic sugar:
 
 ```python
 
+import rclpy
+from rclpy.node import Node
 from knowledge_core.api import KB
 
-rospy.init_node("test_knowledge_base")
-
-kb = KB()
+rclpy.init()
+node = Node("test_kb")
+kb = KB(node)
 
 def on_robot_entering_antonio_property(evt):
-  print("A robot entered Antonio's %s: %s" (evt[0]["place"], evt[0]["robot"]))
+  print("A robot entered Antonio's %s: %s" % (evt[0]["place"], evt[0]["robot"]))
 
 kb += "ari rdf:type Robot"  
 kb += ["antonio looksAt ari", "ari isIn kitchen"]
 
-kb.subscribe(["?robot isIn ?place", "?place belongsTo antonio", "?robot rdf:type Robot"], onRobotEnteringAntonioProperty)
+kb.subscribe(["?robot isIn ?place", "?place belongsTo antonio", "?robot rdf:type Robot"], on_robot_entering_antonio_property)
 
 kb += "kitchen belongsTo antonio"
 
@@ -44,7 +46,7 @@ kb += "kitchen belongsTo antonio"
 # kb -= "antonio looksAt ari" to remove facts
 # kb["* rdf:type Robot"] to query the knowledge base
 
-rospy.spin()
+rclpy.spin(node)
 ```
 
 will print:
@@ -155,15 +157,20 @@ Check [oro-view](https://github.com/severin-lemaignan/oro-view) ;-)
 
 ### ROS usage
 
+**This version of KnowledgeCore only supports ROS 2.**
+
 **Please first read the general [API introduction](doc/api.md), as this applies to the ROS interface as well.**
 
 To start the ROS node:
 
 ```
-rosrun knowledge_core knowledge_core
+ros2 run knowledge_core knowledge_core
 ```
 
-**Note that, in general, you want to use the 'Pythonic' wrapper built on top of the low-level ROS topics/services API. See example above. This Pythonic interface follows the [`pykb`](https://gitlab/interaction/pykb/) API (except in a few corner case that are not supported by the ROS interface).**
+**Note that, in general, you want to use the 'Pythonic' wrapper built on top of
+the low-level ROS topics/services API. See example above. This Pythonic
+interface follows the [`pykb`](https://gitlab/interaction/pykb/) API (except in
+a few corner case that are not supported by the ROS interface).**
 
 `knowledge_core` exposes two topics, `/kb/add_facts` and
 `/kb/remove_facts`, to add/remove triples to the knowledge base. Both topics

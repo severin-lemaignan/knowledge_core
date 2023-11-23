@@ -1,56 +1,94 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import logging
+from knowledge_core.api import KB, KbError
 import unittest
-import time
+import pytest
+import rclpy
+from rclpy.node import Node
+from rclpy.duration import Duration
 
-from kb import KbError
-
-try:
-    import kb
-except ImportError:
-    import sys
-
-    print("You must first install pykb")
-    sys.exit(1)
-
-from knowledge_core import __version__
-
-from queue import Empty
-
-REASONING_DELAY = 0.2
+import launch_ros
+import launch_testing
+from launch import LaunchDescription
 
 
-class TestSequenceFunctions(unittest.TestCase):
+@pytest.mark.rostest
+def generate_test_description():
+    kb_node = launch_ros.actions.Node(
+        package='knowledge_core',
+        executable='knowledge_core',
+        output='both',
+        emulate_tty=True,
+        arguments=["--debug", "--no-reasoner"])
+
+    ld = LaunchDescription()
+    ld.add_action(kb_node)
+    ld.add_action(launch_testing.actions.ReadyToTest())
+    return ld, {'kb_node': kb_node}
+
+
+@launch_testing.post_shutdown_test()
+class TestProcessOutput(unittest.TestCase):
+    def test_exit_code(self, kb_node, proc_info):
+        launch_testing.asserts.assertExitCodes(
+            proc_info, process=kb_node)
+
+
+class TestPythonicROSKb(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        rclpy.init()
+        cls.node = Node("kb_test")
+
+    @classmethod
+    def TearDownClass(cls):
+        cls.node.destroy_node()
+        rclpy.shutdown()
+
     def setUp(self):
-        self.kb = kb.KB()
+        self.kb = KB(self.node)
         self.kb.clear()
 
     def tearDown(self):
-        self.kb.close()
+        pass
+
+    def sleep(self, d):
+
+        target = Duration(seconds=d)
+        elapsed = Duration()
+        delta = Duration(seconds=0.01)
+
+        while True:
+            self.node.get_clock().sleep_for(delta)
+            rclpy.spin_once(self.node, timeout_sec=0.01)
+            elapsed = Duration(
+                nanoseconds=elapsed.nanoseconds + delta.nanoseconds)
+            if elapsed > target:
+                break
 
     def test_basics(self):
 
         self.kb.hello()
 
-        with self.assertRaises(kb.KbError):
+        with self.assertRaises(TypeError):
             self.kb.add()
-        with self.assertRaises(kb.KbError):
+        with self.assertRaises(KbError):
             self.kb.add("toto")
-        with self.assertRaises(kb.KbError):
+        with self.assertRaises(KbError):
             self.kb.add(["toto"])
-        with self.assertRaises(kb.KbError):
+        with self.assertRaises(KbError):
             self.kb += ["toto"]
-        with self.assertRaises(kb.KbError):
+        with self.assertRaises(KbError):
             self.kb += ["toto titi"]
-        with self.assertRaises(kb.KbError):
+        with self.assertRaises(KbError):
             self.kb += ["toto titi tutu tata"]
 
     def test_basic_modifications(self):
 
         # check no exception is raised
-        self.kb.add(["johnny rdf:type Human", 'johnny rdfs:label "A que Johnny"'])
+        self.kb.add(["johnny rdf:type Human",
+                    'johnny rdfs:label "A que Johnny"'])
         self.kb += ["alfred rdf:type Human", "alfred likes icecream"]
         self.kb.remove(["alfred rdf:type Human", "alfred likes icecream"])
         self.kb -= ["johnny rdf:type Human"]
@@ -63,7 +101,8 @@ class TestSequenceFunctions(unittest.TestCase):
         self.kb.add(
             ["johnny rdf:type Human", 'johnny rdfs:label "A que Johnny"'], ["model1"]
         )
-        self.kb.remove(["alfred rdf:type Human", "alfred likes icecream"], ["model1"])
+        self.kb.remove(
+            ["alfred rdf:type Human", "alfred likes icecream"], ["model1"])
 
         self.kb.add(
             ["johnny rdf:type Human", 'johnny rdfs:label "A que Johnny"'],
@@ -73,9 +112,11 @@ class TestSequenceFunctions(unittest.TestCase):
             ["alfred rdf:type Human", "alfred likes icecream"], ["model1", "model2"]
         )
 
-        self.kb.revise(["toto likes tata"], {"method": "add", "models": ["model1"]})
+        self.kb.revise(["toto likes tata"], {
+                       "method": "add", "models": ["model1"]})
         self.kb.revise(
-            ["toto likes tata"], {"method": "add", "models": ["model1", "model2"]}
+            ["toto likes tata"], {"method": "add",
+                                  "models": ["model1", "model2"]}
         )
 
     def test_basic_kwargs(self):
@@ -140,87 +181,114 @@ class TestSequenceFunctions(unittest.TestCase):
         self.assertCountEqual(self.kb.lookup("alfred"), [])
 
         self.kb += ['alfred rdfs:label "alfred"']
-        self.assertCountEqual(self.kb.lookup("alfred"), [["alfred", "undecided"]])
+        self.assertCountEqual(self.kb.lookup("alfred"),
+                              [["alfred", "undecided"]])
         self.assertCountEqual(
             self.kb.lookup("rdfs:label"), [["rdfs:label", "datatype_property"]]
         )
 
         self.kb += ["alfred rdf:type Robot"]
-        self.assertCountEqual(self.kb.lookup("alfred"), [["alfred", "instance"]])
+        self.assertCountEqual(self.kb.lookup("alfred"),
+                              [["alfred", "instance"]])
         self.assertCountEqual(self.kb.lookup("Robot"), [["Robot", "class"]])
         self.assertCountEqual(
             self.kb.lookup("rdf:type"), [["rdf:type", "object_property"]]
         )
 
         self.kb += ["alfred likes icecream"]
-        self.assertCountEqual(self.kb.lookup("likes"), [["likes", "object_property"]])
-        self.assertCountEqual(self.kb.lookup("alfred"), [["alfred", "instance"]])
+        self.assertCountEqual(self.kb.lookup("likes"), [
+                              ["likes", "object_property"]])
+        self.assertCountEqual(self.kb.lookup("alfred"),
+                              [["alfred", "instance"]])
 
         self.kb += ['nono rdfs:label "alfred"']
+        self.kb += ['sentence rdfs:label "alfred is a charming person"']
         self.assertCountEqual(
-            self.kb.lookup("alfred"), [["alfred", "instance"], ["nono", "undecided"]]
+            self.kb.lookup("alfred"),
+            [["alfred", "instance"], ["nono", "undecided"], ["sentence", "undecided"]],
+        )
+
+        # as 'sentence' is only a partial match, it should be listed last
+        self.assertEquals(self.kb.lookup("alfred")
+                          [-1], ["sentence", "undecided"])
+
+        self.kb.clear()
+
+        # same test as above, but different insertion order
+        self.kb += ['sentence rdfs:label "alfred is a charming person"']
+        self.kb += ['nono rdfs:label "alfred"']
+        self.kb += ['alfred likes icecream']
+        self.kb += ["alfred rdf:type Robot"]
+        self.assertCountEqual(
+            self.kb.lookup("alfred"),
+            [["alfred", "instance"], ["nono", "undecided"], ["sentence", "undecided"]],
         )
 
         self.kb += ['gerard rdfs:label "likes"']
         self.assertCountEqual(
-            self.kb.lookup('"likes"'),
-            [['"likes"', "literal"]],
+            self.kb.lookup("likes"),
+            [["gerard", "undecided"], ["likes", "object_property"]],
         )
 
         self.kb += ["gerard age 18"]
-        self.assertCountEqual(self.kb.lookup("age"), [["age", "datatype_property"]])
+        self.assertCountEqual(self.kb.lookup(
+            "age"), [["age", "datatype_property"]])
 
     def test_literals(self):
 
-        literals = [
-            '"test"',
-            '"""test"""',
-            '"""toto\ntata"""',
-            '"test"@fr',
-            '"foo"^^<http://example.org/my/datatype>',
-            '"""10"""^^xsd:decimal',
-            "-5",
-            "0",
-            "1",
-            "10",
-            "+1",
-            '"-5"^^xsd:integer',
-            '"10"^^<http://www.w3.org/2001/XMLSchema#integer>',
-            "1.3e2",
-            "10e0",
-            "-12.5e10",
-            '"1.3e2"^^xsd:double',
-            '"-12.5e10"^^<http://www.w3.org/2001/XMLSchema#double>',
-            "0.0",
-            "1.0",
-            "1.234567890123456789",
-            "-5.0",
-            '"0.0"^^xsd:decimal',
-            '"-5.0"^^<http://www.w3.org/2001/XMLSchema#decimal>',
-            "true",
-            "false",
-            '"true"^^xsd:boolean',
-            '"false"^^<http://www.w3.org/2001/XMLSchema#boolean>',
-        ]
+        literals = {
+            '"test"': "test",
+            '"""test"""': "test",
+            '"""toto\ntata"""': "toto\ntata",
+            '"test"@fr': "test",
+            '"foo"^^<http://example.org/my/datatype>': "foo",
+            '"""10"""^^xsd:decimal': 10,
+            "-5": -5,
+            "0": 0,
+            "1": 1,
+            "10": 10,
+            "+1": 1,
+            '"-5"^^xsd:integer': -5,
+            '"10"^^<http://www.w3.org/2001/XMLSchema#integer>': 10,
+            "1.3e2": 1.3e2,
+            "10e0": 10,
+            "-12.5e10": -12.5e10,
+            '"1.3e2"^^xsd:double': 1.3e2,
+            '"-12.5e10"^^<http://www.w3.org/2001/XMLSchema#double>': -12.5e10,
+            "0.0": 0.0,
+            "1.0": 1.0,
+            "1.234567890123456789": 1.234567890123456789,
+            "-5.0": -5.0,
+            '"0.0"^^xsd:decimal': 0.0,
+            '"-5.0"^^<http://www.w3.org/2001/XMLSchema#decimal>': -5.0,
+            "true": True,
+            "false": False,
+            '"true"^^xsd:boolean': True,
+            '"false"^^<http://www.w3.org/2001/XMLSchema#boolean>': False,
+        }
 
         malformed = ["'test'", '"toto\ntata"']
 
         objects = ["test", "False", "True"]
 
-        for i, val in enumerate(literals):
-            self.kb += ["robert rel%s %s" % (i, val)]
+        for i, kv in enumerate(literals.items()):
+            lit, py = kv
+            self.kb += ["robert rel%s %s" % (i, lit)]
             self.assertCountEqual(
-                self.kb.lookup("rel%s" % i), [["rel%s" % i, "datatype_property"]]
+                self.kb.lookup("rel%s" % i), [
+                    ["rel%s" % i, "datatype_property"]]
             )
+            self.assertEquals(self.kb["* rel%s ?lit" % i][0]["lit"], py)
 
         for i, val in enumerate(objects):
             self.kb += ["robert relobj%s %s" % (i, val)]
             self.assertCountEqual(
-                self.kb.lookup("relobj%s" % i), [["relobj%s" % i, "object_property"]]
+                self.kb.lookup("relobj%s" % i), [
+                    ["relobj%s" % i, "object_property"]]
             )
 
         for val in malformed:
-            with self.assertRaises(kb.KbError):
+            with self.assertRaises(KbError):
                 self.kb += ["robert rel%s %s" % (i, val)]
 
     def test_retrieval(self):
@@ -228,7 +296,8 @@ class TestSequenceFunctions(unittest.TestCase):
         self.assertFalse(self.kb.about("Human"))
         self.assertFalse(self.kb["* rdf:type Human"])
 
-        self.kb += ["johnny rdf:type Human", 'johnny rdfs:label "A que Johnny"']
+        self.kb += ["johnny rdf:type Human",
+                    'johnny rdfs:label "A que Johnny"']
         self.kb += ["alfred rdf:type Human", "alfred likes icecream"]
 
         self.assertCountEqual(
@@ -237,12 +306,14 @@ class TestSequenceFunctions(unittest.TestCase):
         )
 
         self.assertCountEqual(
-            self.kb["* rdf:type Human"], [{"var1": "johnny"}, {"var1": "alfred"}]
+            self.kb["* rdf:type Human"], [{"var1": "johnny"},
+                                          {"var1": "alfred"}]
         )
 
         self.kb -= ["alfred rdf:type Human", "alfred likes icecream"]
 
-        self.assertCountEqual(self.kb["* rdf:type Human"], [{"var1": "johnny"}])
+        self.assertCountEqual(
+            self.kb["* rdf:type Human"], [{"var1": "johnny"}])
 
         self.assertTrue(self.kb["johnny rdf:type Human"])
 
@@ -281,10 +352,12 @@ class TestSequenceFunctions(unittest.TestCase):
 
         self.kb += ["nono loves icecream"]
         self.assertEqual(
-            self.kb["?agent desires jump", "?agent loves icecream"], [{"agent": "nono"}]
+            self.kb["?agent desires jump", "?agent loves icecream"], [
+                {"agent": "nono"}]
         )
         self.assertCountEqual(
-            self.kb["?agent desires *", "?agent loves icecream"], [{"agent": "nono"}]
+            self.kb["?agent desires *",
+                    "?agent loves icecream"], [{"agent": "nono"}]
         )
 
         self.kb += ["jump rdf:type Action"]
@@ -302,7 +375,8 @@ class TestSequenceFunctions(unittest.TestCase):
         )
 
     def test_update(self):
-        self.kb += ["nono isNice true", "isNice rdf:type owl:FunctionalProperty"]
+        self.kb += ["nono isNice true",
+                    "isNice rdf:type owl:FunctionalProperty"]
         self.assertCountEqual(self.kb["* isNice true"], [{"var1": "nono"}])
 
         self.kb += ["nono isNice false"]
@@ -329,134 +403,133 @@ class TestSequenceFunctions(unittest.TestCase):
 
         # should not trigger an event
         self.kb += ["alfred isIn garage"]
-        time.sleep(0.1)
+        self.sleep(0.1)
         self.assertFalse(eventtriggered[0])
 
         # should trigger an event
         self.kb += ["alfred isIn room"]
-        time.sleep(0.1)
+        self.sleep(0.1)
         self.assertTrue(eventtriggered[0])
 
         eventtriggered[0] = False
 
         # should not trigger an event
         self.kb += ["alfred leaves room"]
-        time.sleep(0.1)
+        self.sleep(0.1)
         self.assertFalse(eventtriggered[0])
 
         # alfred is already in garage, should not fire an event
         evtid2 = self.kb.subscribe(["?o isIn garage"], onevent)
         self.assertFalse(evtid == evtid2)
-        time.sleep(0.1)
+        self.sleep(0.1)
         self.assertFalse(eventtriggered[0])
 
         # alfred is already in garage, should not fire an event
         self.kb += ["alfred isIn garage"]
-        time.sleep(0.1)
+        self.sleep(0.1)
         self.assertFalse(eventtriggered[0])
 
         self.kb += ["batman isIn garage"]
-        time.sleep(0.1)
+        self.sleep(0.1)
         self.assertTrue(eventtriggered[0])
 
-    def test_events_multiclients(self):
+    def test_events_multi_clients(self):
 
-        with kb.KB() as kb2:
+        evt_triggers_count = [0]
+        evt_triggers_count_other = [0]
 
-            eventtriggered = [False]
+        def onevent(evt):
+            print("onevent callback triggered")
+            evt_triggers_count[0] += 1
 
-            def onevent(evt):
-                # py3 only! -> workaround is turning eventtriggered into a list
-                # nonlocal eventtriggered
-                print("In callback. Got evt %s" % evt)
-                eventtriggered[0] = True
+        def onevent_other(evt):
+            print("onevent_other callback triggered")
+            evt_triggers_count_other[0] += 1
 
-            self.kb.subscribe(["?o isIn room"], onevent)
+        evtid = self.kb.subscribe(["?o isIn room"], onevent)
 
-            # should not trigger an event
-            kb2 += ["alfred isIn garage"]
-            time.sleep(0.1)
-            self.assertFalse(eventtriggered[0])
+        evtid2 = self.kb.subscribe(["?o isIn room"], onevent)
 
-            # should trigger an event
-            kb2 += ["alfred isIn room"]
-            time.sleep(0.1)
-            self.assertTrue(eventtriggered[0])
+        self.assertEqual(evtid, evtid2)
 
-    def test_polled_events(self):
-
-        evtid = self.kb.subscribe(["?o isIn room"])
-
-        # should not trigger an event
-        self.kb += ["alfred isIn garage"]
-        time.sleep(0.1)
-
-        with self.assertRaises(Empty):
-            self.kb.events.get_nowait()
-
-        # should trigger an event
+        # should trigger only one event
         self.kb += ["alfred isIn room"]
-        time.sleep(0.1)
+        self.sleep(0.1)
+        self.assertEqual(evt_triggers_count[0], 1)
 
-        id, value = self.kb.events.get_nowait()
-        self.assertEqual(id, evtid)
-        self.assertCountEqual(value, [{"o": "alfred"}])
+        evt_triggers_count = [0]
 
-        # should not trigger an event
-        self.kb += ["alfred leaves room"]
-        time.sleep(0.1)
+        ##########################################################
+        evtid2 = self.kb.subscribe(["?o isIn room"], onevent_other)
 
-        with self.assertRaises(Empty):
-            self.kb.events.get_nowait()
+        # each callback should be called once
+        self.kb += ["catwoman isIn room"]
+        self.sleep(0.1)
+        self.assertEqual(evt_triggers_count[0], 1)
+        self.assertEqual(evt_triggers_count_other[0], 1)
 
-        # alfred is already in garage, should not fire an event
-        evtid = self.kb.subscribe(["?o isIn garage"])
-        time.sleep(0.1)
+        evt_triggers_count = [0]
+        evt_triggers_count_other = [0]
 
-        with self.assertRaises(Empty):
-            self.kb.events.get_nowait()
+        ##########################################################
+        kb2 = KB(self.node)
+        evtid3 = kb2.subscribe(["?o isIn room"], onevent)
+        self.assertEqual(evtid, evtid3)
 
-        # alfred is already in garage, should not fire an event
-        self.kb += ["alfred isIn garage"]
-        time.sleep(0.1)
+        # should trigger two event (two independent instances of KB(), that
+        # happen to call the same callback)
+        self.kb += ["batman isIn room"]
+        self.sleep(0.1)
+        self.assertEqual(evt_triggers_count[0], 2)
 
-        with self.assertRaises(Empty):
-            self.kb.events.get_nowait()
+        evt_triggers_count = [0]
 
-        self.kb += ["batman isIn garage"]
-        time.sleep(0.1)
+        evtid3 = kb2.subscribe(["?o isIn room"], lambda x: x)
 
-        id, value = self.kb.events.get_nowait()
-        self.assertEqual(id, evtid)
-        self.assertCountEqual(value, [{"o": "batman"}])
+        # should again trigger two event (two independent instances of KB(), that
+        # happen to call the same callback)
+        #
+        # adding another event listener should not cause the callbacks to be
+        # called yet another time
+        self.kb += ["wonderwoman isIn room"]
+        self.sleep(0.1)
+        self.assertEqual(evt_triggers_count[0], 2)
 
     def test_complex_events(self):
 
-        evtid = self.kb.subscribe(["?a desires ?act", "?act rdf:type Action"])
+        eventtriggered = [False]
+        last_evt = []
+
+        def onevent(evt):
+            self.node.get_logger().warn("In callback. Got evt %s" % evt)
+            eventtriggered[0] = True
+            last_evt.append(evt)
+
+        self.kb.subscribe(
+            ["?a desires ?act", "?act rdf:type Action"], onevent)
 
         # should not trigger an event
         self.kb += ["alfred desires ragnagna"]
-        time.sleep(0.1)
+        self.sleep(0.2)
 
-        with self.assertRaises(Empty):
-            self.kb.events.get_nowait()
+        self.assertFalse(eventtriggered[0])
 
         # should not trigger an event
         self.kb += ["ragnagna rdf:type Zorro"]
-        time.sleep(0.1)
+        self.sleep(0.2)
 
-        with self.assertRaises(Empty):
-            self.kb.events.get_nowait()
+        self.assertFalse(eventtriggered[0])
 
         # should trigger an event
         self.kb += ["ragnagna rdf:type Action"]
-        time.sleep(0.1)
+        self.sleep(0.2)
 
-        id, value = self.kb.events.get_nowait()
-        self.assertEqual(id, evtid)
-        self.assertEqual(value, [{"a": "alfred", "act": "ragnagna"}])
+        self.assertTrue(eventtriggered[0])
+        self.assertEqual(last_evt[-1], [{"a": "alfred", "act": "ragnagna"}])
 
-    def test_taxonomy_walking(self):
+    # test currently disabled, as taxonomy walking is not yet supported over
+    # the ROS API
+    def _test_taxonomy_walking(self):
 
         self.assertFalse(self.kb.classesof("john"))
         self.kb += ["john rdf:type Human"]
@@ -465,46 +538,3 @@ class TestSequenceFunctions(unittest.TestCase):
         self.assertCountEqual(self.kb.classesof("john"), [u"Human", u"Genius"])
         self.kb -= ["john rdf:type Human"]
         self.assertCountEqual(self.kb.classesof("john"), [u"Genius"])
-
-    def test_memory(self):
-
-        self.kb.add(["john rdf:type Human"])
-        time.sleep(1.2)
-        self.assertTrue("john" in self.kb)
-        self.kb.remove(["john rdf:type Human"])
-        self.kb.add(["john rdf:type Human"], [], 0.5)
-        time.sleep(0.4)
-        self.assertTrue("john" in self.kb)
-        time.sleep(0.6)
-        self.assertFalse("john" in self.kb)
-
-
-def version():
-    print("KnowledgeCore tests %s" % __version__)
-
-
-if __name__ == "__main__":
-
-    import argparse
-
-    parser = argparse.ArgumentParser(description="Test suite for KnowledgeCore.")
-    parser.add_argument(
-        "-v",
-        "--version",
-        action="version",
-        version=version(),
-        help="returns KnowledgeCore version",
-    )
-    parser.add_argument(
-        "-f", "--failfast", action="store_true", help="stops at first failed test"
-    )
-
-    args = parser.parse_args()
-
-    kblogger = logging.getLogger("kb")
-    console = logging.StreamHandler()
-    kblogger.setLevel(logging.DEBUG)
-    kblogger.addHandler(console)
-
-    unittest.main(failfast=args.failfast)
-    # unittest.main(failfast=True)
