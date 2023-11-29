@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-PKG = "test_knowledge_core"
-
-import rospy
-import unittest
-
 from knowledge_core.api import KB, KbError
+import unittest
+import rospy
+PKG = "test_knowledge_core"
 
 
 class TestPythonicROSKb(unittest.TestCase):
@@ -36,7 +34,8 @@ class TestPythonicROSKb(unittest.TestCase):
     def test_basic_modifications(self):
 
         # check no exception is raised
-        self.kb.add(["johnny rdf:type Human", 'johnny rdfs:label "A que Johnny"'])
+        self.kb.add(["johnny rdf:type Human",
+                    'johnny rdfs:label "A que Johnny"'])
         self.kb += ["alfred rdf:type Human", "alfred likes icecream"]
         self.kb.remove(["alfred rdf:type Human", "alfred likes icecream"])
         self.kb -= ["johnny rdf:type Human"]
@@ -49,7 +48,8 @@ class TestPythonicROSKb(unittest.TestCase):
         self.kb.add(
             ["johnny rdf:type Human", 'johnny rdfs:label "A que Johnny"'], ["model1"]
         )
-        self.kb.remove(["alfred rdf:type Human", "alfred likes icecream"], ["model1"])
+        self.kb.remove(
+            ["alfred rdf:type Human", "alfred likes icecream"], ["model1"])
 
         self.kb.add(
             ["johnny rdf:type Human", 'johnny rdfs:label "A que Johnny"'],
@@ -59,9 +59,11 @@ class TestPythonicROSKb(unittest.TestCase):
             ["alfred rdf:type Human", "alfred likes icecream"], ["model1", "model2"]
         )
 
-        self.kb.revise(["toto likes tata"], {"method": "add", "models": ["model1"]})
+        self.kb.revise(["toto likes tata"], {
+                       "method": "add", "models": ["model1"]})
         self.kb.revise(
-            ["toto likes tata"], {"method": "add", "models": ["model1", "model2"]}
+            ["toto likes tata"], {"method": "add",
+                                  "models": ["model1", "model2"]}
         )
 
     def test_basic_kwargs(self):
@@ -126,21 +128,25 @@ class TestPythonicROSKb(unittest.TestCase):
         self.assertCountEqual(self.kb.lookup("alfred"), [])
 
         self.kb += ['alfred rdfs:label "alfred"']
-        self.assertCountEqual(self.kb.lookup("alfred"), [["alfred", "undecided"]])
+        self.assertCountEqual(self.kb.lookup("alfred"),
+                              [["alfred", "undecided"]])
         self.assertCountEqual(
             self.kb.lookup("rdfs:label"), [["rdfs:label", "datatype_property"]]
         )
 
         self.kb += ["alfred rdf:type Robot"]
-        self.assertCountEqual(self.kb.lookup("alfred"), [["alfred", "instance"]])
+        self.assertCountEqual(self.kb.lookup("alfred"),
+                              [["alfred", "instance"]])
         self.assertCountEqual(self.kb.lookup("Robot"), [["Robot", "class"]])
         self.assertCountEqual(
             self.kb.lookup("rdf:type"), [["rdf:type", "object_property"]]
         )
 
         self.kb += ["alfred likes icecream"]
-        self.assertCountEqual(self.kb.lookup("likes"), [["likes", "object_property"]])
-        self.assertCountEqual(self.kb.lookup("alfred"), [["alfred", "instance"]])
+        self.assertCountEqual(self.kb.lookup("likes"), [
+                              ["likes", "object_property"]])
+        self.assertCountEqual(self.kb.lookup("alfred"),
+                              [["alfred", "instance"]])
 
         self.kb += ['nono rdfs:label "alfred"']
         self.kb += ['sentence rdfs:label "alfred is a charming person"']
@@ -172,7 +178,8 @@ class TestPythonicROSKb(unittest.TestCase):
         )
 
         self.kb += ["gerard age 18"]
-        self.assertCountEqual(self.kb.lookup("age"), [["age", "datatype_property"]])
+        self.assertCountEqual(self.kb.lookup(
+            "age"), [["age", "datatype_property"]])
 
     def test_literals(self):
 
@@ -215,14 +222,16 @@ class TestPythonicROSKb(unittest.TestCase):
             lit, py = kv
             self.kb += ["robert rel%s %s" % (i, lit)]
             self.assertCountEqual(
-                self.kb.lookup("rel%s" % i), [["rel%s" % i, "datatype_property"]]
+                self.kb.lookup("rel%s" % i), [
+                    ["rel%s" % i, "datatype_property"]]
             )
             self.assertEquals(self.kb["* rel%s ?lit" % i][0]["lit"], py)
 
         for i, val in enumerate(objects):
             self.kb += ["robert relobj%s %s" % (i, val)]
             self.assertCountEqual(
-                self.kb.lookup("relobj%s" % i), [["relobj%s" % i, "object_property"]]
+                self.kb.lookup("relobj%s" % i), [
+                    ["relobj%s" % i, "object_property"]]
             )
 
         for val in malformed:
@@ -234,7 +243,8 @@ class TestPythonicROSKb(unittest.TestCase):
         self.assertFalse(self.kb.about("Human"))
         self.assertFalse(self.kb["* rdf:type Human"])
 
-        self.kb += ["johnny rdf:type Human", 'johnny rdfs:label "A que Johnny"']
+        self.kb += ["johnny rdf:type Human",
+                    'johnny rdfs:label "A que Johnny"']
         self.kb += ["alfred rdf:type Human", "alfred likes icecream"]
 
         self.assertCountEqual(
@@ -243,12 +253,14 @@ class TestPythonicROSKb(unittest.TestCase):
         )
 
         self.assertCountEqual(
-            self.kb["* rdf:type Human"], [{"var1": "johnny"}, {"var1": "alfred"}]
+            self.kb["* rdf:type Human"], [{"var1": "johnny"},
+                                          {"var1": "alfred"}]
         )
 
         self.kb -= ["alfred rdf:type Human", "alfred likes icecream"]
 
-        self.assertCountEqual(self.kb["* rdf:type Human"], [{"var1": "johnny"}])
+        self.assertCountEqual(
+            self.kb["* rdf:type Human"], [{"var1": "johnny"}])
 
         self.assertTrue(self.kb["johnny rdf:type Human"])
 
@@ -287,10 +299,12 @@ class TestPythonicROSKb(unittest.TestCase):
 
         self.kb += ["nono loves icecream"]
         self.assertEqual(
-            self.kb["?agent desires jump", "?agent loves icecream"], [{"agent": "nono"}]
+            self.kb["?agent desires jump", "?agent loves icecream"], [
+                {"agent": "nono"}]
         )
         self.assertCountEqual(
-            self.kb["?agent desires *", "?agent loves icecream"], [{"agent": "nono"}]
+            self.kb["?agent desires *",
+                    "?agent loves icecream"], [{"agent": "nono"}]
         )
 
         self.kb += ["jump rdf:type Action"]
@@ -308,7 +322,8 @@ class TestPythonicROSKb(unittest.TestCase):
         )
 
     def test_update(self):
-        self.kb += ["nono isNice true", "isNice rdf:type owl:FunctionalProperty"]
+        self.kb += ["nono isNice true",
+                    "isNice rdf:type owl:FunctionalProperty"]
         self.assertCountEqual(self.kb["* isNice true"], [{"var1": "nono"}])
 
         self.kb += ["nono isNice false"]
@@ -375,7 +390,8 @@ class TestPythonicROSKb(unittest.TestCase):
             eventtriggered[0] = True
             last_evt.append(evt)
 
-        evtid = self.kb.subscribe(["?a desires ?act", "?act rdf:type Action"], onevent)
+        evtid = self.kb.subscribe(
+            ["?a desires ?act", "?act rdf:type Action"], onevent)
 
         # should not trigger an event
         self.kb += ["alfred desires ragnagna"]

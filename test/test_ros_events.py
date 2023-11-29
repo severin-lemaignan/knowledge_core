@@ -1,13 +1,13 @@
 #!/usr/bin/env python
+from std_msgs.msg import String
+from knowledge_core.srv import Event
+from knowledge_core.srv import Revise, ReviseRequest
+from knowledge_core.srv import Manage, ManageRequest
+import json
+import unittest
+import rospy
 PKG = "test_knowledge_core"
 
-import rospy
-import unittest
-import json
-from knowledge_core.srv import Manage, ManageRequest
-from knowledge_core.srv import Revise, ReviseRequest
-from knowledge_core.srv import Event
-from std_msgs.msg import String
 
 MANAGE_SRV = "/kb/manage"
 REVISE_SRV = "/kb/revise"
@@ -203,7 +203,7 @@ class TestKBEvents(unittest.TestCase):
         self.check_event(should_trigger=True)
 
         sub.unregister()
-        rospy.sleep(0.3)
+        rospy.sleep(0.4)
 
         self.revise(
             method=ReviseRequest.ADD,
@@ -214,7 +214,8 @@ class TestKBEvents(unittest.TestCase):
 
         self.check_event(should_trigger=False)
 
-        sub = rospy.Subscriber(EVENTS_NS + evt.id, String, self.on_evt, queue_size=10)
+        sub = rospy.Subscriber(EVENTS_NS + evt.id, String,
+                               self.on_evt, queue_size=10)
 
         self.revise(
             method=ReviseRequest.ADD,

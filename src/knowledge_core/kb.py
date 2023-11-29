@@ -157,6 +157,11 @@ def shorten_term(graph, term):
 
 
 def shorten(graph, stmt, double_quote_for_str=False):
+    """
+    Shorten a full-qualified URI reference to instead use prefixes.
+
+    Optionally, ensure that strings are double-quoted, for further JSON serialization.
+    """
 
     is_single_term = isinstance(stmt, str)
 
