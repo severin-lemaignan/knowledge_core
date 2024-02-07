@@ -2,6 +2,23 @@
 Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* fix events being sometimes triggered multiple times or never
+* doc/line wrapping
+* fix test_ros.py that was incorrect when running without a reasoner
+* fix sparql() that was broken since eb0c97a1bef3e74
+* reimplemented lookup(); fixes unittest
+  While here, strenghten the literals unittest and fix some issues that arose.
+* make it possible to update the lifespan of statements (either to extend or shorten it)
+* workaround for rdflib 6.2.x bug
+  See https://github.com/RDFLib/rdflib/issues/2077
+* automatically remove statements reaching the end of their lifespan
+* do not crash when starting with --no-ros
+* add metadata graph to each model + store insertion date of every stmts
+* do not return blank nodes (BNodes) when querying the kb
+* Contributors: Séverin Lemaignan
+
 2.8.10 (2023-07-05)
 -------------------
 * bump version
