@@ -2,8 +2,8 @@
 Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.9.0 (2024-02-07)
+------------------
 * fix events being sometimes triggered multiple times or never
 * doc/line wrapping
 * fix test_ros.py that was incorrect when running without a reasoner
