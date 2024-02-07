@@ -2,11 +2,6 @@ from setuptools import find_packages, setup
 
 package_name = 'knowledge_core'
 
-version = {}
-with open("src/knowledge_core/__init__.py") as fp:
-    exec(fp.read(), version)
-
-
 def readme():
     with open("README-pypi.rst") as f:
         return f.read()
@@ -14,7 +9,7 @@ def readme():
 
 setup(
     name=package_name,
-    version=version["__version__"],
+    version="2.9.0",
     license='Apache-2.0',
     description="A RDFlib-backed simple knowledge based for robotic application",
     long_description=readme(),

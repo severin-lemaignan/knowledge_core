@@ -2,6 +2,12 @@
 Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* port to ROS 2 humble
+* srv files have moved to kb-msgs
+* Contributors: Séverin Lemaignan
+
 2.9.0 (2024-02-07)
 ------------------
 * fix events being sometimes triggered multiple times or never
