@@ -2,6 +2,7 @@ from setuptools import find_packages, setup
 
 package_name = 'knowledge_core'
 
+
 def readme():
     with open("README-pypi.rst") as f:
         return f.read()
