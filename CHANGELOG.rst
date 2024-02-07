@@ -2,6 +2,12 @@
 Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* [test] disable flaky test
+* [test] please linter
+* Contributors: Séverin Lemaignan
+
 3.0.0 (2024-02-07)
 ------------------
 * port to ROS 2 humble
