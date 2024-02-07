@@ -2,8 +2,8 @@
 Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.0.0 (2024-02-07)
+------------------
 * port to ROS 2 humble
 * srv files have moved to kb-msgs
 * Contributors: Séverin Lemaignan
