@@ -2,8 +2,8 @@
 Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.0.1 (2024-02-07)
+------------------
 * [test] disable flaky test
 * [test] please linter
 * Contributors: Séverin Lemaignan
