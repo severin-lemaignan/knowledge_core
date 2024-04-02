@@ -219,9 +219,6 @@ the exact level of support of the different OWL2 RL rules.
 `KnowledgeCore` allows to attach 'lifespans' to statements: after a given duration,
 they are automatically collected.
 
-**[this functionality is currently disabled. Please open an issue of you need it
-urgently]**
-
 ### Ontology walking
 
 `KnowledgeCore` exposes several methods to explore the different ontological models
