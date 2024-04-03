@@ -2,6 +2,11 @@
 Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* when creating a new knowledge model, pre-load it with the same default ontology as the default model
+* Contributors: Séverin Lemaignan
+
 2.10.0 (2024-04-03)
 -------------------
 * add support for querying for concepts' labels via /kb/label
