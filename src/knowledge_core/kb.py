@@ -341,13 +341,12 @@ class KnowledgeCore:
         # create a RDFlib dataset
         self.ds = Dataset()
         self.models = {}
+        
+        self.preload_ontologies = filenames
+
         self.create_model(DEFAULT_MODEL)
 
         self._functionalproperties = frozenset()
-
-        if filenames:
-            for filename in filenames:
-                self.load(filename)
 
     @api
     def hello(self):
@@ -358,9 +357,11 @@ class KnowledgeCore:
         return str(__version__)
 
     @api
-    def load(self, filename, models=None):
+    def load(self, filename, models=None, skip_normalisation=False):
 
-        models = self.normalize_models(models)
+        if not skip_normalisation:
+            models = self.normalize_models(models)
+
         for model in models:
             logger.info("Loading file <%s> in model <%s>" % (filename, model))
             self.models[model].graph.parse(filename, publicID=IRIS[DEFAULT_PREFIX])
@@ -1321,6 +1322,12 @@ class KnowledgeCore:
                 "materialized_graph": Graph(),
             }
         )
+
+        if self.preload_ontologies:
+            for filename in self.preload_ontologies:
+                self.load(filename, models=[model], skip_normalisation=True)
+
+        logger.info(f"Created new belief model <{model}>, and pre-loaded it with ontologies {self.preload_ontologies}")
 
     def normalize_models(self, models):
         """If 'models' is None or [], returns the default model (ie, the
