@@ -2,8 +2,8 @@
 Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.10.1 (2024-04-03)
+-------------------
 * when creating a new knowledge model, pre-load it with the same default ontology as the default model
 * Contributors: Séverin Lemaignan
 

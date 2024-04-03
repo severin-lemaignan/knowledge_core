@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="3">
   <name>knowledge_core</name>
-  <version>2.10.0</version>
+  <version>2.10.1</version>
   <description>The KnowledgeCore knowledge base, including its service-based ROS API</description>
 
   <maintainer email="severin.lemaignan@pal-robotics.com">Séverin Lemaignan</maintainer>
