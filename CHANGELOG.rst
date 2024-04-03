@@ -2,6 +2,24 @@
 Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* add support for querying for concepts' labels via /kb/label
+  Also support multiple languages
+* minor update to test_embedded.py now that the embeddind API works with knowledgecore
+* add /kb/details to the ROS API + improve returned details
+  Including removing 'internal' facts, BNode, providing the list of relations
+  involving the term, etc
+* add kb.on_active_concepts method to register custom callbacks when a new active concept is detected
+* publish active concepts on /kb/active_concepts
+* implemented ActiveConcept
+  Any concept marked as 'rdf:type ActiveConcept' is a currently 'active' concept.
+  The 'rdf:type ActiveConcept' is automatically removed after a period of time (currently set to 5 seconds).
+  It can be used to eg display what concepts are currently important in the knowledge base because they have been eg recently added or refered to in a discussion
+* [doc] mention details, about, label APIs in README
+* [doc] statement lifespans are supported
+* Contributors: Séverin Lemaignan
+
 2.9.0 (2024-02-07)
 ------------------
 * fix events being sometimes triggered multiple times or never
