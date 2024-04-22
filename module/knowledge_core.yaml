@@ -1,0 +1,2 @@
+knowledge_core:
+  launch: "knowledge_core knowledge_core.launch"

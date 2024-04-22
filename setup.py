@@ -11,7 +11,7 @@ def readme():
 setup(
     name=package_name,
     version="3.0.1",
-    license='Apache-2.0',
+    license='Apache License 2.0',
     description="A RDFlib-backed simple knowledge based for robotic application",
     long_description=readme(),
     packages=find_packages(where="src", exclude=['test']),
@@ -19,6 +19,10 @@ setup(
     data_files=[
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
+        ('share/ament_index/resource_index/pal_system_module_set',
+         ['module/' + package_name]),
+        ('share/' + package_name + '/launch',
+         ['launch/knowledge_core.launch']),
         ('share/' + package_name, ['package.xml']),
     ],
     install_requires=['setuptools'],
