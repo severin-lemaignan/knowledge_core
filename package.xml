@@ -9,6 +9,7 @@
   <url>https://github.com/severin-lemaignan/knowledge_core</url>
   <license>Apache-2.0</license>
 
+  <depend>ament_index_python</depend>
   <depend>rclpy</depend>
   <depend>diagnostic_msgs</depend>
   <depend>std_msgs</depend>

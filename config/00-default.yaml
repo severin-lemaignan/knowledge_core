@@ -1,0 +1,9 @@
+/reasoning/knowledge_core:
+  ros__parameters:
+    default_kb: "ontology://oro/oro.owl"
+#  arguments:
+#   - "--no-reasoner" # disable the reasoner
+#   - "--debug" # enable debug mode
+#   - "--quiet" # only report errors to the console
+#   - "--port=9000" # change the default port, only useful for direct TCP connection to the knowledge base
+

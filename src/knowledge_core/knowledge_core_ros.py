@@ -3,6 +3,7 @@ import sys
 try:
     import rclpy
     from rclpy.node import Node
+    import ament_index_python as aip
 except ImportError:
     print(
         "Unable to load the ROS 2 support. You might want to run with --no-ros"
@@ -56,6 +57,53 @@ class KnowledgeCoreROS(Node):
         super().__init__('knowledge_core')
 
         self.kb = kb
+
+        self.declare_parameter('default_kb', rclpy.Parameter.Type.STRING)
+        default_kb = self.get_parameter_or('default_kb', None)
+
+        RES_NAME = "ontology"
+
+        if default_kb.value:
+            self.get_logger().info(
+                f"Default knowledge base file: {default_kb.value}")
+            if not default_kb.value.startswith(f"{RES_NAME}://"):
+                self.get_logger().error(
+                    "Invalid default knowledge base URI."
+                    f" Should be in the form '{RES_NAME}://<package>/<file>'")
+                rclpy.shutdown()
+                return
+
+            pkg, res = default_kb.value.split("://")[1].split("/")
+
+            try:
+                ontologies_res = aip.get_resource(RES_NAME, pkg)
+            except aip.LookupError:
+                self.get_logger().error(
+                    f"Default ontology (default_kb) set to {default_kb.value}, "
+                    f"yet package '{pkg}' not found in the '{RES_NAME}' resource index")
+                rclpy.shutdown()
+                return
+
+            ontologies_list = {
+                r.split("/")[1]: r for r in ontologies_res[0].split("\n")}
+
+            if res not in ontologies_list.keys():
+                self.get_logger().error(
+                    f"Default ontology (default_kb) set to {default_kb.value}, "
+                    "yet resource '{res}' not found in the '{RES_NAME}' resource "
+                    "index (pkg '{pkg}'). Found files: {list(ontologies_list.keys())}")
+                rclpy.shutdown()
+                return
+
+            path = aip.packages.get_package_share_path(
+                pkg) / ontologies_list[res]
+
+            self.get_logger().info(
+                f"Loading default knowledge base [{default_kb.value}] from {path}")
+            self.kb.load(path)
+        else:
+            self.get_logger().info(
+                "No default knowledge base file provided. Starting with an empty one.")
 
         self.diagnostics_pub = self.create_publisher(
             DiagnosticArray, "/diagnostics", 1
