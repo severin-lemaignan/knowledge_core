@@ -1,6 +1,7 @@
 // import * as d3 from 'https://cdn.skypack.dev/d3@7';
 import {Mutex, MutexInterface, Semaphore, SemaphoreInterface, withTimeout} from 'async-mutex';
 import * as d3 from 'd3';
+import ROSLIB from 'roslib';
 
 const ICON_MAP = {
     'owl:Thing': 'GenericInstance',
@@ -77,6 +78,49 @@ type Link = {
 
 type AdjencyList = Record<string, Node[]>;
 
+class RosKBClient {
+  private ros: ROSLIB.Ros;
+  private details_service: ROSLIB.Service;
+
+  constructor(rosBridgeUrl: string) {
+    this.ros = new ROSLIB.Ros({
+      url: rosBridgeUrl,
+    });
+
+    this.ros.on('connection', () => {
+      console.log('Connected to rosbridge server.');
+    });
+
+    this.ros.on('error', (error) => {
+      console.error('Error connecting to rosbridge server:', error);
+    });
+
+    this.ros.on('close', () => {
+      console.log('Connection to rosbridge server closed.');
+    });
+
+    this.details_service = new ROSLIB.Service({
+      ros: this.ros,
+      name: '/kb/details',
+      serviceType: 'kb_msgs/srv/About',
+    });
+  }
+
+  details(term: string): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const requestMsg = new ROSLIB.ServiceRequest({term: term});
+
+      this.details_service.callService(requestMsg, (response) => {
+        resolve(response);
+      }, (error) => {
+        reject(error);
+      });
+    });
+  }
+}
+
+const ros_kb_client = new RosKBClient('ws://localhost:9090');
+
 class Node {
     selected: boolean;
     hovered: boolean;
@@ -105,6 +149,7 @@ class Node {
         this.hovered = false;
         this.highlight = false;
         this.depth = 0;
+
     }
 
     /* sets a very low depth for all nodes connected to this node, except for
@@ -200,7 +245,11 @@ class Node {
             'instances': []
         };
 
-        let res = await Node.fetchConcept(term);
+
+        let response = await ros_kb_client.details(term);
+        let res = JSON.parse(response['json']);
+
+        //console.log('Service call succeeded:', res);
 
         for (const attr of res['attributes']) {
             for (const sc of attr['values']) {
@@ -219,14 +268,8 @@ class Node {
             res['label']['default'],
         );
     }
-
-    static async fetchConcept(query: string): Promise<Node> {
-        const response = await fetch(`/details/${query}`);
-        const term = await response.json();
-
-        return term;
-    }
 }
+
 type Graph = {
     links: Link[],
     nodes: Node[],
@@ -355,6 +398,8 @@ async function updateTerm(term: string): Promise<Node> {
 const SCALE_FACTOR_INSTANCES = 1.5
 
 function makeChart(data, invalidation = null) {
+
+
     // Specify the dimensions of the chart.
     const width = 928;
     const height = 680;
