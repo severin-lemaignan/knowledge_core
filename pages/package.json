@@ -1,0 +1,17 @@
+{
+    "scripts": {
+        "build": "npx tsc --project tsconfig.json && npm run bundle",
+        "build-min": "npx tsc --project tsconfig.json && npm run bundle-min",
+        "bundle": "esbuild dist/kb_explorer.js --bundle --sourcemap --outfile=static/kb_explorer.min.js",
+        "bundle-min": "esbuild dist/kb_explorer.js --bundle --minify --sourcemap --outfile=static/kb_explorer.min.js",
+        "start": "npm run build -- -w"
+    },
+    "dependencies": {
+        "esbuild": "0.18.11",
+        "typescript": "^5.1.6",
+        "async-mutex": "0.4.0"
+    },
+    "devDependencies": {
+        "d3": "^7.8.5"
+    }
+}

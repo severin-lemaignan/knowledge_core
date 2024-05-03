@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Knowledge base explorer</title>
+
+        <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" type="text/css" />
+        <link href="https://unpkg.com/gijgo@1.9.13/css/gijgo.min.css" rel="stylesheet" type="text/css" />
+
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300italic,700,700italic">
+        <!-- CSS Reset -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.css">
+        <!-- Milligram CSS -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/milligram/1.4.1/milligram.css">
+
+
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+
+        <!-- https://gijgo.com/grid -->
+        <script src="https://unpkg.com/gijgo@1.9.13/js/gijgo.min.js" type="text/javascript"></script>
+
+        <!-- D3 for the force-directed knowledge graph -->
+        <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+
+<style>
+.grid-wrapper {
+  margin:10px;
+  display: grid;
+  grid-template-columns: 50% 50%;
+  column-gap: 10px;
+  row-gap: 10px;
+}
+
+.grid-wrapper > div {
+    padding: 10px;
+    background-color: #FFF7E8;
+    border-radius: 10px;
+}
+
+#graph {
+    border: 0px;
+    height: 400px;
+    width: 100%;
+}
+
+#stmts {
+    overflow: scroll;
+    resize: vertical;
+}
+
+</style>
+    </head>
+    <body>
+
+        <iframe id="graph" src="/graph"></iframe>
+
+        <div class="grid-wrapper">
+
+            <div>
+                <h1>Query facts</h1>
+
+
+                <div class="float-left">
+                    <form class="display-inline">
+                        Variables: <input id="vars" type="text" placeholder="" class="gj-textbox-md" style="width:200px; display:inline;" value="?label"/><br/>
+                        Query: <input id="query" type="text" placeholder="* status charging" class="gj-textbox-md" style="width:500px; display:inline;" value="?domain rdf:type ResearchDomain, ?domain rdfs:label ?label"/>
+                        <button id="btnSearch" type="button">Search</button>
+                        <button id="btnClear" type="button" class="button-outline">Clear</button>
+                    </form>
+                </div>
+                <table id="stmts_list"></table>
+                <button id="refresh_btn" class="button-outline">Refresh</button>
+
+            </div>
+            <div>
+                <h1>Update facts</h1>
+
+                <p>
+                <textarea id="stmts" rows="10" cols="50" placeholder="robot1 status charging&#10;human2 looksAt robot1"></textarea>
+                </p>
+
+                <select name="method" id="revise_method">
+                    <option value="PATCH">UPDATE</option>
+                    <option value="PUT">ADD</option>
+                    <option value="DELETE">DELETE</option>
+                </select>
+                <button id="revise_btn">Revise</button>
+            </div>
+            <div>
+
+                <h1>Active concepts</h1>
+
+                <span id="active_concepts"></span>
+            </div>
+            <div>
+
+                <h1>Load ontology</h1>
+
+                <form enctype="multipart/form-data" method="post" action="/">
+                    <input type="file" name="file" accept=".owl,.nt,.t3,.rdf">
+                    <input type="submit" value="Load ontology">
+                </form>
+            </div>
+            <div>
+
+
+                <h1>Clear knowledge base</h1>
+
+                <button id="clear_btn">CLEAR ALL</button>
+            </div>
+        </div>
+
+
+        <script>
+
+function get_vars(pattern) {
+
+    var res = [];
+    for (const tok of pattern) {
+        if (tok.startsWith("?")) {
+            res.push(tok);
+        }
+    }
+    return res;
+}
+
+function replacestars(pattern) {
+
+    var res = [];
+    for (const tok of pattern) {
+        if (tok == "*") {
+            id = "?var"  + (Math.floor((1 + Math.random()) * 0x10000)
+                .toString(16)
+                .substring(1));
+            res.push(id)
+        }
+        else {
+            res.push(tok);
+        }
+
+    }
+    return res;
+}
+
+function get_all_statements() {
+    $('#stmts_list').grid().reload();
+}
+
+
+
+function onsuccess(data, status, jqxhr) {
+    // data will be a native javascript object
+    console.log(data);
+    get_all_statements();
+}
+
+function revise() {
+    var method = $("#revise_method option:selected").val();
+
+    $.ajax({ url: '/revise', 
+        data: {
+            stmts: $('#stmts').val().split('\n'),
+        },
+        dataType: 'json', 
+        type: method,
+        success: onsuccess 
+    });
+
+}
+
+function clear() {
+    $.ajax({ url: '/clear', 
+        type: 'GET',
+        success: onsuccess 
+    });
+
+}
+
+function preprocess_patterns(str) {
+
+    var stmts = []
+    var vars = []
+
+    for (const p of str.split(',')) {
+        var stmt = replacestars(p.match(/(?:[^\s"]+|"[^"]*")+/g) );
+        stmts.push(stmt.join(" "));
+        vars = vars.concat(get_vars(stmt));
+    }
+    res = { stmts: stmts,
+        vars: vars
+    };
+
+    console.log(res);
+    return res;
+}
+
+
+const activeConceptsSource = new EventSource("/active_concepts");
+
+
+$(document).ready(function () {
+
+    activeConceptsSource.onmessage = (msg) => {
+        $("#active_concepts").text(msg.data);
+    };
+
+    $('#btnSearch').on('click', function () {
+
+        patterns = preprocess_patterns($('#query').val());
+        vars = $("#vars").val().split(",");
+
+        grid.reload({ 
+            page: 1, 
+            patterns: patterns.stmts,
+            vars: vars[0]=="" ? patterns.vars : vars
+        });
+    });
+
+    $('#btnClear').on('click', function () {
+        $('#query').val('');
+    });
+
+    $("#refresh_btn").click(function(){get_all_statements();});
+    $("#revise_btn").click(function(){revise();});
+    $("#clear_btn").click(function(){clear();});
+
+    var grid = $('#stmts_list').grid({
+        dataSource: 'query',
+        columns: [
+            { field: 's', title: "Subject", sortable: true },
+            { field: 'p', title: "Predicate", sortable: true },
+            { field: 'o', title: "Object", sortable: true },
+        ],
+        pager: { limit: 5 }
+    });
+
+});
+
+        </script>
+
+    </body>
+</html>
