@@ -2,8 +2,8 @@
 Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.1.0 (2024-05-14)
+------------------
 * launch knowledge_core in the kb/ namespace
   ...and ensure all the topics/services are right under that namespace
 * Port launchfile to py, handle the `default_kb` parameter
