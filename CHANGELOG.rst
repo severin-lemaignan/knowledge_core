@@ -2,6 +2,19 @@
 Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* launch knowledge_core in the kb/ namespace
+  ...and ensure all the topics/services are right under that namespace
+* Port launchfile to py, handle the `default_kb` parameter
+  Add logic to parse ontology path in the form of `ontology://pkg/file`,
+  so that the ontology to be loaded can be found across packages
+  Make the node PAPS-007 conformant, by fetching configuration files
+  invarious ament-index'ed locations
+* install PAL module + bump version
+* [doc] statement lifespans are supported
+* Contributors: Séverin Lemaignan
+
 3.0.1 (2024-02-07)
 ------------------
 * [test] disable flaky test
