@@ -20,7 +20,7 @@ from knowledge_core.exceptions import KbServerError
 from kb_msgs.srv import Manage, Revise, Query, About, Lookup, Sparql, Event
 from std_msgs.msg import String
 
-EVENTS_TOPIC_NS = "/kb/events/"
+EVENTS_TOPIC_NS = "events/"
 
 DIAGNOSTICS_FREQUENCY = 1  # Hz
 
@@ -111,17 +111,17 @@ class KnowledgeCoreROS(Node):
         self.last_diagnostics_ts = self.get_clock().now()
 
         self.update_sub = self.create_subscription(
-            String, "/kb/add_fact", self.on_update_fact, 10)
+            String, "add_fact", self.on_update_fact, 10)
         self.retract_sub = self.create_subscription(
-            String, "/kb/remove_fact", self.on_retract_fact, 10)
+            String, "remove_fact", self.on_retract_fact, 10)
 
-        self.create_service(Manage, "kb/manage",  self.handle_manage)
-        self.create_service(Revise, "kb/revise",  self.handle_revise)
-        self.create_service(Query, "kb/query",  self.handle_query)
-        self.create_service(About, "kb/about",  self.handle_about)
-        self.create_service(Lookup, "kb/lookup",  self.handle_lookup)
-        self.create_service(Event, "kb/events",  self.handle_new_event)
-        self.create_service(Sparql, "kb/sparql",  self.handle_sparql)
+        self.create_service(Manage, "manage",  self.handle_manage)
+        self.create_service(Revise, "revise",  self.handle_revise)
+        self.create_service(Query, "query",  self.handle_query)
+        self.create_service(About, "about",  self.handle_about)
+        self.create_service(Lookup, "lookup",  self.handle_lookup)
+        self.create_service(Event, "events",  self.handle_new_event)
+        self.create_service(Sparql, "sparql",  self.handle_sparql)
 
         self.get_logger().info(
             """

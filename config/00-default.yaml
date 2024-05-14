@@ -1,4 +1,4 @@
-/reasoning/knowledge_core:
+/kb/knowledge_core:
   ros__parameters:
     default_kb: "ontology://oro/oro.owl"
 #  arguments:

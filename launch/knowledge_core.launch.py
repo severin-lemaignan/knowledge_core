@@ -167,7 +167,7 @@ def generate_launch_description():
     knowledge_core_node = Node(
         package='knowledge_core',
         executable='knowledge_core',
-        namespace='reasoning',
+        namespace='kb',
         name='knowledge_core',
         parameters=config["parameters"],
         remappings=config["remappings"],
