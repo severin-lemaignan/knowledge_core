@@ -301,6 +301,8 @@ class KnowledgeCore:
 
     def __init__(self, filenames=None, enable_reasoner=True, auto_activeconcepts=False):
         """
+        Create a new KnowledgeCore instance.
+
         :param filenames: a list of path to ontologies to pre-load in the
         knowledge base
         :param enable_reasoner: if True, enable automatic knowledge base
@@ -309,7 +311,6 @@ class KnowledgeCore:
         to the knowledge base is also marked as an instance of 'ActiveConcept'
         for ACTIVE_CONCEPT_LIFESPAN seconds (default to 5 sec)
         """
-
         self.reasoner_enabled = has_reasoner and enable_reasoner
         if not self.reasoner_enabled:
             logger.warn("Running without OWL2 RL reasoner.")

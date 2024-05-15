@@ -233,18 +233,16 @@ class KB:
         return json.loads(res.json)
 
     def label(self, term, lang=None, models=[]):
-        """returns the label associated to the term.
+        """
+        Return the label associated to the term.
 
         If no label, returns the term itself.
-
         If lang is specified (2 letter code, eg `en`, `fr`), returns the label
         translated in that language, if available.
-
         If not specified, or if the desired language is not available, fallback
         to English.
 
         """
-
         future = self._label_srv.call_async(
             About.Request(term=term, models=models))
         rclpy.spin_until_future_complete(self.node, future)
