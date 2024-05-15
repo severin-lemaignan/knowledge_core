@@ -81,6 +81,7 @@ type AdjencyList = Record<string, Node[]>;
 class RosKBClient {
   private ros: ROSLIB.Ros;
   private details_service: ROSLIB.Service;
+  private active_concepts_sub: ROSLIB.Topic;
 
   constructor(rosBridgeUrl: string) {
     this.ros = new ROSLIB.Ros({
@@ -104,6 +105,12 @@ class RosKBClient {
       name: '/kb/details',
       serviceType: 'kb_msgs/srv/About',
     });
+
+    this.active_concepts_sub = new ROSLIB.Topic({
+      ros: this.ros,
+      name: '/kb/active_concepts',
+      messageType: 'kb_msgs/ActiveConcepts',
+    });
   }
 
   details(term: string): Promise<any> {
@@ -117,6 +124,13 @@ class RosKBClient {
       });
     });
   }
+
+  on_active_concepts(callback: (message: any) => void): void {
+    this.active_concepts_sub.subscribe((message) => {
+      callback(message);
+    });
+  }
+
 }
 
 const ros_kb_client = new RosKBClient('ws://localhost:9090');
@@ -407,14 +421,15 @@ function makeChart(data, invalidation = null) {
 
     ///////////////////////////////////////////////////////////
     // interaction with the knowledge base
-    const activeConceptsSource = new EventSource('/active_concepts');
 
-    activeConceptsSource.onmessage = (msg) => {
-        updateTerm(msg.data).then(node => {
-            console.log('Updated node ' + node.id);
-            kb_graph.update(KB);
-        });
-    };
+    ros_kb_client.on_active_concepts((msg) => {
+        for (const concept of msg.concepts) {
+            updateTerm(concept).then(node => {
+                console.log('Updated node ' + node.id);
+                kb_graph.update(KB);
+            });
+        }
+    });
 
     ///////////////////////////////////////////////////////////
 
