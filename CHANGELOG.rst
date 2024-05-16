@@ -2,6 +2,11 @@
 Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* correctly report topic namespace when subscribing to events
+* Contributors: Séverin Lemaignan
+
 3.2.1 (2024-05-16)
 ------------------
 * bump version
