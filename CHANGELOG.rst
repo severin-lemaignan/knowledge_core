@@ -2,8 +2,8 @@
 Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.2.0 (2024-05-16)
+------------------
 * replace KB webgui by the explorer
 * kb_explorer: add support for active_concepts
 * kb_explorer: port to ROS2 using roslib
