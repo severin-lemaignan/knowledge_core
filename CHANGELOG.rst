@@ -2,6 +2,12 @@
 Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* bump version
+* [minor] doc typo
+* Contributors: Séverin Lemaignan
+
 3.2.0 (2024-05-16)
 ------------------
 * replace KB webgui by the explorer
