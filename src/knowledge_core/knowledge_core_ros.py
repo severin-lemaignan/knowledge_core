@@ -395,7 +395,7 @@ Available services:
                     "Event %s already subscribed to. Nothing to do." % evt)
 
             response.id = evt
-            response.topic = EVENTS_TOPIC_NS + evt
+            response.topic = self.get_namespace() + "/" + EVENTS_TOPIC_NS + evt
             return response
 
         except KbServerError as kbe:
