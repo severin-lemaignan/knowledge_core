@@ -2,6 +2,30 @@
 Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* replace KB webgui by the explorer
+* kb_explorer: add support for active_concepts
+* kb_explorer: port to ROS2 using roslib
+  It requires `rosbridge_server` running on the ROS2 side.
+  You can start the rosbridge server using:
+  ros2 launch rosbridge_server rosbridge_websocket_launch.xml
+* import kb_explorer from ROS1's kb_rest
+* please pep 257 linter
+* [doc] mention details, about, label APIs in README
+* add support for querying for concepts' labels via /kb/label
+  Also support multiple languages
+* add /kb/details to the ROS API + improve returned details
+  Including removing 'internal' facts, BNode, providing the list of relations
+  involving the term, etc
+* add kb.on_active_concepts method to register custom callbacks when a new active concept is detected
+* publish active concepts on /kb/active_concepts
+* implemented ActiveConcept
+  Any concept marked as 'rdf:type ActiveConcept' is a currently 'active' concept.
+  The 'rdf:type ActiveConcept' is automatically removed after a period of time (currently set to 5 seconds).
+  It can be used to eg display what concepts are currently important in the knowledge base because they have been eg recently added or refered to in a discussion
+* Contributors: Séverin Lemaignan
+
 3.1.0 (2024-05-14)
 ------------------
 * launch knowledge_core in the kb/ namespace
