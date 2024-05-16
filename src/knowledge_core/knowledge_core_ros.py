@@ -149,7 +149,7 @@ Available services:
 - /kb/revise [kb_msgs/Revise]
 - /kb/query [kb_msgs/Query]
 - /kb/about [kb_msgs/About]
-- /kb/label [knowledge_core/About]
+- /kb/label [kb_msgs/About]
 - /kb/details [kb_msgs/About]
 - /kb/lookup [kb_msgs/Lookup]
 - /kb/sparql [kb_msgs/Sparql]
