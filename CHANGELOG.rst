@@ -2,6 +2,12 @@
 Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* install kb_explorer files
+* [doc] various documentation improvements
+* Contributors: Séverin Lemaignan
+
 3.2.3 (2024-05-16)
 ------------------
 * bump version
