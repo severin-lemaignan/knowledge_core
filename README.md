@@ -3,6 +3,9 @@ KnowledgeCore
 
 ![KnowledgeCore icon](icon.png)
 
+
+![KnowledgeCore explorer](doc/kb_explorer.png)
+
 KnowledgeCore is a RDFlib-backed minimalistic knowledge base, initially designed
 for robots (in particular human-robot interaction or multi-robot interaction).
 It features full [ROS](https://www.ros.org) support.
@@ -20,7 +23,7 @@ RL reasoner to provide OWL2 semantics and fast knowledge materialisation.
 Example
 -------
 
-This example uses the ROS 2 API (see below), with some Pythonic syntatic sugar:
+This example uses the ROS 2 API (see below), with some Pythonic syntactic sugar:
 
 ```python
 
@@ -91,7 +94,7 @@ $ python setup.py install
 $ knowledge_core
 ```
 
-If using ROS, you can also use your regular catkin workflow.
+If using ROS, you can also use your regular colcon/ament workflow.
 
 
 Documentation
@@ -130,7 +133,8 @@ with kb.KB() as kb:
     #...
 ```
 
-See usage examples on the [pykb](https://github.com/severin-lemaignan/pykb) page, or in the `KnowledgeCore` [unit-tests](testing).
+See usage examples on the [pykb](https://github.com/severin-lemaignan/pykb)
+page, or in the `KnowledgeCore` [unit-tests](testing).
 
 #### Embedded mode
 
@@ -144,27 +148,17 @@ with kb.KB(embedded=True) as kb:
     #...
 ```
 
-#### Interacting with KnowledgeCore from other languages
-
-- from C++: check [liboro](https://github.com/severin-lemaignan/liboro)
-- from any other language: the communication with the server relies on a simply
-  socket-based text protocol. Feel free to get in touch if you need help to add
-  support for your favourite language!
-
-#### How do I get that fancy image on top of the README?
-
-Check [oro-view](https://github.com/severin-lemaignan/oro-view) ;-)
-
 ### ROS usage
 
 **This version of KnowledgeCore only supports ROS 2.**
 
-**Please first read the general [API introduction](doc/api.md), as this applies to the ROS interface as well.**
+**Please first read the general [API introduction](doc/api.md), as this applies
+to the ROS interface as well.**
 
 To start the ROS node:
 
 ```
-ros2 run knowledge_core knowledge_core
+ros2 launch knowledge_core knowledge_core.launch.py
 ```
 
 **Note that, in general, you want to use the 'Pythonic' wrapper built on top of
@@ -179,20 +173,41 @@ quotes to escape it).
 
 It also exposes the following services:
 
+- `/kb/manage` to manage the knowledge base (including eg clearing all the
+  facts)
 - `/kb/revise` to add/remove facts using a synchronous interface
 - `/kb/query` to perform simple queries
-- `/kb/sparql` to perform complex queries (full SPARQL end-point)
 - `/kb/about` to return the list of all statements involving a specific concept
 - `/kb/label` to return the of a specific concept (or the concept name if no
   label available)
 - `/kb/details` to return details about one specific concept (for instance,
   parents classes, instances,...)
+- `/kb/lookup` to return the list of terms matching the provided string, either
+  in their name or in their label
+- `/kb/sparql` to perform complex queries (full SPARQL end-point)
 - `/kb/events` to subscribe to 'events' by providing a (set of) partially-bound
-  triples. Calling the service returns an event *id*. Subscribe then to
-  `/kb/events/<id>` to be notified everytime a new instance/class match the
+  triples. Calling the service returns an event *id*. Subscribe then to the
+  `/kb/events/<id>` topic to be notified each time a new instance/class match the
   provided pattern
-- `/kb/manage` to manage the knowledge base (including eg clearing all the
-  facts)
+
+### Interacting with KnowledgeCore from other languages
+
+- from C++: check [liboro](https://github.com/severin-lemaignan/liboro) (note:
+  this library is not actively maintained anymore)
+- from any other language: the communication with the server relies on a simply
+  socket-based text protocol. Feel free to get in touch if you need help to add
+  support for your favourite language!
+
+
+Visualisation
+-------------
+
+![KnowledgeCore explorer](doc/demo_knowledge_core.webm)
+
+`KnowledgeCore` comes with its own interactive web-based visualisation tool, KB Explorer.
+See [KB Explorer README](pages/README.md) for more information.
+
+`KnowledgeCore` is also compatible with [oro-view](https://github.com/severin-lemaignan/oro-view).
 
 Features
 --------
@@ -234,6 +249,4 @@ they are automatically collected.
 ### Ontology walking
 
 `KnowledgeCore` exposes several methods to explore the different ontological models
-of the knowledge base. It is compatible with the visualization tool
-[oro-view](https://github.com/severin-lemaignan/oro-view).
-
+of the knowledge base.

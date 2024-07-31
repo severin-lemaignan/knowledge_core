@@ -27,7 +27,7 @@ setup(
     name=package_name,
     version="3.2.3",
     license='Apache License 2.0',
-    description="A RDFlib-backed simple knowledge based for robotic application",
+    description="A RDFlib-backed knowledge base for robotic applications",
     long_description=readme(),
     packages=find_packages(where="src", exclude=['test']),
     package_dir={"": "src"},
