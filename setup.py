@@ -1,4 +1,7 @@
 from setuptools import find_packages, setup
+import os
+import sys
+from itertools import chain
 import pathlib
 
 package_name = 'knowledge_core'
@@ -16,6 +19,20 @@ def install_configuration(path):
          str(tmp/package_name)]),
         (f'share/{package_name}/config', [path]),
     ]
+
+
+def generate_kb_explorer_files():
+    data_files = []
+    data_dirs = ('pages',)
+
+    for path, _, files in chain.from_iterable(
+            os.walk(data_dir) for data_dir in data_dirs):
+        install_dir = os.path.join('share', package_name, path)
+        list_entry = (install_dir, [os.path.join(path, f)
+                      for f in files if not f.startswith('.')])
+        data_files.append(list_entry)
+
+    return data_files
 
 
 def readme():
@@ -39,7 +56,8 @@ setup(
         ('share/' + package_name + '/launch',
          ['launch/knowledge_core.launch.py']),
         ('share/' + package_name, ['package.xml']),
-    ] + install_configuration('config/00-default.yaml'),
+    ] + generate_kb_explorer_files()
+      + install_configuration('config/00-default.yaml'),
     install_requires=['setuptools'],
     zip_safe=True,
     author="Séverin Lemaignan",
