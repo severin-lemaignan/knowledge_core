@@ -1,24 +1,8 @@
 from setuptools import find_packages, setup
 import os
-import sys
 from itertools import chain
-import pathlib
 
 package_name = 'knowledge_core'
-
-
-def install_configuration(path):
-
-    tmp = pathlib.Path("./marker")
-    tmp.mkdir(exist_ok=True)
-    with open(tmp/package_name, 'w') as f:
-        f.write(path)
-
-    return [
-        (f'share/ament_index/resource_index/pal_configuration.{package_name}/', [
-         str(tmp/package_name)]),
-        (f'share/{package_name}/config', [path]),
-    ]
 
 
 def generate_kb_explorer_files():
@@ -53,11 +37,14 @@ setup(
             ['resource/' + package_name]),
         ('share/ament_index/resource_index/pal_system_module',
          ['module/' + package_name]),
+        ('share/' + package_name + '/module', ['module/knowledge_core_module.yaml']),
         ('share/' + package_name + '/launch',
          ['launch/knowledge_core.launch.py']),
         ('share/' + package_name, ['package.xml']),
-    ] + generate_kb_explorer_files()
-      + install_configuration('config/00-default.yaml'),
+        ('share/' + package_name + '/config', ['config/00-defaults.yaml']),
+        ('share/ament_index/resource_index/pal_configuration.' + package_name,
+            ['config/' + package_name]),
+    ] + generate_kb_explorer_files(),
     install_requires=['setuptools'],
     zip_safe=True,
     author="Séverin Lemaignan",
