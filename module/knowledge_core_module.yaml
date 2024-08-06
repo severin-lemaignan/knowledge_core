@@ -1,2 +1,2 @@
 knowledge_core:
-  launch: "knowledge_core knowledge_core.launch"
+  launch: "knowledge_core knowledge_core.launch.py"
