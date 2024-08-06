@@ -2,6 +2,11 @@
 Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* fix installation of module and configuration
+* Contributors: Séverin Lemaignan
+
 3.2.4 (2024-07-31)
 ------------------
 * install kb_explorer files
