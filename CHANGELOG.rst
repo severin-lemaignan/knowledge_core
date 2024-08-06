@@ -2,8 +2,8 @@
 Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.2.5 (2024-08-06)
+------------------
 * fix installation of module and configuration
 * Contributors: Séverin Lemaignan
 
