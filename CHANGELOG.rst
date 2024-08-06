@@ -2,6 +2,11 @@
 Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* typo in module
+* Contributors: Séverin Lemaignan
+
 3.2.5 (2024-08-06)
 ------------------
 * fix installation of module and configuration
