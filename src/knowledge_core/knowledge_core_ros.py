@@ -14,7 +14,7 @@ except ImportError:
 
 import json
 
-from diagnostic_msgs.msg import DiagnosticArray, DiagnosticStatus
+from diagnostic_msgs.msg import DiagnosticArray, DiagnosticStatus, KeyValue
 from knowledge_core.exceptions import KbServerError
 
 from kb_msgs.srv import Manage, Revise, Query, About, Lookup, Sparql, Event
@@ -411,14 +411,20 @@ Available services:
             if self.kb.reasoner_enabled:
                 msg = DiagnosticStatus(
                     level=DiagnosticStatus.OK,
-                    name="Reasoning: Knowledge base",
+                    name="/reasoning/kb/knowledge_core",
                     message="Knowledge base running, with OWL/RDF reasoner enabled",
+                    values=[
+                        KeyValue(key="Module name", value="knowledge_core"),
+                    ]
                 )
             else:
                 msg = DiagnosticStatus(
                     level=DiagnosticStatus.WARN,
-                    name="Reasoning: Knowledge base",
+                    name="/reasoning/kb/knowledge_core",
                     message="Knowledge base running, but OWL/RDF reasoner not enabled",
+                    values=[
+                        KeyValue(key="Module name", value="knowledge_core"),
+                    ]
                 )
             arr = DiagnosticArray()
             arr.header.stamp = self.get_clock().now().to_msg()
