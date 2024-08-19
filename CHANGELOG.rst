@@ -2,6 +2,11 @@
 Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* rename diagnostics msg to match documentation (and diagnostic_aggregator) categories
+* Contributors: Séverin Lemaignan
+
 3.2.6 (2024-08-06)
 ------------------
 * typo in module
