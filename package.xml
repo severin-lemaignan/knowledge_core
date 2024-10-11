@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>knowledge_core</name>
-  <version>3.2.7</version>
+  <version>3.2.8</version>
   <description>The KnowledgeCore knowledge base, including its service-based ROS API</description>
   <maintainer email="severin.lemaignan@pal-robotics.com">Séverin Lemaignan</maintainer>
   <author email="severin.lemaignan@pal-robotics.com">Séverin Lemaignan</author>

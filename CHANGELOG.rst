@@ -2,8 +2,8 @@
 Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.2.8 (2024-10-11)
+------------------
 * teach knowledge core about DBPedia prefixes
 * Contributors: Séverin Lemaignan
 
