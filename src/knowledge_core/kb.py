@@ -57,6 +57,8 @@ IRIS = {
     "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
     "owl": "http://www.w3.org/2002/07/owl#",
     "xsd": "http://www.w3.org/2001/XMLSchema#",
+    "dbr": "https://dbpedia.org/resource/",
+    "dbo": "https://dbpedia.org/ontology/",
 }
 
 DEFAULT_PREFIX = "oro"
