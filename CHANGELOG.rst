@@ -2,6 +2,12 @@
 Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* simplify launch file by using new 'get_pal_configuration(cmdline_args)' parameter
+* fix typo in config file path
+* Contributors: Séverin Lemaignan
+
 3.2.8 (2024-10-11)
 ------------------
 * teach knowledge core about DBPedia prefixes
