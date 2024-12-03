@@ -2,8 +2,8 @@
 Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.3.1 (2024-12-03)
+------------------
 * teaching knowledge_core about foaf, prov and dbp prefixes
 * Contributors: Séverin Lemaignan
 
