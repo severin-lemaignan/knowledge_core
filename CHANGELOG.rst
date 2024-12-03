@@ -2,6 +2,11 @@
 Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* teaching knowledge_core about foaf, prov and dbp prefixes
+* Contributors: Séverin Lemaignan
+
 3.3.0 (2024-10-16)
 ------------------
 * simplify launch file by using new 'get_pal_configuration(cmdline_args)' parameter
