@@ -59,6 +59,9 @@ IRIS = {
     "xsd": "http://www.w3.org/2001/XMLSchema#",
     "dbr": "https://dbpedia.org/resource/",
     "dbo": "https://dbpedia.org/ontology/",
+    "dbp": "https://dbpedia.org/property/",
+    "prov": "http://www.w3.org/ns/prov#",
+    "foaf": "http://xmlns.com/foaf/0.1/",
 }
 
 DEFAULT_PREFIX = "oro"
