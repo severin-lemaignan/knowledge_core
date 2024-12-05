@@ -8,6 +8,7 @@ from datetime import datetime
 import time
 from decimal import Decimal
 import logging
+import re
 
 logger = logging.getLogger("KnowledgeCore." + __name__)
 
@@ -83,6 +84,9 @@ N3_PROLOGUE += (
     "@keywords a,true,false. "  # see https://www.w3.org/TeamSubmission/n3/#keywords
 )
 
+QUOTE_REGEX = re.compile(
+    r'^(\".*\"|\'.*\'|\"\"\".*\"\"\"|\'\'\'.*\'\'\')$', re.DOTALL)
+
 
 def ORO(term: str):
     return URIRef(IRIS[DEFAULT_PREFIX] + term)
@@ -112,6 +116,7 @@ def parse_stmts_to_graph(stmts):
                 "invalid syntax for statement %s: it should be formed of 3 terms."
                 % stmt
             )
+        stmt = " ".join([turtle_escape(t) for t in stmt.split()])
         data += " %s . " % stmt
 
     try:
@@ -126,15 +131,41 @@ def parse_stmts(stmts):
     return list(parse_stmts_to_graph(stmts))
 
 
+def turtle_escape(string):
+    """
+    Escapes special characters in a string to be used in a turtle statement.
+
+    according to the turtle spec, the following characters needs to be escaped:
+    ~.-!$&'()*+,;=/?#@%_
+
+    https://www.w3.org/TR/turtle/#reserved
+
+    """
+    if bool(QUOTE_REGEX.fullmatch(string)):
+        return string
+
+    for c in "~.-!$&'()*+,;=/#%":  # exclude ? and @, as they might be legitimate in a term
+        string = string.replace(c, "\\" + c)
+    return string
+
+
 # @memoize
 def parse_stmt(stmt):
 
+    logger.warning("Parsing statement: %s" % stmt)
+    stmt = " ".join([turtle_escape(t) for t in stmt.split()])
+
     try:
         return list(Graph().parse(data=N3_PROLOGUE + "%s ." % stmt, format="n3"))[0]
-    except rdflib.plugins.parsers.notation3.BadSyntax:
-        raise KbServerError("invalid syntax for statement <%s>" % stmt)
-    except IndexError:
-        raise KbServerError("invalid syntax for statement <%s>" % stmt)
+    except rdflib.plugins.parsers.notation3.BadSyntax as bs:
+        raise KbServerError(
+            f"invalid syntax for statement <{stmt}>. Original error: {bs}")
+    except IndexError as ie:
+        raise KbServerError(
+            f"invalid syntax for statement <{stmt}>. Original error: {ie}")
+    except AttributeError as ae:
+        raise KbServerError(
+            f"invalid syntax for statement <{stmt}>. Original error: {ae}")
 
 
 # @memoize
@@ -146,10 +177,12 @@ def parse_term(term):
     try:
         # TODO: correct, but not super effective!
         return list(
-            Graph().parse(data=N3_PROLOGUE + " <s> <p> %s ." % term, format="n3")
+            Graph().parse(data=N3_PROLOGUE + " <s> <p> %s ." %
+                          turtle_escape(term), format="n3")
         )[0][2]
-    except rdflib.plugins.parsers.notation3.BadSyntax:
-        raise KbServerError("invalid syntax for term <%s>" % term)
+    except rdflib.plugins.parsers.notation3.BadSyntax as bs:
+        raise KbServerError(
+            f"invalid syntax for term <{term}>. Original error: {bs}")
 
 
 def shorten_term(graph, term):
