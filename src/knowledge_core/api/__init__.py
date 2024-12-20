@@ -12,12 +12,17 @@ from kb_msgs.msg import ActiveConcepts
 from std_msgs.msg import String
 
 import rclpy
-from rclpy.node import Node
+from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 from rclpy.duration import Duration
+from rclpy.executors import MultiThreadedExecutor
+from rclpy.node import Node
 
+import asyncio
 import json
 import random
 import shlex
+import threading
+from typing import Coroutine
 
 MANAGE_SRV = Manage, "/kb/manage"
 REVISE_SRV = Revise, "/kb/revise"
@@ -44,65 +49,93 @@ class KB:
     """
     Pythonic wrapper around the ROS API of KnowledgeCore.
 
-    To try it:
+    To quickly try it, using a built-in ROS node and executor:
+
+    ```
+    from knowledge_core.api import KB
+
+    kb = KB()
+    kb += ["john rdf:type Human", "tiago rdf:type Robot", "john likes tiago"]
+    kb["?human rdf:type Human", "?human likes ?robot", "?robot rdf:type Robot"]
+    ```
+
+    To use it in a custom ROS node, pass the node to the constructor and spin the node using a
+    MultiThreadedExecutor, e.g.:
 
     ```
     import rclpy
+    from rclpy.executors import MultiThreadedExecutor
     from rclpy.node import Node
     from knowledge_core.api import KB
 
-    rclpy.init()
-    node = Node("test_kb")
-    kb = KB(node)
+    MyNodeClass(Node):
+        def __init__(self, name):
+            super().__init__(name)
+            self.kb = KB(self)
+
+    def main():
+        rclpy.init()
+        node = MyNodeClass("my_node")
+        executor = MultiThreadedExecutor()
+        executor.add_node(node)
+        executor.spin()
     ```
-
-    Then:
-
-    >>> kb += ["john rdf:type Human", "tiago rdf:type Robot", "john likes tiago"]
-    >>> kb["?human rdf:type Human", "?human likes ?robot", "?robot rdf:type Robot"]
 
     """
 
-    def __init__(self, node: Node):
+    def __init__(self, node: Node = None):
+        if node is None:
+            if not rclpy.ok():
+                rclpy.init()
+            self.node = Node("kb")
+            self.executor = MultiThreadedExecutor()
+            self.executor.add_node(self.node)
+            self.thread = threading.Thread(target=self.executor.spin)
+            self.thread.start()
+            self.self_running = True
+            print("self running KB")
+        else:
+            self.node = node
+            self.self_running = False
 
-        self.node = node
+        self.cb_group = MutuallyExclusiveCallbackGroup()
 
-        self._manage_srv = node.create_client(*MANAGE_SRV)
-        self._revise_srv = node.create_client(*REVISE_SRV)
-        self._query_srv = node.create_client(*QUERY_SRV)
-        self._about_srv = node.create_client(*ABOUT_SRV)
-        self._label_srv = node.create_client(*LABEL_SRV)
-        self._details_srv = node.create_client(*DETAILS_SRV)
-        self._lookup_srv = node.create_client(*LOOKUP_SRV)
-        self._sparql_srv = node.create_client(*SPARQL_SRV)
-        self._events_srv = node.create_client(*EVENTS_SRV)
+        self._manage_srv = self.node.create_client(*MANAGE_SRV, callback_group=self.cb_group)
+        self._revise_srv = self.node.create_client(*REVISE_SRV, callback_group=self.cb_group)
+        self._query_srv = self.node.create_client(*QUERY_SRV, callback_group=self.cb_group)
+        self._about_srv = self.node.create_client(*ABOUT_SRV, callback_group=self.cb_group)
+        self._label_srv = self.node.create_client(*LABEL_SRV, callback_group=self.cb_group)
+        self._details_srv = self.node.create_client(*DETAILS_SRV, callback_group=self.cb_group)
+        self._lookup_srv = self.node.create_client(*LOOKUP_SRV, callback_group=self.cb_group)
+        self._sparql_srv = self.node.create_client(*SPARQL_SRV, callback_group=self.cb_group)
+        self._events_srv = self.node.create_client(*EVENTS_SRV, callback_group=self.cb_group)
 
         while not self._manage_srv.wait_for_service(timeout_sec=1.0):
-            node.get_logger().info(
+            self.node.get_logger().info(
                 f'service {MANAGE_SRV[1]} not available, waiting again...')
         while not self._revise_srv.wait_for_service(timeout_sec=1.0):
-            node.get_logger().info(
+            self.node.get_logger().info(
                 f'service {REVISE_SRV[1]} not available, waiting again...')
         while not self._query_srv.wait_for_service(timeout_sec=1.0):
-            node.get_logger().info(
+            self.node.get_logger().info(
                 f'service {QUERY_SRV[1]} not available, waiting again...')
         while not self._about_srv.wait_for_service(timeout_sec=1.0):
-            node.get_logger().info(
+            self.node.get_logger().info(
                 f'service {ABOUT_SRV[1]} not available, waiting again...')
         while not self._label_srv.wait_for_service(timeout_sec=1.0):
-            node.get_logger().info(
+            self.node.get_logger().info(
                 f'service {LABEL_SRV[1]} not available, waiting again...')
         while not self._details_srv.wait_for_service(timeout_sec=1.0):
-            node.get_logger().info(
+            self.node.get_logger().info(
                 f'service {DETAILS_SRV[1]} not available, waiting again...')
         while not self._lookup_srv.wait_for_service(timeout_sec=1.0):
-            node.get_logger().info(
+            self.node.get_logger().info(
                 f'service {LOOKUP_SRV[1]} not available, waiting again...')
         while not self._sparql_srv.wait_for_service(timeout_sec=1.0):
-            node.get_logger().info(
+            self.node.get_logger().info(
                 f'service {SPARQL_SRV[1]} not available, waiting again...')
         while not self._events_srv.wait_for_service(timeout_sec=1.0):
-            node.get_logger().info(
+            self.node.get_logger().info(
                 f'service {EVENTS_SRV[1]} not available, waiting again...')
 
         self._evt_subscribers = {}
@@ -112,6 +145,11 @@ class KB:
         )
         self._active_concepts_callbacks = []
 
+    def __del__(self):
+        if self.self_running:
+            self.executor.shutdown()
+            self.thread.join()
+
     def on_active_concept(self, callback):
         self._active_concepts_callbacks.append(callback)
 
@@ -119,31 +157,47 @@ class KB:
         for cb in self._active_concepts_callbacks:
             cb(msg.concepts)
 
-    def hello(self):
-        future = self._manage_srv.call_async(
-            Manage.Request(action=Manage.Request.STATUS))
-        rclpy.spin_until_future_complete(self.node, future)
+    """
+    Helper function to run an async function as a standard blocking one.
 
-        return json.loads(future.result().json)["name"]
+    It attempts to execute the coroutine in a new event loop.
+    If it fails due to a running event loop already existing,
+    it uses the latter to execute the coroutine.
+    """
+    @staticmethod
+    def async_run(coro: Coroutine, *args, **kwargs):
+        try:
+            return asyncio.run(coro(*args, **kwargs))
+        except RuntimeError:
+            return asyncio.get_running_loop().run_until_complete(coro(*args, **kwargs))
+
+    def hello(self):
+        return self.async_run(self._hello)
+
+    async def _hello(self):
+        res = await self._manage_srv.call_async(
+            Manage.Request(action=Manage.Request.STATUS))
+        return json.loads(res.json)["name"]
 
     def stats(self):
-        future = self._manage_srv.call_async(
+        return self.async_run(self._stats)
+
+    async def _stats(self):
+        res = await self._manage_srv.call_async(
             Manage.Request(action=Manage.Request.STATUS))
-        rclpy.spin_until_future_complete(self.node, future)
-        return json.loads(future.result().json)
+        return json.loads(res.json)
 
     def clear(self):
-        future = self._manage_srv.call_async(
-            Manage.Request(action=Manage.Request.CLEAR))
-        rclpy.spin_until_future_complete(self.node, future)
+        return self.async_run(self._clear)
 
-    def subscribe(
-        self,
-        pattern,
-        callback,
-        one_shot=False,
-        models=[],
-    ):
+    async def _clear(self):
+        await self._manage_srv.call_async(
+            Manage.Request(action=Manage.Request.CLEAR))
+
+    def subscribe(self, pattern, callback, one_shot=False, models=[]):
+        return self.async_run(self._subscribe, pattern, callback, one_shot, models)
+
+    async def _subscribe(self, pattern, callback, one_shot=False, models=[]):
         """
         Allow to subscribe to an event, and get notified when the event is triggered.
 
@@ -177,10 +231,8 @@ class KB:
         if isinstance(pattern, str):
             pattern = [pattern]
 
-        future = self._events_srv.call_async(Event.Request(
+        evt = await self._events_srv.call_async(Event.Request(
             patterns=pattern, one_shot=one_shot, models=models))
-        rclpy.spin_until_future_complete(self.node, future)
-        evt = future.result()
 
         # check if we already have a registered an identical event pattern,
         # with an identifical callback
@@ -202,7 +254,7 @@ class KB:
             (
                 callback,
                 self.node.create_subscription(
-                    String, evt.topic, evt_relay.callback, 10)
+                    String, evt.topic, evt_relay.callback, 10, callback_group=self.cb_group)
             )
         )
 
@@ -211,10 +263,11 @@ class KB:
         return evt.id
 
     def find(self, patterns, vars=[], models=[]):
-        future = self._query_srv.call_async(Query.Request(
+        return self.async_run(self._find, patterns, vars, models)
+
+    async def _find(self, patterns, vars=[], models=[]):
+        res = await self._query_srv.call_async(Query.Request(
             patterns=patterns, vars=vars, models=models))
-        rclpy.spin_until_future_complete(self.node, future)
-        res = future.result()
 
         if not res.success:
             raise KbError(res.error_msg)
@@ -222,10 +275,11 @@ class KB:
         return json.loads(res.json)
 
     def about(self, term, models=[]):
-        future = self._about_srv.call_async(
+        return self.async_run(self._about, term, models)
+
+    async def _about(self, term, models=[]):
+        res = await self._about_srv.call_async(
             About.Request(term=term, models=models))
-        rclpy.spin_until_future_complete(self.node, future)
-        res = future.result()
 
         if not res.success:
             raise KbError(res.error_msg)
@@ -233,6 +287,9 @@ class KB:
         return json.loads(res.json)
 
     def label(self, term, lang=None, models=[]):
+        return self.async_run(self._label, term, lang, models)
+
+    async def _label(self, term, lang=None, models=[]):
         """
         Return the label associated to the term.
 
@@ -243,10 +300,8 @@ class KB:
         to English.
 
         """
-        future = self._label_srv.call_async(
+        res = await self._label_srv.call_async(
             About.Request(term=term, models=models))
-        rclpy.spin_until_future_complete(self.node, future)
-        res = future.result()
 
         if not res.success:
             raise KbError(res.error_msg)
@@ -259,10 +314,11 @@ class KB:
             return labels.get(lang, labels["default"])
 
     def details(self, term, models=[]):
-        future = self._details_srv.call_async(
+        return self.async_run(self._details, term, models)
+
+    async def _details(self, term, models=[]):
+        res = await self._details_srv.call_async(
             About.Request(term=term, models=models))
-        rclpy.spin_until_future_complete(self.node, future)
-        res = future.result()
 
         if not res.success:
             raise KbError(res.error_msg)
@@ -270,10 +326,11 @@ class KB:
         return json.loads(res.json)
 
     def lookup(self, query, models=[]):
-        future = self._lookup_srv.call_async(
+        return self.async_run(self._lookup, query, models)
+
+    async def _lookup(self, query, models=[]):
+        res = await self._lookup_srv.call_async(
             Lookup.Request(query=query, models=models))
-        rclpy.spin_until_future_complete(self.node, future)
-        res = future.result()
 
         if not res.success:
             raise KbError(res.error_msg)
@@ -402,20 +459,20 @@ class KB:
             raise KbError("unknown revise policy %s" % policy["method"])
 
     def update(self, stmts, models=[], lifespan=0):
+        return self.async_run(self._update, stmts, models, lifespan)
+
+    async def _update(self, stmts, models=[], lifespan=0):
 
         if not (type(stmts) == list):
             stmts = [stmts]
 
-        future = self._revise_srv.call_async(
+        res = await self._revise_srv.call_async(
             Revise.Request(
                 method=Revise.Request.UPDATE,
                 statements=stmts,
                 models=models,
                 lifespan=Duration(seconds=lifespan).to_msg(),
             ))
-        rclpy.spin_until_future_complete(self.node, future)
-
-        res = future.result()
 
         if not res.success:
             raise KbError(res.error_msg)
@@ -424,14 +481,14 @@ class KB:
         self.update(stmts, models, lifespan)
 
     def remove(self, stmts, models=[]):
+        return self.async_run(self._remove, stmts, models)
 
-        future = self._revise_srv.call_async(
+    async def _remove(self, stmts, models=[]):
+
+        res = await self._revise_srv.call_async(
             Revise.Request(
                 method=Revise.Request.REMOVE, statements=stmts, models=models
             ))
-        rclpy.spin_until_future_complete(self.node, future)
-
-        res = future.result()
 
         if not res.success:
             raise KbError(res.error_msg)
