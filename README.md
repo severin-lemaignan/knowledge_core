@@ -77,6 +77,14 @@ For reasoning (optional):
 $ pip install reasonable
 ```
 
+If you want to use the ROS interface, you also need to install the `kb_msgs`
+package, available here: https://github.com/pal-robotics/kb_msgs/
+
+Finally, you might want to install the [OpenRobots
+Ontology](https://github.com/severin-lemaignan/openrobots-ontology/) as a
+sample ontology to play with.
+
+
 ### Installation
 
 From `pypi`:
