@@ -2,6 +2,13 @@
 Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* [doc] update doc to match simpler async ROS2 pythonic API
+* fix async calls
+* [doc] add mention of kb_msgs and oro
+* Contributors: Luka Juricic, Séverin Lemaignan
+
 3.3.1 (2024-12-03)
 ------------------
 * teaching knowledge_core about foaf, prov and dbp prefixes
