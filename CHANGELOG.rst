@@ -2,8 +2,8 @@
 Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.4.0 (2025-02-18)
+------------------
 * [doc] update doc to match simpler async ROS2 pythonic API
 * fix async calls
 * [doc] add mention of kb_msgs and oro
