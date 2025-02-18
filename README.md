@@ -27,13 +27,8 @@ This example uses the ROS 2 API (see below), with some Pythonic syntactic sugar:
 
 ```python
 
-import rclpy
-from rclpy.node import Node
 from knowledge_core.api import KB
-
-rclpy.init()
-node = Node("test_kb")
-kb = KB(node)
+kb = KB()
 
 def on_robot_entering_antonio_property(evt):
   print("A robot entered Antonio's %s: %s" % (evt[0]["place"], evt[0]["robot"]))
@@ -48,8 +43,6 @@ kb += "kitchen belongsTo antonio"
 # try as well:
 # kb -= "antonio looksAt ari" to remove facts
 # kb["* rdf:type Robot"] to query the knowledge base
-
-rclpy.spin(node)
 ```
 
 will print:
