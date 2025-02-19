@@ -2,8 +2,8 @@
 Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.5.0 (2025-02-19)
+------------------
 * escape turtle/n3 reserved characters
   This implementation ignores terms that are quoted (ie, string literal)
   and does not escape the '?' and '@' as they can legitimately occur in a
