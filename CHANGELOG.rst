@@ -2,6 +2,18 @@
 Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* escape turtle/n3 reserved characters
+  This implementation ignores terms that are quoted (ie, string literal)
+  and does not escape the '?' and '@' as they can legitimately occur in a
+  term/sparql statement.
+  '\' is escaped (ie, if a character was already escaped, it will be
+  double escaped.
+  fix escape
+* [kb explorer] update classes to reflect dbpedia use in ORO
+* Contributors: Séverin Lemaignan
+
 3.4.0 (2025-02-18)
 ------------------
 * [doc] update doc to match simpler async ROS2 pythonic API
