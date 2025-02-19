@@ -6,6 +6,8 @@ import ROSLIB from 'roslib';
 const ICON_MAP = {
     'owl:Thing': 'GenericInstance',
     'cyc:Plant': 'leaf',
+    'dbr:Plant': 'leaf',
+    'dbr:Ornamental_plant': 'leaf',
     'cyc:Color': 'invert-colors',
     'cyc:EnduringThing-Localized': 'map',
     'cyc:SpatialThing-Localized': 'map-marker',
@@ -14,30 +16,48 @@ const ICON_MAP = {
     'undecided': 'progress-question',
     'Robot': 'Robot',
     'Human': 'Human',
+    'foaf:Person': 'Human',
     'cyc:TemporalThing': 'Time',
     'cyc:Event': 'timer-outline',
     'EmbodiedAgent': 'Agent',
     'Toolbox': 'toolbox-outline',
     'Agent': 'Agent',
+    'foaf:Agent': 'Agent',
     'Box': 'GenericInstance',
     'Cardboardbox': 'GenericInstance',
     'cyc:FurniturePiece': 'Furniture',
     'Table': 'Furniture',
+    'dbr:Table_(furniture)': 'Furniture',
+    'dbr:Coffee_table': 'Furniture',
     'cyc:CellularTelephone': 'cellphone',
+    'dbr:Smartphone': 'cellphone',
     'Cloth': 'tshirt-crew',
     'Trashbin': 'trash-can',
+    'dbr:Waste_container': 'trash-can',
     'Tableware': 'silverware-fork-knife',
+    'dbr:Tableware': 'silverware-fork-knife',
+    'dbr:Fork': 'silverware-fork-knife',
+    'dbr:Knife': 'silverware-fork-knife',
+    'dbr:Spoon': 'silverware-fork-knife',
+    'dbr:Kitchen_utensil': 'silverware-fork-knife',
     'Window': 'window-closed-variant',
     'GraspableObject': 'hand',
     'Book': 'book-open-variant',
+    'dbr:Book': 'book-open-variant',
     'cyc:Chair-PieceOfFurniture': 'chair-rolling',
+    'dbr:Chair': 'chair-rolling',
     'cyc:Sofa-PieceOfFurniture': 'sofa-single',
+    'dbr:Couch': 'sofa-single',
     'cyc:ArmChair': 'armchair',
+    'dbr:Armchair_(furniture)': 'armchair',
     'Remote': 'remote-tv',
     'cyc:Tray': 'tray',
     'Bottle': 'bottle-wine',
+    'dbr:Bottle': 'bottle-wine',
     'Glass': 'cup-water',
-    'Cup': 'glass-mug',
+    'dbr:Glass_(drinkware)': 'cup-water',
+    'Cup': 'cup-water',
+    'dbr:Cup': 'cup-water',
     'Placemat': 'mat',
     'Container': 'contain',
     'cyc:Action': 'run-fast',
@@ -57,9 +77,12 @@ const ICON_MAP = {
     'Eye': 'eye',
     'Head': 'head',
     'Shelf': 'bookshelf',
+    'dbr:Shelf_(storage)': 'bookshelf',
     'cyc:Object-SupportingFurniture': 'support',
     'cyc:FluidTangibleThing': 'water',
     'cyc:EdibleStuff': 'food-apple',
+    'dbr:Apple': 'food-apple',
+    'dbr:Pear': 'food-pear',
     'Artifact': 'hammer',
     'cyc:PartiallyTangible': 'tangible',
 
@@ -261,6 +284,10 @@ class Node {
 
 
         let response = await ros_kb_client.details(term);
+        if (!response || !response['json']) {
+            console.log("Service call 'details' failed for term " + term);
+            return new Node(term, 'undecided');
+        }
         let res = JSON.parse(response['json']);
 
         //console.log('Service call succeeded:', res);
@@ -386,6 +413,13 @@ async function updateTerm(term: string): Promise<Node> {
 
         // skip self-referring relations (like xyz owl:sameAs xyz)
         if (rel[0] == rel[2]) {
+            continue;
+        }
+
+        // if rel[0] or rel[2] are not strings, skip the relation
+        // TODO: add support for this case (ie, datatype properties)
+        if (typeof rel[0] !== 'string' || typeof rel[2] !== 'string') {
+            console.log('Skipping datatype property relation ' + rel[0] + ' ' + rel[1] + ' ' + rel[2]);
             continue;
         }
 
@@ -658,6 +692,8 @@ function makeChart(data, invalidation = null) {
 
 
     function icon(d: Node) {
+
+        console.log('Getting icon for ' + d.id + " (classes: " + d.classes + ")");
         if (d.type == 'class') {
             if (d.id in ICON_MAP) {
                 return ICON_MAP[d.id];
