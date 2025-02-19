@@ -39,7 +39,7 @@ setup(
          ['module/' + package_name]),
         ('share/' + package_name + '/module', ['module/knowledge_core_module.yaml']),
         ('share/' + package_name + '/launch',
-         ['launch/knowledge_core.launch.py']),
+         ['launch/knowledge_core.launch.py', 'launch/knowledge_viewer.launch.py']),
         ('share/' + package_name, ['package.xml']),
         ('share/' + package_name + '/config', ['config/00-defaults.yaml']),
         ('share/ament_index/resource_index/pal_configuration.' + package_name,
@@ -53,5 +53,5 @@ setup(
     maintainer_email='severin.lemaignan@pal-robotics.com',
     url="https://github.com/severin-lemaignan/knowledge_core",
     tests_require=['pytest'],
-    scripts=['bin/knowledge_core'],
+    scripts=['bin/knowledge_core', 'bin/knowledge_viewer'],
 )
