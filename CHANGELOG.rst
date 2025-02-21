@@ -2,6 +2,11 @@
 Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* add missing knowledge_viewer script
+* Contributors: Séverin Lemaignan
+
 3.6.0 (2025-02-21)
 ------------------
 * add launch file to start kb_explorer
