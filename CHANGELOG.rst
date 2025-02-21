@@ -2,8 +2,8 @@
 Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.6.0 (2025-02-21)
+------------------
 * add launch file to start kb_explorer
 * Contributors: Séverin Lemaignan
 
