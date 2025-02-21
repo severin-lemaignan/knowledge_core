@@ -2,6 +2,11 @@
 Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* add launch file to start kb_explorer
+* Contributors: Séverin Lemaignan
+
 3.5.0 (2025-02-19)
 ------------------
 * escape turtle/n3 reserved characters
