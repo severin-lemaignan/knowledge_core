@@ -2,6 +2,11 @@
 Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* increase the queue size for /kb/add_fact and /kb/remove_fact
+* Contributors: Séverin Lemaignan
+
 3.6.1 (2025-02-21)
 ------------------
 * add missing knowledge_viewer script
