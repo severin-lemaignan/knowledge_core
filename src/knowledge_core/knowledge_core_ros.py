@@ -112,9 +112,9 @@ class KnowledgeCoreROS(Node):
         self.last_diagnostics_ts = self.get_clock().now()
 
         self.update_sub = self.create_subscription(
-            String, "add_fact", self.on_update_fact, 10)
+            String, "add_fact", self.on_update_fact, 200)
         self.retract_sub = self.create_subscription(
-            String, "remove_fact", self.on_retract_fact, 10)
+            String, "remove_fact", self.on_retract_fact, 200)
 
         self.active_concepts_pub = self.create_publisher(
             ActiveConcepts, "active_concepts", 1)
