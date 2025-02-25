@@ -2,8 +2,8 @@
 Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.6.2 (2025-02-25)
+------------------
 * increase the queue size for /kb/add_fact and /kb/remove_fact
 * Contributors: Séverin Lemaignan
 
