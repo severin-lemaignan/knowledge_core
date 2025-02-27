@@ -389,9 +389,15 @@ class KnowledgeCore:
 
         self._functionalproperties = frozenset()
 
+        self.default_ontologies = []
         if filenames:
             for filename in filenames:
-                self.load(filename)
+                self.add_default_ontology(filename)
+
+    def add_default_ontology(self, uri):
+        logger.info("Adding default ontology <%s>" % uri)
+        self.load(uri)
+        self.default_ontologies.append(uri)
 
     @api
     def hello(self):
@@ -405,11 +411,17 @@ class KnowledgeCore:
     def load(self, filename, models=None):
 
         models = self.normalize_models(models)
-        for model in models:
-            logger.info("Loading file <%s> in model <%s>" % (filename, model))
-            self.models[model].graph.parse(
-                filename, publicID=IRIS[DEFAULT_PREFIX])
-            self.models[model].is_dirty = True
+
+        try:
+            for model in models:
+                logger.info("Loading file <%s> in model <%s>" %
+                            (filename, model))
+                self.models[model].graph.parse(
+                    filename, publicID=IRIS[DEFAULT_PREFIX])
+                self.models[model].is_dirty = True
+        except FileNotFoundError:
+            logger.error("File <%s> not found." % filename)
+            raise KbServerError("File <%s> not found." % filename)
 
         self.onupdate()
 
@@ -425,15 +437,30 @@ class KnowledgeCore:
             self.models[model].graph.serialize(str(filename), format="xml")
 
     @api
-    def clear(self):
-        logger.warn("Clearing the knowledge base!")
+    def clear(self, keep_defaults=False):
+
         self.active_evts.clear()
         self.eventsubscriptions.clear()
 
-        for m, g in self.models.items():
-            self.ds.remove_graph(g.graph)
+        models = list(self.models.keys())
 
-        self.create_model(DEFAULT_MODEL)
+        if keep_defaults:
+            logger.warn(
+                "Clearing the knowledge base, keeping the default ontologies.")
+            for m, g in self.models.items():
+                self.ds.remove_graph(g.graph)
+                self.create_model(m)
+
+            if self.default_ontologies:
+                for uri in self.default_ontologies:
+                    logger.info("Reloading default ontology <%s>" % uri)
+                    self.load(uri, models=models)
+
+        else:
+            logger.warn("Clearing the knowledge base!")
+            for m, g in self.models.items():
+                self.ds.remove_graph(g.graph)
+            self.create_model(DEFAULT_MODEL)
 
     @api
     def methods(self):

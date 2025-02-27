@@ -101,7 +101,7 @@ class KnowledgeCoreROS(Node):
 
             self.get_logger().info(
                 f"Loading default knowledge base [{default_kb.value}] from {path}")
-            self.kb.load(path)
+            self.kb.add_default_ontology(path)
         else:
             self.get_logger().info(
                 "No default knowledge base file provided. Starting with an empty one.")
@@ -176,7 +176,10 @@ Available services:
 
         try:
             if req.action == Manage.Request.CLEAR:
-                self.kb.clear()
+                if "keep_defaults" in req.parameters:
+                    self.kb.clear(keep_defaults=True)
+                else:
+                    self.kb.clear()
                 response.success = True
                 response.error_msg = ""
                 return response

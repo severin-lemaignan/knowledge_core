@@ -100,15 +100,24 @@ class KB:
 
         self.cb_group = MutuallyExclusiveCallbackGroup()
 
-        self._manage_srv = self.node.create_client(*MANAGE_SRV, callback_group=self.cb_group)
-        self._revise_srv = self.node.create_client(*REVISE_SRV, callback_group=self.cb_group)
-        self._query_srv = self.node.create_client(*QUERY_SRV, callback_group=self.cb_group)
-        self._about_srv = self.node.create_client(*ABOUT_SRV, callback_group=self.cb_group)
-        self._label_srv = self.node.create_client(*LABEL_SRV, callback_group=self.cb_group)
-        self._details_srv = self.node.create_client(*DETAILS_SRV, callback_group=self.cb_group)
-        self._lookup_srv = self.node.create_client(*LOOKUP_SRV, callback_group=self.cb_group)
-        self._sparql_srv = self.node.create_client(*SPARQL_SRV, callback_group=self.cb_group)
-        self._events_srv = self.node.create_client(*EVENTS_SRV, callback_group=self.cb_group)
+        self._manage_srv = self.node.create_client(
+            *MANAGE_SRV, callback_group=self.cb_group)
+        self._revise_srv = self.node.create_client(
+            *REVISE_SRV, callback_group=self.cb_group)
+        self._query_srv = self.node.create_client(
+            *QUERY_SRV, callback_group=self.cb_group)
+        self._about_srv = self.node.create_client(
+            *ABOUT_SRV, callback_group=self.cb_group)
+        self._label_srv = self.node.create_client(
+            *LABEL_SRV, callback_group=self.cb_group)
+        self._details_srv = self.node.create_client(
+            *DETAILS_SRV, callback_group=self.cb_group)
+        self._lookup_srv = self.node.create_client(
+            *LOOKUP_SRV, callback_group=self.cb_group)
+        self._sparql_srv = self.node.create_client(
+            *SPARQL_SRV, callback_group=self.cb_group)
+        self._events_srv = self.node.create_client(
+            *EVENTS_SRV, callback_group=self.cb_group)
 
         while not self._manage_srv.wait_for_service(timeout_sec=1.0):
             self.node.get_logger().info(
@@ -187,12 +196,31 @@ class KB:
             Manage.Request(action=Manage.Request.STATUS))
         return json.loads(res.json)
 
-    def clear(self):
-        return self.async_run(self._clear)
+    def clear(self, keep_defaults=False):
+        """
+        Clear the knowledge base, ie, all triples are removed.
 
-    async def _clear(self):
+        If keep_defaults is set to True, the default ontology is
+        re-injected in the knowledge base after the clear operation.
+        """
+        return self.async_run(self._clear, keep_defaults)
+
+    async def _clear(self, keep_defaults=False):
+        if keep_defaults:
+            await self._manage_srv.call_async(
+                Manage.Request(action=Manage.Request.CLEAR, parameters=["keep_defaults"]))
+
+        else:
+            await self._manage_srv.call_async(Manage.Request(action=Manage.Request.CLEAR))
+
+    def load(self, uri, models=None):
+        return self.async_run(self._load, uri, models)
+
+    async def _load(self, uri, models=None):
+        if models is None:
+            models = []
         await self._manage_srv.call_async(
-            Manage.Request(action=Manage.Request.CLEAR))
+            Manage.Request(action=Manage.Request.LOAD, parameters=[uri], models=models))
 
     def subscribe(self, pattern, callback, one_shot=False, models=[]):
         return self.async_run(self._subscribe, pattern, callback, one_shot, models)
