@@ -2,8 +2,8 @@
 Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.7.0 (2025-02-27)
+------------------
 * api.KB: expose load() + add support for clear(keep_defaults=True)
   clear(keep_defaults=True) removes all statements in the knowledge base, but
   keep the ones coming for the 'default ontologies' loaded at startup
