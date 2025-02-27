@@ -2,6 +2,13 @@
 Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* api.KB: expose load() + add support for clear(keep_defaults=True)
+  clear(keep_defaults=True) removes all statements in the knowledge base, but
+  keep the ones coming for the 'default ontologies' loaded at startup
+* Contributors: Séverin Lemaignan
+
 3.6.2 (2025-02-25)
 ------------------
 * increase the queue size for /kb/add_fact and /kb/remove_fact
