@@ -18,17 +18,20 @@ from launch_xml.launch_description_sources import XMLLaunchDescriptionSource
 from launch.substitutions import PathJoinSubstitution
 from launch_ros.substitutions import FindPackageShare
 from launch_ros.actions import Node
-from launch_pal import get_pal_configuration
 
 
 def generate_launch_description():
 
     ld = LaunchDescription()
 
-    config = get_pal_configuration(
-        pkg='knowledge_core',
-        node='knowledge_viewer',
-        ld=ld)
+    try:
+        from launch_pal import get_pal_configuration
+        config = get_pal_configuration(
+            pkg='knowledge_core',
+            node='knowledge_viewer',
+            ld=ld)
+    except ImportError:
+        config = {"parameters": None, "remappings": None, "arguments": None}
 
     rosbridge_launch = IncludeLaunchDescription(
         XMLLaunchDescriptionSource([

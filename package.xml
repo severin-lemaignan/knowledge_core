@@ -9,14 +9,14 @@
   <url>https://github.com/severin-lemaignan/knowledge_core</url>
   <license>Apache-2.0</license>
 
-  <depend>ament_index_python</depend>
-  <depend>rclpy</depend>
-  <depend>diagnostic_msgs</depend>
-  <depend>std_msgs</depend>
-  <depend>kb_msgs</depend>
-
-  <depend>python3-rdflib</depend>
-  <depend>python3-reasonable</depend>
+  <exec_depend>ament_index_python</exec_depend>
+  <exec_depend>diagnostic_msgs</exec_depend>
+  <exec_depend>kb_msgs</exec_depend>
+  <exec_depend>launch_pal</exec_depend>
+  <exec_depend>python3-reasonable</exec_depend>
+  <exec_depend>python3-rdflib</exec_depend>
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>
