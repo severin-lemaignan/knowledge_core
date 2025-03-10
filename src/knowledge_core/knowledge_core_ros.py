@@ -12,6 +12,7 @@ except ImportError:
     )
     sys.exit(1)
 
+import collections
 import json
 
 from diagnostic_msgs.msg import DiagnosticArray, DiagnosticStatus, KeyValue
@@ -106,6 +107,8 @@ class KnowledgeCoreROS(Node):
             self.get_logger().info(
                 "No default knowledge base file provided. Starting with an empty one.")
 
+        self.last_facts = collections.deque(maxlen=5)
+
         self.diagnostics_pub = self.create_publisher(
             DiagnosticArray, "/diagnostics", 1
         )
@@ -163,12 +166,16 @@ Available services:
             self.kb.update([msg.data])
         except KbServerError as kse:
             self.get_logger().error(str(kse))
+        if msg.data not in self.last_facts:
+            self.last_facts.append(msg.data)
 
     def on_retract_fact(self, msg):
         try:
             self.kb.remove([msg.data])
         except KbServerError as kse:
             self.get_logger().error(str(kse))
+        if msg.data in self.last_facts:
+            self.last_facts.remove(msg.data)
 
     def handle_manage(self, req, response):
 
@@ -411,24 +418,19 @@ Available services:
         now = self.get_clock().now()
 
         if (now - self.last_diagnostics_ts).nanoseconds > 1e9 / DIAGNOSTICS_FREQUENCY:
+            msg = DiagnosticStatus(
+                name="/reasoning/kb/knowledge_core",
+                values=[
+                    KeyValue(key="Module name", value="knowledge_core"),
+                    KeyValue(key="Last facts", value="; ".join([f for f in self.last_facts])),
+                ]
+            )
             if self.kb.reasoner_enabled:
-                msg = DiagnosticStatus(
-                    level=DiagnosticStatus.OK,
-                    name="/reasoning/kb/knowledge_core",
-                    message="Knowledge base running, with OWL/RDF reasoner enabled",
-                    values=[
-                        KeyValue(key="Module name", value="knowledge_core"),
-                    ]
-                )
+                msg.level = DiagnosticStatus.OK
+                msg.message = "Knowledge base running, with OWL/RDF reasoner enabled"
             else:
-                msg = DiagnosticStatus(
-                    level=DiagnosticStatus.WARN,
-                    name="/reasoning/kb/knowledge_core",
-                    message="Knowledge base running, but OWL/RDF reasoner not enabled",
-                    values=[
-                        KeyValue(key="Module name", value="knowledge_core"),
-                    ]
-                )
+                msg.level = DiagnosticStatus.WARN
+                msg.message = "Knowledge base running, but OWL/RDF reasoner not enabled"
             arr = DiagnosticArray()
             arr.header.stamp = self.get_clock().now().to_msg()
             arr.status = [msg]
