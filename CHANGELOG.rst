@@ -2,8 +2,8 @@
 Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.8.0 (2025-03-11)
+------------------
 * fix launch_pal dependency for PAL internal and external users
 * add last facts to diagnostics
 * Contributors: Luka Juricic
