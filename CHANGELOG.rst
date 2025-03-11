@@ -2,6 +2,12 @@
 Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* fix launch_pal dependency for PAL internal and external users
+* add last facts to diagnostics
+* Contributors: Luka Juricic
+
 3.7.0 (2025-02-27)
 ------------------
 * api.KB: expose load() + add support for clear(keep_defaults=True)
