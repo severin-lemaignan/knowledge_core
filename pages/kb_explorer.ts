@@ -156,7 +156,7 @@ class RosKBClient {
 
 }
 
-const ros_kb_client = new RosKBClient('ws://localhost:9090');
+const ros_kb_client = new RosKBClient(`ws://${location.hostname}:9090`);
 
 class Node {
     selected: boolean;
