@@ -6,6 +6,8 @@ import os
 from ament_index_python.packages import get_package_share_directory
 
 # Get the path of the ROS2 package 'knowledge_core'
+
+
 def get_package_path(package_name):
     try:
         return get_package_share_directory(package_name)
@@ -13,16 +15,17 @@ def get_package_path(package_name):
         print(f"Error: Could not find package {package_name}: {e}")
         return None
 
+
 if __name__ == "__main__":
     PACKAGE_NAME = "knowledge_core"
     package_path = get_package_path(PACKAGE_NAME)
 
     if package_path:
         os.chdir(package_path + "/pages")  # Change to package directory
-        PORT = 8000  # Define the HTTP server port
-        
+        PORT = 8010  # Define the HTTP server port
+
         Handler = http.server.SimpleHTTPRequestHandler
         with socketserver.TCPServer(("", PORT), Handler) as httpd:
-            print(f"knowledge_viewer is running. Open http://localhost:{PORT} in a webbrowser to start exploring the knowledge base.")
+            print(
+                f"knowledge_viewer is running. Open http://localhost:{PORT} in a webbrowser to start exploring the knowledge base.")
             httpd.serve_forever()
-
