@@ -43,4 +43,27 @@ def generate_launch_description():
 
     ld.add_action(knowledge_core_node)
 
+    try:
+        from launch_pal import get_pal_configuration
+        config = get_pal_configuration(
+            pkg='knowledge_core',
+            node='knowledge_viewer',
+            ld=ld)
+    except ImportError:
+        config = {"parameters": None, "remappings": None, "arguments": None}
+
+    knowledge_viewer_node = Node(
+        package='knowledge_core',
+        executable='knowledge_viewer',
+        namespace='kb',
+        name='knowledge_viewer',
+        parameters=config["parameters"],
+        remappings=config["remappings"],
+        arguments=config["arguments"],
+        output='both',
+        emulate_tty=True,
+    )
+
+    ld.add_action(knowledge_viewer_node)
+
     return ld
