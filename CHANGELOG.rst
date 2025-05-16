@@ -2,6 +2,13 @@
 Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* automatically launch kb_viewer alongside knowledge_core
+* make sure we connect to the right ROS host, even when remotely accessing the kb viewer
+* change default port from 8000 to 8010
+* Contributors: Séverin Lemaignan
+
 3.8.0 (2025-03-11)
 ------------------
 * fix launch_pal dependency for PAL internal and external users
