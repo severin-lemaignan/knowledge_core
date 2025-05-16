@@ -2,8 +2,8 @@
 Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.8.1 (2025-05-16)
+------------------
 * automatically launch kb_viewer alongside knowledge_core
 * make sure we connect to the right ROS host, even when remotely accessing the kb viewer
 * change default port from 8000 to 8010
