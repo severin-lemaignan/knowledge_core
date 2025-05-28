@@ -26,7 +26,7 @@ def readme():
 
 setup(
     name=package_name,
-    version="3.8.1",
+    version="3.9.0",
     license='Apache License 2.0',
     description="A RDFlib-backed knowledge base for robotic applications",
     long_description=readme(),
