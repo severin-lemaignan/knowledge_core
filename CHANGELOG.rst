@@ -2,6 +2,11 @@
 Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* [api] expose KB.sparql to perform raw sparql queries
+* Contributors: Séverin Lemaignan
+
 3.8.1 (2025-05-16)
 ------------------
 * automatically launch kb_viewer alongside knowledge_core
