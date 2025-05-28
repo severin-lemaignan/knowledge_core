@@ -521,6 +521,52 @@ class KB:
         if not res.success:
             raise KbError(res.error_msg)
 
+    def sparql(self, query, models=[]):
+        """
+        Perform a raw SPARQL query on a given model ('default' by default).
+
+        The SPARQL PREFIX and BASE are automatically added, no need to do it
+        manually (even though you can if you want to use non-standard
+        prefixes).
+
+        Note that you are responsible for writing a syntactically corret SPARQL
+        query. In particualar, all non-literal/non-variable terms must have a
+        namespace (or a prefix).
+
+        Results is returned as a JSON object that follow the standard JSON
+        serialization of SPARQL Results
+        (https://www.w3.org/TR/2013/REC-sparql11-results-json-20130321/)
+
+        Example:
+        -------
+        ```
+        >>> kb += ["myself age 40"]
+        >>> kb.sparql("SELECT ?age WHERE { :myself :age ?age . }")
+        {'results':
+            {'bindings': [
+                {'age':
+                    {'type': 'typed-literal',
+                     'value': '40',
+                     'datatype': 'http://www.w3.org/2001/XMLSchema#integer'}
+                }]
+            },
+          'head': {'vars': ['age']}
+          'query': # original query
+         }
+
+        """
+        return self.async_run(self._sparql, query, models)
+
+    async def _sparql(self, query, models=[]):
+
+        res = await self._sparql_srv.call_async(
+            Sparql.Request(query=query, models=models))
+
+        if not res.success:
+            raise KbError(res.error_msg)
+
+        return json.loads(res.json)
+
     def __iadd__(self, stmts):
         """
         Allow to easily add new statements to the ontology with the ``+=`` operator.
