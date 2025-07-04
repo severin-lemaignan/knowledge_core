@@ -10,6 +10,7 @@
   <license>Apache-2.0</license>
 
   <exec_depend>ament_index_python</exec_depend>
+  <exec_depend>diagnostic_aggregator</exec_depend>
   <exec_depend>diagnostic_msgs</exec_depend>
   <exec_depend>kb_msgs</exec_depend>
   <exec_depend>launch_pal</exec_depend>

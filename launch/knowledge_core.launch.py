@@ -12,11 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
+
+from ament_index_python import get_package_share_directory
+
 from launch import LaunchDescription
 from launch_ros.actions import Node
 
 
 def generate_launch_description():
+
+    pkg = 'knowledge_core'
 
     ld = LaunchDescription()
 
@@ -65,5 +71,16 @@ def generate_launch_description():
     )
 
     ld.add_action(knowledge_viewer_node)
+
+    knowledge_core_analyzer = Node(
+        package='diagnostic_aggregator',
+        executable='add_analyzer',
+        namespace=pkg,
+        output='screen',
+        emulate_tty=True,
+        parameters=[
+            os.path.join(get_package_share_directory(pkg), 'config', f'{pkg}_analyzers.yaml')],
+    )
+    ld.add_action(knowledge_core_analyzer)
 
     return ld

@@ -42,6 +42,7 @@ setup(
          ['launch/knowledge_core.launch.py', 'launch/knowledge_viewer.launch.py']),
         ('share/' + package_name, ['package.xml']),
         ('share/' + package_name + '/config', ['config/00-defaults.yaml']),
+        ('share/' + package_name + '/config', ['config/knowledge_core_analyzers.yaml']),
         ('share/ament_index/resource_index/pal_configuration.' + package_name,
             ['config/' + package_name]),
     ] + generate_kb_explorer_files(),
