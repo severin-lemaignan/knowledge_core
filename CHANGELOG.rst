@@ -2,8 +2,8 @@
 Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.9.1 (2025-07-09)
+------------------
 * Add diagnostic analyzers
 * Contributors: Noel Jimenez
 
