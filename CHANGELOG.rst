@@ -2,8 +2,8 @@
 Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.9.2 (2025-09-12)
+------------------
 * fix crash when sending a query with stmt '?'
 * Contributors: Séverin Lemaignan
 
