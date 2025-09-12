@@ -166,6 +166,9 @@ def parse_stmt(stmt):
     except AttributeError as ae:
         raise KbServerError(
             f"invalid syntax for statement <{stmt}>. Original error: {ae}")
+    except Exception as e:
+        raise KbServerError(
+            f"invalid syntax for statement <{stmt}>. Original error: {e}")
 
 
 # @memoize
