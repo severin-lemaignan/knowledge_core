@@ -2,6 +2,11 @@
 Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* fix crash when sending a query with stmt '?'
+* Contributors: Séverin Lemaignan
+
 3.9.1 (2025-07-09)
 ------------------
 * Add diagnostic analyzers
