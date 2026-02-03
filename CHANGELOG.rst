@@ -2,6 +2,12 @@
 Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Event.srv -> KbEvent.srv
+  This change has been triggered by stricter g++ checks in jazzy: the IDL generation creates a 'Event' member that was colliding with our 'Event' class name
+* Contributors: Séverin Lemaignan
+
 3.9.2 (2025-09-12)
 ------------------
 * fix crash when sending a query with stmt '?'
