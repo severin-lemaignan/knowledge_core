@@ -7,7 +7,7 @@ from kb_msgs.srv import Query
 from kb_msgs.srv import About
 from kb_msgs.srv import Lookup
 from kb_msgs.srv import Sparql
-from kb_msgs.srv import Event
+from kb_msgs.srv import KbEvent
 from kb_msgs.msg import ActiveConcepts
 from std_msgs.msg import String
 
@@ -32,7 +32,7 @@ LABEL_SRV = About, "/kb/label"
 DETAILS_SRV = About, "/kb/details"
 LOOKUP_SRV = Lookup, "/kb/lookup"
 SPARQL_SRV = Sparql, "/kb/sparql"
-EVENTS_SRV = Event, "/kb/events"
+EVENTS_SRV = KbEvent, "/kb/events"
 ACTIVE_CONCEPTS_TOPIC = "/kb/active_concepts"
 EVENTS_NS = EVENTS_SRV[1] + "/"
 
@@ -259,7 +259,7 @@ class KB:
         if isinstance(pattern, str):
             pattern = [pattern]
 
-        evt = await self._events_srv.call_async(Event.Request(
+        evt = await self._events_srv.call_async(KbEvent.Request(
             patterns=pattern, one_shot=one_shot, models=models))
 
         # check if we already have a registered an identical event pattern,

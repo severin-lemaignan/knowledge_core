@@ -18,7 +18,7 @@ import json
 from diagnostic_msgs.msg import DiagnosticArray, DiagnosticStatus, KeyValue
 from knowledge_core.exceptions import KbServerError
 
-from kb_msgs.srv import Manage, Revise, Query, About, Lookup, Sparql, Event
+from kb_msgs.srv import Manage, Revise, Query, About, Lookup, Sparql, KbEvent
 from kb_msgs.msg import ActiveConcepts
 from std_msgs.msg import String
 
@@ -130,7 +130,7 @@ class KnowledgeCoreROS(Node):
         self.create_service(About, "label",  self.handle_details)
         self.create_service(About, "details",  self.handle_details)
         self.create_service(Lookup, "lookup",  self.handle_lookup)
-        self.create_service(Event, "events",  self.handle_new_event)
+        self.create_service(KbEvent, "events",  self.handle_new_event)
         self.create_service(Sparql, "sparql",  self.handle_sparql)
 
         self.get_logger().info(
@@ -156,7 +156,7 @@ Available services:
 - /kb/details [kb_msgs/About]
 - /kb/lookup [kb_msgs/Lookup]
 - /kb/sparql [kb_msgs/Sparql]
-- /kb/events [kb_msgs/Event]
+- /kb/events [kb_msgs/KbEvent]
 
 """
         )

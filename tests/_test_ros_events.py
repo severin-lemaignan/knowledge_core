@@ -11,7 +11,7 @@ from std_msgs.msg import String
 from kb_msgs.srv import Query
 from kb_msgs.srv import Revise
 from kb_msgs.srv import Manage
-from kb_msgs.srv import Event
+from kb_msgs.srv import KbEvent
 
 
 import launch_ros
@@ -21,7 +21,7 @@ from launch import LaunchDescription
 MANAGE_SRV = Manage, "/kb/manage"
 REVISE_SRV = Revise, "/kb/revise"
 QUERY_SRV = Query, "/kb/query"
-EVENTS_SRV = Event, "/kb/events"
+EVENTS_SRV = KbEvent, "/kb/events"
 EVENTS_NS = EVENTS_SRV[1] + "/"
 
 
@@ -110,7 +110,7 @@ class TestKBEvents(unittest.TestCase):
         return future.result()
 
     def events(self, *args, **kwargs):
-        future = self.events_srv.call_async(Event.Request(*args, **kwargs))
+        future = self.events_srv.call_async(KbEvent.Request(*args, **kwargs))
         rclpy.spin_until_future_complete(self.node, future)
 
         return future.result()
