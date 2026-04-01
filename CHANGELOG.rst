@@ -2,6 +2,13 @@
 Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* port from asynchat to asyncio
+  asynchat has been deprecated since Python 3.6, and removed in Python 3.12
+  Port entierly written by Claude AI
+* Contributors: Séverin Lemaignan
+
 3.10.0 (2026-02-03)
 -------------------
 * Event.srv -> KbEvent.srv
