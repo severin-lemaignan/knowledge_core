@@ -140,7 +140,7 @@ class KnowledgeCoreROS(Node):
         self.create_service(Revise, 'revise',  self.handle_revise)
         self.create_service(Query, 'query',  self.handle_query)
         self.create_service(About, 'about',  self.handle_about)
-        self.create_service(About, 'label',  self.handle_details)
+        self.create_service(About, 'label',  self.handle_label)
         self.create_service(About, 'details',  self.handle_details)
         self.create_service(Lookup, 'lookup',  self.handle_lookup)
         self.create_service(KbEvent, 'events',  self.handle_new_event)
