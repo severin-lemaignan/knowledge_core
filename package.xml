@@ -4,8 +4,8 @@
   <name>knowledge_core</name>
   <version>3.11.0</version>
   <description>The KnowledgeCore knowledge base, including its service-based ROS API</description>
-  <maintainer email="severin.lemaignan@pal-robotics.com">Séverin Lemaignan</maintainer>
-  <author email="severin.lemaignan@pal-robotics.com">Séverin Lemaignan</author>
+  <maintainer email="severin.lemaignan@iiia.csic.es">Séverin Lemaignan</maintainer>
+  <author email="severin.lemaignan@iiia.csic.es">Séverin Lemaignan</author>
   <url>https://github.com/severin-lemaignan/knowledge_core</url>
   <license>Apache-2.0</license>
 
