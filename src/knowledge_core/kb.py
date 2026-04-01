@@ -1,16 +1,32 @@
-from knowledge_core import __version__
-from .exceptions import KbServerError
-import hashlib
-import traceback
-from queue import Queue, Empty
-import pathlib
-from datetime import datetime
-import time
-from decimal import Decimal
-import logging
-import re
+# Copyright 2026 IIIA-CSIC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-logger = logging.getLogger("KnowledgeCore." + __name__)
+from datetime import datetime
+from decimal import Decimal
+import hashlib
+import logging
+import pathlib
+from queue import Empty, Queue
+import re
+import time
+import traceback
+
+from knowledge_core import __version__
+
+from .exceptions import KbServerError
+
+logger = logging.getLogger('KnowledgeCore.' + __name__)
 
 try:
     import rdflib
@@ -19,9 +35,9 @@ try:
     from rdflib.term import Node, BNode, Literal, URIRef, Variable
     from rdflib import Graph, Dataset
 
-    logger.info("Using RDFlib %s" % rdflib.__version__)
+    logger.info('Using RDFlib %s' % rdflib.__version__)
 except ImportError:
-    logger.error("RDFlib is required. Please install it.")
+    logger.error('RDFlib is required. Please install it.')
     import sys
 
     sys.exit(1)
@@ -33,55 +49,55 @@ try:
 
     has_reasoner = True
     logger.info(
-        "reasonable OWL2 RL reasoner available. Running with reasoning enabled."
+        'reasonable OWL2 RL reasoner available. Running with reasoning enabled.'
     )
 except ImportError:
     logger.warning(
-        "reasonable OWL2 RL reasoner not available. Install it with "
-        "`pip install reasonable`. Running without reasoning."
+        'reasonable OWL2 RL reasoner not available. Install it with '
+        '`pip install reasonable`. Running without reasoning.'
     )
 
 
-def stable_hash(s, p="", o="", model=""):
-    return hashlib.md5(("%s%s%s%s" % (s, p, o, model)).encode("utf-8")).hexdigest()
+def stable_hash(s, p='', o='', model=''):
+    return hashlib.md5(('%s%s%s%s' % (s, p, o, model)).encode('utf-8')).hexdigest()
 
 
-DEFAULT_MODEL = "default"
+DEFAULT_MODEL = 'default'
 REASONER_RATE = 5  # Hz
 EXPIRED_STMTS_CHECK_RATE = 1  # Hz
 ACTIVE_CONCEPT_LIFESPAN = 5  # sec
 
 IRIS = {
-    "oro": "http://kb.openrobots.org#",
-    "cyc": "http://sw.opencyc.org/concept/",
-    "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
-    "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
-    "owl": "http://www.w3.org/2002/07/owl#",
-    "xsd": "http://www.w3.org/2001/XMLSchema#",
-    "dbr": "https://dbpedia.org/resource/",
-    "dbo": "https://dbpedia.org/ontology/",
-    "dbp": "https://dbpedia.org/property/",
-    "prov": "http://www.w3.org/ns/prov#",
-    "foaf": "http://xmlns.com/foaf/0.1/",
+    'oro': 'http://kb.openrobots.org#',
+    'cyc': 'http://sw.opencyc.org/concept/',
+    'rdf': 'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
+    'rdfs': 'http://www.w3.org/2000/01/rdf-schema#',
+    'owl': 'http://www.w3.org/2002/07/owl#',
+    'xsd': 'http://www.w3.org/2001/XMLSchema#',
+    'dbr': 'https://dbpedia.org/resource/',
+    'dbo': 'https://dbpedia.org/ontology/',
+    'dbp': 'https://dbpedia.org/property/',
+    'prov': 'http://www.w3.org/ns/prov#',
+    'foaf': 'http://xmlns.com/foaf/0.1/',
 }
 
-DEFAULT_PREFIX = "oro"
+DEFAULT_PREFIX = 'oro'
 
 default_ns = Namespace(IRIS[DEFAULT_PREFIX])
 
-SPARQL_PREFIXES = "".join(["PREFIX %s: <%s>\n" % (p, iri)
+SPARQL_PREFIXES = ''.join(['PREFIX %s: <%s>\n' % (p, iri)
                           for p, iri in IRIS.items()])
-SPARQL_PREFIXES += "PREFIX : <%s>\n" % IRIS[DEFAULT_PREFIX]
-SPARQL_PREFIXES += "BASE <%s>\n" % IRIS[DEFAULT_PREFIX]
+SPARQL_PREFIXES += 'PREFIX : <%s>\n' % IRIS[DEFAULT_PREFIX]
+SPARQL_PREFIXES += 'BASE <%s>\n' % IRIS[DEFAULT_PREFIX]
 
 
 # reference: https://www.w3.org/TeamSubmission/n3/#syntax
-N3_PROLOGUE = " ".join(["@prefix %s: <%s>." % (p, iri)
+N3_PROLOGUE = ' '.join(['@prefix %s: <%s>.' % (p, iri)
                        for p, iri in IRIS.items()])
-N3_PROLOGUE += " @prefix : <%s>. " % IRIS[DEFAULT_PREFIX]
-N3_PROLOGUE += "@base <%s>. " % IRIS[DEFAULT_PREFIX]
+N3_PROLOGUE += ' @prefix : <%s>. ' % IRIS[DEFAULT_PREFIX]
+N3_PROLOGUE += '@base <%s>. ' % IRIS[DEFAULT_PREFIX]
 N3_PROLOGUE += (
-    "@keywords a,true,false. "  # see https://www.w3.org/TeamSubmission/n3/#keywords
+    '@keywords a,true,false. '  # see https://www.w3.org/TeamSubmission/n3/#keywords
 )
 
 QUOTE_REGEX = re.compile(
@@ -92,7 +108,7 @@ def ORO(term: str):
     return URIRef(IRIS[DEFAULT_PREFIX] + term)
 
 
-EXPIRES_ON_TERM = ORO("expiresOn")
+EXPIRES_ON_TERM = ORO('expiresOn')
 
 
 def api(fn):
@@ -111,18 +127,18 @@ def parse_stmts_to_graph(stmts):
     data = N3_PROLOGUE
 
     for stmt in stmts:
-        if " " not in stmt:
+        if ' ' not in stmt:
             raise KbServerError(
-                "invalid syntax for statement %s: it should be formed of 3 terms."
+                'invalid syntax for statement %s: it should be formed of 3 terms.'
                 % stmt
             )
-        stmt = " ".join([turtle_escape(t) for t in stmt.split()])
-        data += " %s . " % stmt
+        stmt = ' '.join([turtle_escape(t) for t in stmt.split()])
+        data += ' %s . ' % stmt
 
     try:
-        return Graph().parse(data=data, format="n3")
+        return Graph().parse(data=data, format='n3')
     except rdflib.plugins.parsers.notation3.BadSyntax:
-        raise KbServerError("invalid syntax for statements %s" % stmts)
+        raise KbServerError('invalid syntax for statements %s' % stmts)
 
 
 # @memoize
@@ -145,30 +161,30 @@ def turtle_escape(string):
         return string
 
     for c in "~.-!$&'()*+,;=/#%":  # exclude ? and @, as they might be legitimate in a term
-        string = string.replace(c, "\\" + c)
+        string = string.replace(c, '\\' + c)
     return string
 
 
 # @memoize
 def parse_stmt(stmt):
 
-    logger.warning("Parsing statement: %s" % stmt)
-    stmt = " ".join([turtle_escape(t) for t in stmt.split()])
+    logger.warning('Parsing statement: %s' % stmt)
+    stmt = ' '.join([turtle_escape(t) for t in stmt.split()])
 
     try:
-        return list(Graph().parse(data=N3_PROLOGUE + "%s ." % stmt, format="n3"))[0]
+        return list(Graph().parse(data=N3_PROLOGUE + '%s .' % stmt, format='n3'))[0]
     except rdflib.plugins.parsers.notation3.BadSyntax as bs:
         raise KbServerError(
-            f"invalid syntax for statement <{stmt}>. Original error: {bs}")
+            f'invalid syntax for statement <{stmt}>. Original error: {bs}')
     except IndexError as ie:
         raise KbServerError(
-            f"invalid syntax for statement <{stmt}>. Original error: {ie}")
+            f'invalid syntax for statement <{stmt}>. Original error: {ie}')
     except AttributeError as ae:
         raise KbServerError(
-            f"invalid syntax for statement <{stmt}>. Original error: {ae}")
+            f'invalid syntax for statement <{stmt}>. Original error: {ae}')
     except Exception as e:
         raise KbServerError(
-            f"invalid syntax for statement <{stmt}>. Original error: {e}")
+            f'invalid syntax for statement <{stmt}>. Original error: {e}')
 
 
 # @memoize
@@ -180,12 +196,12 @@ def parse_term(term):
     try:
         # TODO: correct, but not super effective!
         return list(
-            Graph().parse(data=N3_PROLOGUE + " <s> <p> %s ." %
-                          turtle_escape(term), format="n3")
+            Graph().parse(data=N3_PROLOGUE + ' <s> <p> %s .' %
+                          turtle_escape(term), format='n3')
         )[0][2]
     except rdflib.plugins.parsers.notation3.BadSyntax as bs:
         raise KbServerError(
-            f"invalid syntax for term <{term}>. Original error: {bs}")
+            f'invalid syntax for term <{term}>. Original error: {bs}')
 
 
 def shorten_term(graph, term):
@@ -217,7 +233,7 @@ def shorten(graph, stmt, double_quote_for_str=False):
             val = t.toPython()
 
             # workaround: decimal.Decimal is not JSON-serializable -> convert it to a float
-            if type(val) == Decimal:
+            if type(val) is Decimal:
                 val = float(val)
 
             if double_quote_for_str and isinstance(val, str):
@@ -249,11 +265,11 @@ def get_variables(stmt):
 
 
 def get_all_variables(stmts):
-    vars = []
+    variables = []
     for p in stmts:
-        vars += [v.n3() for v in get_variables(parse_stmt(p))]
+        variables += [v.n3() for v in get_variables(parse_stmt(p))]
 
-    return vars
+    return variables
 
 
 class dotdict(dict):
@@ -278,7 +294,7 @@ class Event:
 
         self.models = models
 
-        self.id = "evt_" + str(
+        self.id = 'evt_' + str(
             stable_hash(
                 str(sorted(self.patterns)) +
                 str(one_shot) + str(sorted(self.models))
@@ -293,12 +309,12 @@ class Event:
 
         self.previous_instances = set()
 
-        logger.debug("Creating new event. Looking existing matchs...")
+        logger.debug('Creating new event. Looking existing matchs...')
         instances = self.kb.find(
             self.patterns, self.vars, frozenset(self.models))
-        logger.debug("Event created with initial instances %s" % instances)
+        logger.debug('Event created with initial instances %s' % instances)
 
-        self.previous_instances = set([hashabledict(row) for row in instances])
+        self.previous_instances = {hashabledict(row) for row in instances}
 
     def __hash__(self):
         return hash(self.id)
@@ -319,7 +335,7 @@ class Event:
         instances = self.kb.find(
             self.patterns, self.vars, frozenset(self.models))
 
-        instances = set([hashabledict(row) for row in instances])
+        instances = {hashabledict(row) for row in instances}
 
         newinstances = instances - self.previous_instances
 
@@ -337,8 +353,8 @@ class Event:
 
 class KnowledgeCore:
 
-    MEMORYPROFILE_DEFAULT = ""
-    MEMORYPROFILE_SHORTTERM = "SHORTTERM"
+    MEMORYPROFILE_DEFAULT = ''
+    MEMORYPROFILE_SHORTTERM = 'SHORTTERM'
 
     def __init__(self, filenames=None, enable_reasoner=True, auto_activeconcepts=False):
         """
@@ -354,13 +370,13 @@ class KnowledgeCore:
         """
         self.reasoner_enabled = has_reasoner and enable_reasoner
         if not self.reasoner_enabled:
-            logger.warn("Running without OWL2 RL reasoner.")
+            logger.warn('Running without OWL2 RL reasoner.')
 
         self.auto_activeconcepts = auto_activeconcepts
         self.active_concepts = set()
 
         _api = [
-            getattr(self, fn) for fn in dir(self) if hasattr(getattr(self, fn), "_api")
+            getattr(self, fn) for fn in dir(self) if hasattr(getattr(self, fn), '_api')
         ]
         import inspect
 
@@ -368,13 +384,13 @@ class KnowledgeCore:
                      str(inspect.signature(fn)): fn for fn in _api}
 
         apilist = [
-            key + (" (compatibility)" if hasattr(val, "_compat") else "")
+            key + (' (compatibility)' if hasattr(val, '_compat') else '')
             for key, val in self._api.items()
         ]
 
         logger.debug(
-            "Initializing the KnowledgeCore with the following API: \n\t- "
-            + "\n\t- ".join(apilist)
+            'Initializing the KnowledgeCore with the following API: \n\t- '
+            + '\n\t- '.join(apilist)
         )
 
         self.incomingrequests = Queue()
@@ -398,13 +414,13 @@ class KnowledgeCore:
                 self.add_default_ontology(filename)
 
     def add_default_ontology(self, uri):
-        logger.info("Adding default ontology <%s>" % uri)
+        logger.info('Adding default ontology <%s>' % uri)
         self.load(uri)
         self.default_ontologies.append(uri)
 
     @api
     def hello(self):
-        return "KnowledgeCore, v.%s" % __version__
+        return 'KnowledgeCore, v.%s' % __version__
 
     @api
     def version(self):
@@ -417,27 +433,27 @@ class KnowledgeCore:
 
         try:
             for model in models:
-                logger.info("Loading file <%s> in model <%s>" %
+                logger.info('Loading file <%s> in model <%s>' %
                             (filename, model))
                 self.models[model].graph.parse(
                     filename, publicID=IRIS[DEFAULT_PREFIX])
                 self.models[model].is_dirty = True
         except FileNotFoundError:
-            logger.error("File <%s> not found." % filename)
-            raise KbServerError("File <%s> not found." % filename)
+            logger.error('File <%s> not found.' % filename)
+            raise KbServerError('File <%s> not found.' % filename)
 
         self.onupdate()
 
     @api
-    def save(self, path=None, basename="kb", models=None):
+    def save(self, path=None, basename='kb', models=None):
 
         path = pathlib.Path(path)
         models = self.normalize_models(models)
         for model in models:
-            filename = path / (basename + "-" + model + ".rdf")
-            logger.info("Saving knowledge base (model <%s>) to %s" %
+            filename = path / (basename + '-' + model + '.rdf')
+            logger.info('Saving knowledge base (model <%s>) to %s' %
                         (model, filename))
-            self.models[model].graph.serialize(str(filename), format="xml")
+            self.models[model].graph.serialize(str(filename), format='xml')
 
     @api
     def clear(self, keep_defaults=False):
@@ -449,18 +465,18 @@ class KnowledgeCore:
 
         if keep_defaults:
             logger.warn(
-                "Clearing the knowledge base, keeping the default ontologies.")
+                'Clearing the knowledge base, keeping the default ontologies.')
             for m, g in self.models.items():
                 self.ds.remove_graph(g.graph)
                 self.create_model(m)
 
             if self.default_ontologies:
                 for uri in self.default_ontologies:
-                    logger.info("Reloading default ontology <%s>" % uri)
+                    logger.info('Reloading default ontology <%s>' % uri)
                     self.load(uri, models=models)
 
         else:
-            logger.warn("Clearing the knowledge base!")
+            logger.warn('Clearing the knowledge base!')
             for m, g in self.models.items():
                 self.ds.remove_graph(g.graph)
             self.create_model(DEFAULT_MODEL)
@@ -513,10 +529,10 @@ class KnowledgeCore:
         """
         models = self.normalize_models(models)
         logger.info(
-            "Lookup for "
+            'Lookup for '
             + str(term)
-            + " in "
-            + (str(models) if models else "default model.")
+            + ' in '
+            + (str(models) if models else 'default model.')
         )
 
         exact_match = set()
@@ -556,11 +572,11 @@ class KnowledgeCore:
         approximate_match = [(s, self.typeof(t, models))
                              for s, t in approximate_match]
         if exact_match:
-            logger.info("Found exact match: " + str(exact_match))
+            logger.info('Found exact match: ' + str(exact_match))
         if approximate_match:
-            logger.info("Found approximate match: " + str(approximate_match))
+            logger.info('Found approximate match: ' + str(approximate_match))
         if not exact_match and not approximate_match:
-            logger.info("No match found")
+            logger.info('No match found')
 
         return exact_match + approximate_match
 
@@ -579,7 +595,7 @@ class KnowledgeCore:
                 result += self.models[model].materialized_graph.subjects(
                     RDF.type, term)
 
-        return list(filter(lambda t: type(t) != BNode, result))
+        return list(filter(lambda t: type(t) is not BNode, result))
 
     @api
     def classesof(self, term, direct=False, models=[]):
@@ -603,7 +619,7 @@ class KnowledgeCore:
                 result += self.models[model].materialized_graph.objects(
                     term, RDF.type)
 
-        return list(filter(lambda t: type(t) != BNode, result))
+        return list(filter(lambda t: type(t) is not BNode, result))
 
     def _subclassesof(self, term, direct=False, models=[]):
 
@@ -622,7 +638,7 @@ class KnowledgeCore:
                     RDFS.subClassOf, term
                 )
 
-        return list(filter(lambda t: type(t) != BNode, result))
+        return list(filter(lambda t: type(t) is not BNode, result))
 
     def _superclassesof(self, term, direct=False, models=[]):
 
@@ -641,7 +657,7 @@ class KnowledgeCore:
                     term, RDFS.subClassOf
                 )
 
-        return list(filter(lambda t: type(t) != BNode, result))
+        return list(filter(lambda t: type(t) is not BNode, result))
 
     @api
     def label(self, term, models=[]):
@@ -669,13 +685,13 @@ class KnowledgeCore:
                 if label.language:
                     result[label.language] = label
                 else:
-                    result["default"] = label
+                    result['default'] = label
 
-        if "default" not in result:
-            if "en" in result:
-                result["default"] = result["en"]
+        if 'default' not in result:
+            if 'en' in result:
+                result['default'] = result['en']
             else:
-                result["default"] = shorten_term(
+                result['default'] = shorten_term(
                     self.models[DEFAULT_MODEL].graph, term)
 
         return result
@@ -686,25 +702,25 @@ class KnowledgeCore:
             term = parse_term(term)
 
         if isinstance(term, Literal):
-            return "literal"
+            return 'literal'
 
         classes = self._classesof(term, False, models)
         if classes:
             if OWL.ObjectProperty in classes:
-                return "object_property"
+                return 'object_property'
             elif OWL.DatatypeProperty in classes:
-                return "datatype_property"
+                return 'datatype_property'
             elif OWL.Class in classes:
-                return "class"
+                return 'class'
             else:
-                return "instance"
+                return 'instance'
 
         if (
             self._instancesof(term, False, models)
             or self._subclassesof(term, False, models)
             or self._superclassesof(term, False, models)
         ):
-            return "class"
+            return 'class'
 
         for model in models:
             stmts_if_predicate = list(
@@ -714,12 +730,12 @@ class KnowledgeCore:
 
             if stmts_if_predicate:
                 if isinstance(stmts_if_predicate[0][2], Literal):
-                    return "datatype_property"
+                    return 'datatype_property'
                 else:
-                    return "object_property"
+                    return 'object_property'
 
-        logger.warn("Concept <%s> has undecidable type." % term.n3())
-        return "undecided"
+        logger.warn('Concept <%s> has undecidable type.' % term.n3())
+        return 'undecided'
 
     @api
     def details(self, raw_term, model=None):
@@ -746,71 +762,71 @@ class KnowledgeCore:
         models = self.normalize_models(model)
         if len(models) != 1:
             raise KbServerError(
-                "the details() method can only operate on a single model. Got: %s" % models)
+                'the details() method can only operate on a single model. Got: %s' % models)
 
         model = list(models)[0]
 
         try:
             term = parse_term(raw_term)
         except KbServerError:
-            raise KbServerError("<%s> is an invalid n3 term." % raw_term)
+            raise KbServerError('<%s> is an invalid n3 term.' % raw_term)
 
         g = self.models[model].materialized_graph
 
         res = {}
-        res["id"] = shorten_term(g, term)
-        res["label"] = self.label(term, models)
-        res["type"] = self.typeof(term, models)
+        res['id'] = shorten_term(g, term)
+        res['label'] = self.label(term, models)
+        res['type'] = self.typeof(term, models)
 
-        res["attributes"] = []
-        if res["type"] == "class":
-            res["attributes"].append(
+        res['attributes'] = []
+        if res['type'] == 'class':
+            res['attributes'].append(
                 {
-                    "name": "Parents",
-                    "id": "superClasses",
-                    "values": [
-                        {"id": shorten_term(
-                            g, r), "name": self.label(r, models)}
+                    'name': 'Parents',
+                    'id': 'superClasses',
+                    'values': [
+                        {'id': shorten_term(
+                            g, r), 'name': self.label(r, models)}
                         for r in self._superclassesof(term, True, models)
                     ],
                 }
             )
 
-            res["attributes"].append(
+            res['attributes'].append(
                 {
-                    "name": "Children",
-                    "id": "subClasses",
-                    "values": [
-                        {"id": shorten_term(
-                            g, r), "label": self.label(r, models)}
+                    'name': 'Children',
+                    'id': 'subClasses',
+                    'values': [
+                        {'id': shorten_term(
+                            g, r), 'label': self.label(r, models)}
                         for r in self._subclassesof(term, True, models)
                     ],
                 }
             )
 
-            res["attributes"].append(
+            res['attributes'].append(
                 {
-                    "name": "Instances",
-                    "id": "instances",
-                    "values": [
-                        {"id": shorten_term(
-                            g, r), "label": self.label(r, models)}
+                    'name': 'Instances',
+                    'id': 'instances',
+                    'values': [
+                        {'id': shorten_term(
+                            g, r), 'label': self.label(r, models)}
                         for r in self._instancesof(term, True, models)
                     ],
                 }
             )
 
-        elif res["type"] == "instance":
-            res["attributes"] = [
+        elif res['type'] == 'instance':
+            res['attributes'] = [
                 {
-                    "name": "Classes",
-                    "id": "classes",
-                    "values": [
-                        {"id": shorten_term(
-                            g, r), "label": self.label(r, models)}
+                    'name': 'Classes',
+                    'id': 'classes',
+                    'values': [
+                        {'id': shorten_term(
+                            g, r), 'label': self.label(r, models)}
                         for r in self._classesof(term, True, models)
                         if r not in [
-                            ORO("ActiveConcept"),
+                            ORO('ActiveConcept'),
                             OWL.NamedIndividual
                         ]
                     ],
@@ -826,19 +842,19 @@ class KnowledgeCore:
         for triple in g.triples((None, None, term)):
             if self.is_fact(triple):
                 stmts.append(shorten(g, triple))
-        res["relations"] = stmts
+        res['relations'] = stmts
 
         return res
 
     def is_fact(self, triple):
 
-        if not all(type(t) != BNode for t in triple):
+        if not all(type(t) is not BNode for t in triple):
             return False
 
         if triple[1] in [RDF.type,
                          RDFS.subClassOf,
                          RDFS.label,
-                         ORO("openCycUri"),
+                         ORO('openCycUri'),
                          OWL.disjointWith,
                          RDF.first,
                          RDFS.domain,
@@ -855,17 +871,17 @@ class KnowledgeCore:
         models = self.normalize_models(models)
 
         logger.info(
-            "Checking existence of "
+            'Checking existence of '
             + str(raw_stmts)
-            + " in "
-            + (str(models) if models else "default model.")
+            + ' in '
+            + (str(models) if models else 'default model.')
         )
         stmts = [parse_stmt(s) for s in raw_stmts]
 
-        vars = get_all_variables(raw_stmts)
+        variables = get_all_variables(raw_stmts)
 
         # no variable? simply check if all the statements are asserted
-        if len(vars) == 0:
+        if len(variables) == 0:
             for model in models:
                 for stmt in stmts:
                     if stmt not in self.models[model].materialized_graph:
@@ -874,7 +890,7 @@ class KnowledgeCore:
             return True
 
         # else, run a query
-        return bool(self.find(raw_stmts, vars, models))
+        return bool(self.find(raw_stmts, variables, models))
 
     @api
     def revise(self, stmts, policy):
@@ -887,51 +903,51 @@ class KnowledgeCore:
         - lifespan: duration before automatic removal of statements, in
           seconds, float
         """
-        if type(policy) != dict:
-            raise KbServerError("Expected a dictionary as policy")
+        if type(policy) is not dict:
+            raise KbServerError('Expected a dictionary as policy')
 
         if isinstance(stmts, str):
-            raise KbServerError("A list of statements is expected")
+            raise KbServerError('A list of statements is expected')
 
-        if not policy["method"]:
+        if not policy['method']:
             raise KbServerError(
-                "No policy specified for method in revise. Expected one of update, add, retract")
+                'No policy specified for method in revise. Expected one of update, add, retract')
 
-        vars = get_all_variables(stmts)
+        variables = get_all_variables(stmts)
 
         subgraph = parse_stmts_to_graph(stmts)
-        parsed_stmts = "\n\t- ".join(
-            [" ".join([str(t) for t in s])
+        parsed_stmts = '\n\t- '.join(
+            [' '.join([str(t) for t in s])
              for s in shorten_graph(subgraph, double_quote_for_str=True)]
         )
 
-        models = self.normalize_models(policy.get("models", []))
+        models = self.normalize_models(policy.get('models', []))
 
-        if policy["method"] in ["update", "safe_update", "add", "safe_add", "revision"]:
+        if policy['method'] in ['update', 'safe_update', 'add', 'safe_add', 'revision']:
 
-            if len(vars) > 0:
+            if len(variables) > 0:
                 raise KbServerError(
-                    "You can not add/update statements containing variables: %s" % stmts)
+                    'You can not add/update statements containing variables: %s' % stmts)
 
-            if policy["method"].startswith("safe"):
+            if policy['method'].startswith('safe'):
                 logger.warn(
-                    "Warning: %s is not implemented. Performing %s instead."
-                    % (policy["method"], policy["method"][5:])
+                    'Warning: %s is not implemented. Performing %s instead.'
+                    % (policy['method'], policy['method'][5:])
                 )
-            if policy["method"].endswith("add"):
+            if policy['method'].endswith('add'):
                 logger.warn(
-                    "Warning: %s is deprecated. Performing update instead."
-                    % (policy["method"])
+                    'Warning: %s is deprecated. Performing update instead.'
+                    % (policy['method'])
                 )
 
-            lifespan = policy.get("lifespan", 0)
+            lifespan = policy.get('lifespan', 0)
 
             logger.info(
-                "Updating "
+                'Updating '
                 + str(list(models))
-                + " with:\n\t- "
+                + ' with:\n\t- '
                 + parsed_stmts
-                + (" (lifespan: %ssec)" % lifespan if lifespan else "")
+                + (' (lifespan: %ssec)' % lifespan if lifespan else '')
             )
             for model in models:
                 for s, p, o in subgraph.triples([None, None, None]):
@@ -943,7 +959,7 @@ class KnowledgeCore:
                     # Note that if a lifespan was associated to this statement, and
                     # that lifespan is smaller than ACTIVE_CONCEPT_LIFESPAN,
                     # the given lifespan is used instead.
-                    if p == RDF.type and o == ORO("ActiveConcept"):
+                    if p == RDF.type and o == ORO('ActiveConcept'):
                         self.mark_active_concept(s, model)
 
                     else:
@@ -959,7 +975,7 @@ class KnowledgeCore:
 
                     expiry_ts = time.time() + lifespan
                     expiry_date = datetime.fromtimestamp(
-                        expiry_ts).strftime("%d/%m/%Y, %H:%M:%S")
+                        expiry_ts).strftime('%d/%m/%Y, %H:%M:%S')
                     expiry_date_xsd = date_time(expiry_ts)
 
                     # do we already have lifespan information for these facts?
@@ -968,26 +984,26 @@ class KnowledgeCore:
                           if len(subgraph-g) == 0]
                     if gr:
                         gr = gr[0]
-                        logger.info("Updating expiry date to %s" % expiry_date)
+                        logger.info('Updating expiry date to %s' % expiry_date)
                     else:
                         gr = subgraph
                         logger.info(
-                            "This statement will expire on %s" % expiry_date)
+                            'This statement will expire on %s' % expiry_date)
 
                     self.models[model].metadata.set(
                         (gr, EXPIRES_ON_TERM, Literal(expiry_date_xsd, datatype=XSD.dateTime)))
 
                 self.models[model].is_dirty = True
 
-        elif policy["method"] == "retract":
+        elif policy['method'] == 'retract':
 
-            if len(vars) > 0:
+            if len(variables) > 0:
 
                 if len(stmts) > 1:
-                    raise KbServerError("Removing multiple statements that \
+                    raise KbServerError('Removing multiple statements that \
                             include variables or wildcards is not supported. \
                             Wildcards are only permitted with a single \
-                            pattern.")
+                            pattern.')
 
                 # we've been provided with a pattern that contains at least one variable.
                 # find() all matching values for the varaible(s), and reconstruct the final
@@ -997,35 +1013,35 @@ class KnowledgeCore:
 
                 for tok in stmts[0].split():
                     # if the token is *not* a variable, add it to the find() results 'as it'
-                    if not tok.startswith("?"):
+                    if not tok.startswith('?'):
                         for e in res:
                             e[tok] = tok
 
                 # tok_order is a copy of the pattern, without the leading '?'
                 tok_order = [tok[1:] if tok.startswith(
-                    "?") else tok for tok in stmts[0].split()]
+                    '?') else tok for tok in stmts[0].split()]
 
                 # final list of statments to remove
                 new_stmts = []
                 for e in res:
-                    new_stmts.append(" ".join([str(e[tok_order[0]]), str(
+                    new_stmts.append(' '.join([str(e[tok_order[0]]), str(
                         e[tok_order[1]]), parse_term(e[tok_order[2]]).n3()]))
 
                 subgraph = parse_stmts_to_graph(new_stmts)
-                parsed_stmts = "\n\t- ".join(
-                    [" ".join([str(t) for t in s])
+                parsed_stmts = '\n\t- '.join(
+                    [' '.join([str(t) for t in s])
                      for s in shorten_graph(subgraph)]
                 )
 
-            logger.info("Deleting from " + str(list(models)) +
-                        ":\n\t- " + parsed_stmts)
+            logger.info('Deleting from ' + str(list(models)) +
+                        ':\n\t- ' + parsed_stmts)
             for model in models:
                 self.models[model].graph -= subgraph
                 self.models[model].is_dirty = True
 
         else:
             raise KbServerError(
-                "Unknown method in revise: %s" % policy["method"])
+                'Unknown method in revise: %s' % policy['method'])
 
         self.onupdate()
 
@@ -1034,11 +1050,11 @@ class KnowledgeCore:
         subgraph = Graph()
         for p, iri in IRIS.items():
             subgraph.bind(p, iri)
-        subgraph.bind("", IRIS[DEFAULT_PREFIX])
+        subgraph.bind('', IRIS[DEFAULT_PREFIX])
 
-        subgraph.add((term, RDF.type, ORO("ActiveConcept")))
+        subgraph.add((term, RDF.type, ORO('ActiveConcept')))
         concept = shorten_term(subgraph, term)
-        logger.info("Marking <%s> as ActiveConcept" % concept)
+        logger.info('Marking <%s> as ActiveConcept' % concept)
         self.active_concepts.add(concept)
         self.models[model].graph += subgraph
         self.models[model].metadata.add(
@@ -1048,19 +1064,19 @@ class KnowledgeCore:
     @compat
     def add(self, stmts, models=None, lifespan=0):
         logger.warn(
-            "Warning: <add> is deprecated. Performing <update> instead.")
+            'Warning: <add> is deprecated. Performing <update> instead.')
         return self.revise(
-            stmts, {"method": "update", "models": models, "lifespan": lifespan}
+            stmts, {'method': 'update', 'models': models, 'lifespan': lifespan}
         )
 
     @api
     def remove(self, stmts, models=None):
-        return self.revise(stmts, {"method": "retract", "models": models})
+        return self.revise(stmts, {'method': 'retract', 'models': models})
 
     @api
     def update(self, stmts, models=None, lifespan=0):
         return self.revise(
-            stmts, {"method": "update", "models": models, "lifespan": lifespan}
+            stmts, {'method': 'update', 'models': models, 'lifespan': lifespan}
         )
 
     @api
@@ -1100,24 +1116,24 @@ class KnowledgeCore:
         """
         models = self.normalize_models(model)
         if len(models) != 1:
-            logger.error("sparql() can only be executed on a single model")
+            logger.error('sparql() can only be executed on a single model')
             return None
 
         model = list(models)[0]
 
-        logger.info("Executing SPARQL query in model: %s\n%s" % (model, query))
+        logger.info('Executing SPARQL query in model: %s\n%s' % (model, query))
 
         sparql_res, query = self._sparql(model, query, raw=True)
 
         import json
 
-        res = json.loads(sparql_res.serialize(format="json"))
-        res["query"] = query
+        res = json.loads(sparql_res.serialize(format='json'))
+        res['query'] = query
 
         return res
 
     @api
-    def find(self, patterns, vars=None, models=None):
+    def find(self, patterns, variables=None, models=None):
         """
         Perform a query on one or several models.
 
@@ -1146,53 +1162,53 @@ class KnowledgeCore:
 
         Note that RDF blank nodes (BNode) are not returned.
         """
-        if not vars or (len(vars) == 1 and vars[0] == ""):
-            vars = get_all_variables(patterns)
-            if len(vars) == 0:
+        if not variables or (len(variables) == 1 and variables[0] == ''):
+            variables = get_all_variables(patterns)
+            if len(variables) == 0:
                 return patterns if self.exist(patterns, models) else []
 
         models = self.normalize_models(models)
 
         patterns = [parse_stmt(p) for p in patterns]
 
-        parsed_patterns = "\n\t- ".join(
-            [" ".join([str(t) for t in s]) for s in shortenN(
+        parsed_patterns = '\n\t- '.join(
+            [' '.join([str(t) for t in s]) for s in shortenN(
                 self.models[DEFAULT_MODEL].graph, patterns)]
         )
 
         normalised_patterns = [
-            " ".join([t.n3() for t in stmt]) for stmt in patterns]
+            ' '.join([t.n3() for t in stmt]) for stmt in patterns]
 
         logger.info(
-            "Searching "
-            + str(vars)
-            + " in models "
+            'Searching '
+            + str(variables)
+            + ' in models '
             + str(models)
-            + " matching:\n\t- "
+            + ' matching:\n\t- '
             + parsed_patterns
         )
 
         res = []
 
-        named_variables = self.named_variables(vars)
+        named_variables = self.named_variables(variables)
         if named_variables:
             # if we have named variable + extra 'anonymous' variable (coming from
             # eg '*'), ignore the anonymous ones
-            if len(named_variables) != len(vars):
-                vars = named_variables
+            if len(named_variables) != len(variables):
+                variables = named_variables
 
             # remove the '?' at the start of the variables
-            vars_naked = [var[1:] for var in vars]
+            vars_naked = [var[1:] for var in variables]
 
         # only anonymous variables? rename them var1,var2,var3,var4...
         else:
-            vars_naked = ["var%s" % (i + 1) for i in range(len(vars))]
+            vars_naked = ['var%s' % (i + 1) for i in range(len(variables))]
 
         for model in models:
-            q = "SELECT %s WHERE {\n" % " ".join(vars)
+            q = 'SELECT %s WHERE {\n' % ' '.join(variables)
             for p in normalised_patterns:
-                q += "%s .\n" % p
-            q += "}"
+                q += '%s .\n' % p
+            q += '}'
 
             sparql_res, _ = self._sparql(model, q)
 
@@ -1201,7 +1217,7 @@ class KnowledgeCore:
                 for r in [shorten(self.models[model].graph, row) for row in sparql_res]
             ]
 
-        logger.info("Found: " + str(res))
+        logger.info('Found: ' + str(res))
         return res
 
     @api
@@ -1242,11 +1258,11 @@ class KnowledgeCore:
         nb_prev_evt = len(self.active_evts)
         self.active_evts.add(event)
         if len(self.active_evts) > nb_prev_evt:
-            logger.info("Registered a new event: %s" %
-                        patterns + " in " + str(models))
+            logger.info('Registered a new event: %s' %
+                        patterns + ' in ' + str(models))
         else:
             logger.info(
-                "Event handler already existing for %s. No need to add it." % patterns)
+                'Event handler already existing for %s. No need to add it.' % patterns)
 
         return event.id
 
@@ -1282,7 +1298,7 @@ class KnowledgeCore:
         q = SPARQL_PREFIXES
         q += query
 
-        logger.debug("Executing SPARQL query in model: %s\n%s" % (model, q))
+        logger.debug('Executing SPARQL query in model: %s\n%s' % (model, q))
 
         import pyparsing
 
@@ -1291,24 +1307,24 @@ class KnowledgeCore:
             if raw:
                 return res, q
             else:
-                no_bnode = [stmt for stmt in filter(
-                    lambda s: all(type(t) != BNode for t in s), res)]
+                no_bnode = list(filter(
+                    lambda s: all(type(t) is not BNode for t in s), res))
                 return no_bnode, q
         except pyparsing.ParseException:
             raise KbServerError(
-                "Syntax error while parsing SPARQL query:\n%s" % q)
+                'Syntax error while parsing SPARQL query:\n%s' % q)
         except TypeError as te:
             raise KbServerError(
-                "Syntax error while parsing SPARQL query:\n%s\nException was: %s" % (q, te))
+                'Syntax error while parsing SPARQL query:\n%s\nException was: %s' % (q, te))
 
-    def named_variables(self, vars):
+    def named_variables(self, variables):
         """
         Return the list of variable that have been explicitely named.
 
         eg, not the 'stars' wildcards, that would have been replaced by anonymous
         variable starting with '__' by pykb.
         """
-        return [v for v in vars if not v.startswith("?__")]
+        return [v for v in variables if not v.startswith('?__')]
 
     def onupdate(self):
 
@@ -1317,29 +1333,29 @@ class KnowledgeCore:
         self.materialise()
 
         self._functionalproperties = frozenset(
-            self._instancesof("owl:FunctionalProperty", False)
+            self._instancesof('owl:FunctionalProperty', False)
         )
 
         to_remove = [
             e_id for e_id, clients in self.eventsubscriptions.items() if len(clients) == 0]
         for e_id in to_remove:
             logger.info(
-                f"Removing handler for event {e_id} as no clients anymore")
+                f'Removing handler for event {e_id} as no clients anymore')
             self.remove_event(e_id)
         if self.active_evts:
             logger.info(
-                "Checking the %s active event handler(s) against new facts"
+                'Checking the %s active event handler(s) against new facts'
                 % len(self.active_evts)
             )
         for e in list(self.active_evts):
             if e.evaluate():
                 clients = self.eventsubscriptions[e.id]
                 logger.info(
-                    "Event %s triggered. Informing %s clients." % (
+                    'Event %s triggered. Informing %s clients.' % (
                         e.id, len(clients))
                 )
                 for client in clients:
-                    msg = ("event", e)
+                    msg = ('event', e)
                     self.requestresults.setdefault(client, Queue()).put(msg)
                 if not e.valid:
                     self.active_evts.remove(e)
@@ -1382,12 +1398,12 @@ class KnowledgeCore:
 
         if end - start > 0.0001:  # did we actually classify anything?
             logger.info(
-                "Materialisation performed by reasoner in %.1fms"
+                'Materialisation performed by reasoner in %.1fms'
                 % ((end - start) * 1000)
             )
 
     def check_expired_stmts(self):
-        logger.debug("Checking for expired statements...")
+        logger.debug('Checking for expired statements...')
 
         # TODO: as a (potential?) optimization, pass initNs to graph.query,
         # instead of adding the PREFIX strings to the query
@@ -1404,18 +1420,18 @@ class KnowledgeCore:
 
         for name, model in self.models.items():
 
-            res = model.metadata.query(q, initBindings={"now": now})
+            res = model.metadata.query(q, initBindings={'now': now})
             if res:
                 for row in res:
                     graph = row[0]
                     date = row[1]
                     for s, p, o in graph:
                         ss, sp, so = shorten(graph, (s, p, o))
-                        if p == RDF.type and o == ORO("ActiveConcept"):
+                        if p == RDF.type and o == ORO('ActiveConcept'):
                             if ss in self.active_concepts:
                                 self.active_concepts.remove(ss)
-                        logger.warn(f"Removing expired statement <{ss} {sp} {so}>"
-                                    f" from <{name}> (expired on {date})")
+                        logger.warn(f'Removing expired statement <{ss} {sp} {so}>'
+                                    f' from <{name}> (expired on {date})')
                     model.metadata.remove((graph, None, None))
                     model.graph -= graph
                     model.is_dirty = True
@@ -1424,23 +1440,23 @@ class KnowledgeCore:
 
     def create_model(self, model):
         g = self.ds.graph(IRIS[DEFAULT_PREFIX] + model)
-        metadata_g = self.ds.graph(IRIS[DEFAULT_PREFIX] + model + "_metadata")
+        metadata_g = self.ds.graph(IRIS[DEFAULT_PREFIX] + model + '_metadata')
 
         # configure our namespace prefixes
         for p, iri in IRIS.items():
             g.bind(p, iri)
             metadata_g.bind(p, iri)
 
-        g.bind("", IRIS[DEFAULT_PREFIX])
-        metadata_g.bind("", IRIS[DEFAULT_PREFIX])
+        g.bind('', IRIS[DEFAULT_PREFIX])
+        metadata_g.bind('', IRIS[DEFAULT_PREFIX])
 
         self.models[model] = dotdict(
             {
-                "graph": g,
-                "metadata": metadata_g,
+                'graph': g,
+                'metadata': metadata_g,
                 # stores whether models have changes that would require re-classification
-                "is_dirty": True,
-                "materialized_graph": Graph(),
+                'is_dirty': True,
+                'materialized_graph': Graph(),
             }
         )
 
@@ -1455,13 +1471,13 @@ class KnowledgeCore:
         only the models passed as argument.
         """
         if models:
-            if "all" in models:
+            if 'all' in models:
                 return frozenset(self.models)
             else:
                 if isinstance(models, str):
                     models = [models]
 
-                models = [m if m != "" else DEFAULT_MODEL for m in models]
+                models = [m if m != '' else DEFAULT_MODEL for m in models]
 
                 # do we have a new model? initialise it.
                 for model in models:
@@ -1474,33 +1490,33 @@ class KnowledgeCore:
 
     def execute(self, client, name, *args, **kwargs):
 
-        if name == "close":
+        if name == 'close':
 
             # Event-related housekepping
             evts_id_to_remove = []
             for evt_id, clients in self.eventsubscriptions.items():
                 if client in clients:
                     logger.info(
-                        "Client closing, removing event subscription <%s>" % evt_id
+                        'Client closing, removing event subscription <%s>' % evt_id
                     )
                     clients.remove(client)
                 if len(clients) == 0:
                     evts_id_to_remove.append(evt_id)
             for evt_id in evts_id_to_remove:
                 logger.info(
-                    "No one interested in event %s anymore. Removing it" % evt_id
+                    'No one interested in event %s anymore. Removing it' % evt_id
                 )
                 self.remove_event(evt_id)
             ###############
 
-            logger.info("Closing connection to client.")
+            logger.info('Closing connection to client.')
             return
 
         f = getattr(self, name)
-        if hasattr(f, "_compat"):
+        if hasattr(f, '_compat'):
             logger.warn(
-                "Using non-standard method %s. This may be " % f.__name__
-                + "removed in the future!"
+                'Using non-standard method %s. This may be ' % f.__name__
+                + 'removed in the future!'
             )
 
         msg = None
@@ -1508,15 +1524,15 @@ class KnowledgeCore:
             res = None
             if args or kwargs:
                 res = f(*args, **kwargs)
-                if name in ["subscribe"]:
+                if name in ['subscribe']:
                     self.eventsubscriptions.setdefault(res, []).append(client)
             else:
                 res = f()
-            msg = ("ok", res)
+            msg = ('ok', res)
         except Exception as e:
             logger.info(traceback.format_exc())
-            logger.error("request failed: %s" % e)
-            msg = ("error", e)
+            logger.error('request failed: %s' % e)
+            msg = ('error', e)
 
         self.requestresults.setdefault(client, Queue()).put(msg)
 
@@ -1532,11 +1548,11 @@ class KnowledgeCore:
         try:
             client, name, args, kwargs = self.incomingrequests.get(True, 0.05)
             logger.debug(
-                "Processing <%s(%s,%s)>..."
+                'Processing <%s(%s,%s)>...'
                 % (
                     name,
-                    ", ".join([str(a) for a in args]),
-                    ", ".join(str(k) + "=" + str(v)
+                    ', '.join([str(a) for a in args]),
+                    ', '.join(str(k) + '=' + str(v)
                               for k, v in kwargs.items()),
                 )
             )
@@ -1547,5 +1563,5 @@ class KnowledgeCore:
         for client, pendingmsg in self.requestresults.items():
             while not pendingmsg.empty():
                 msg = pendingmsg.get()
-                logger.debug("sending %s to %s" % (msg, client))
+                logger.debug('sending %s to %s' % (msg, client))
                 client.sendmsg(msg)

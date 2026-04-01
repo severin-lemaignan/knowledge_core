@@ -14,10 +14,10 @@
 
 from launch import LaunchDescription
 from launch.actions import IncludeLaunchDescription
-from launch_xml.launch_description_sources import XMLLaunchDescriptionSource
 from launch.substitutions import PathJoinSubstitution
-from launch_ros.substitutions import FindPackageShare
 from launch_ros.actions import Node
+from launch_ros.substitutions import FindPackageShare
+from launch_xml.launch_description_sources import XMLLaunchDescriptionSource
 
 
 def generate_launch_description():
@@ -31,7 +31,7 @@ def generate_launch_description():
             node='knowledge_viewer',
             ld=ld)
     except ImportError:
-        config = {"parameters": None, "remappings": None, "arguments": None}
+        config = {'parameters': None, 'remappings': None, 'arguments': None}
 
     rosbridge_launch = IncludeLaunchDescription(
         XMLLaunchDescriptionSource([
@@ -47,9 +47,9 @@ def generate_launch_description():
         executable='knowledge_viewer',
         namespace='kb',
         name='knowledge_viewer',
-        parameters=config["parameters"],
-        remappings=config["remappings"],
-        arguments=config["arguments"],
+        parameters=config['parameters'],
+        remappings=config['remappings'],
+        arguments=config['arguments'],
         output='both',
         emulate_tty=True,
     )

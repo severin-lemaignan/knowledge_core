@@ -33,16 +33,16 @@ def generate_launch_description():
             node='knowledge_core',
             ld=ld)
     except ImportError:
-        config = {"parameters": None, "remappings": None, "arguments": None}
+        config = {'parameters': None, 'remappings': None, 'arguments': None}
 
     knowledge_core_node = Node(
         package='knowledge_core',
         executable='knowledge_core',
         namespace='kb',
         name='knowledge_core',
-        parameters=config["parameters"],
-        remappings=config["remappings"],
-        arguments=config["arguments"],
+        parameters=config['parameters'],
+        remappings=config['remappings'],
+        arguments=config['arguments'],
         output='both',
         emulate_tty=True,
     )
@@ -56,16 +56,16 @@ def generate_launch_description():
             node='knowledge_viewer',
             ld=ld)
     except ImportError:
-        config = {"parameters": None, "remappings": None, "arguments": None}
+        config = {'parameters': None, 'remappings': None, 'arguments': None}
 
     knowledge_viewer_node = Node(
         package='knowledge_core',
         executable='knowledge_viewer',
         namespace='kb',
         name='knowledge_viewer',
-        parameters=config["parameters"],
-        remappings=config["remappings"],
-        arguments=config["arguments"],
+        parameters=config['parameters'],
+        remappings=config['remappings'],
+        arguments=config['arguments'],
         output='both',
         emulate_tty=True,
     )

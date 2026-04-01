@@ -1,3 +1,19 @@
+# Copyright 2026 IIIA-CSIC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import collections
+import json
 import sys
 
 try:
@@ -6,23 +22,19 @@ try:
     import ament_index_python as aip
 except ImportError:
     print(
-        "Unable to load the ROS 2 support. You might want to run with --no-ros"
-        " to use KnowledgeCore without ROS 2 support enabled (or check an older"
-        " version for ROS 1 support)."
+        'Unable to load the ROS 2 support. You might want to run with --no-ros'
+        ' to use KnowledgeCore without ROS 2 support enabled (or check an older'
+        ' version for ROS 1 support).'
     )
     sys.exit(1)
 
-import collections
-import json
-
 from diagnostic_msgs.msg import DiagnosticArray, DiagnosticStatus, KeyValue
-from knowledge_core.exceptions import KbServerError
-
-from kb_msgs.srv import Manage, Revise, Query, About, Lookup, Sparql, KbEvent
 from kb_msgs.msg import ActiveConcepts
+from kb_msgs.srv import About, KbEvent, Lookup, Manage, Query, Revise, Sparql
+from knowledge_core.exceptions import KbServerError
 from std_msgs.msg import String
 
-EVENTS_TOPIC_NS = "events/"
+EVENTS_TOPIC_NS = 'events/'
 
 DIAGNOSTICS_FREQUENCY = 1  # Hz
 
@@ -63,37 +75,38 @@ class KnowledgeCoreROS(Node):
         self.declare_parameter('default_kb', rclpy.Parameter.Type.STRING)
         default_kb = self.get_parameter_or('default_kb', None)
 
-        RES_NAME = "ontology"
+        RES_NAME = 'ontology'
 
         if default_kb.value:
             self.get_logger().info(
-                f"Default knowledge base file: {default_kb.value}")
-            if not default_kb.value.startswith(f"{RES_NAME}://"):
+                f'Default knowledge base file: {default_kb.value}')
+            if not default_kb.value.startswith(f'{RES_NAME}://'):
                 self.get_logger().error(
-                    "Invalid default knowledge base URI."
+                    'Invalid default knowledge base URI.'
                     f" Should be in the form '{RES_NAME}://<package>/<file>'")
                 rclpy.shutdown()
                 return
 
-            pkg, res = default_kb.value.split("://")[1].split("/")
+            pkg, res = default_kb.value.split('://')[1].split('/')
 
             try:
                 ontologies_res = aip.get_resource(RES_NAME, pkg)
             except aip.LookupError:
                 self.get_logger().error(
-                    f"Default ontology (default_kb) set to {default_kb.value}, "
-                    f"yet package '{pkg}' not found in the '{RES_NAME}' resource index")
+                    f'Default ontology (default_kb) set to {default_kb.value}, '
+                    f"yet package '{pkg}' not found in the '{RES_NAME}' resource index"
+                )
                 rclpy.shutdown()
                 return
 
             ontologies_list = {
-                r.split("/")[1]: r for r in ontologies_res[0].split("\n")}
+                r.split('/')[1]: r for r in ontologies_res[0].split('\n')}
 
             if res not in ontologies_list.keys():
                 self.get_logger().error(
-                    f"Default ontology (default_kb) set to {default_kb.value}, "
-                    "yet resource '{res}' not found in the '{RES_NAME}' resource "
-                    "index (pkg '{pkg}'). Found files: {list(ontologies_list.keys())}")
+                    f'Default ontology (default_kb) set to {default_kb.value}, '
+                    f"yet resource '{res}' not found in the '{RES_NAME}' resource "
+                    f"index (pkg '{pkg}'). Found files: {list(ontologies_list.keys())}")
                 rclpy.shutdown()
                 return
 
@@ -101,37 +114,37 @@ class KnowledgeCoreROS(Node):
                 pkg) / ontologies_list[res]
 
             self.get_logger().info(
-                f"Loading default knowledge base [{default_kb.value}] from {path}")
+                f'Loading default knowledge base [{default_kb.value}] from {path}')
             self.kb.add_default_ontology(path)
         else:
             self.get_logger().info(
-                "No default knowledge base file provided. Starting with an empty one.")
+                'No default knowledge base file provided. Starting with an empty one.')
 
         self.last_facts = collections.deque(maxlen=5)
 
         self.diagnostics_pub = self.create_publisher(
-            DiagnosticArray, "/diagnostics", 1
+            DiagnosticArray, '/diagnostics', 1
         )
         self.last_diagnostics_ts = self.get_clock().now()
 
         self.update_sub = self.create_subscription(
-            String, "add_fact", self.on_update_fact, 200)
+            String, 'add_fact', self.on_update_fact, 200)
         self.retract_sub = self.create_subscription(
-            String, "remove_fact", self.on_retract_fact, 200)
+            String, 'remove_fact', self.on_retract_fact, 200)
 
         self.active_concepts_pub = self.create_publisher(
-            ActiveConcepts, "active_concepts", 1)
+            ActiveConcepts, 'active_concepts', 1)
         self._current_active_concepts = set()
 
-        self.create_service(Manage, "manage",  self.handle_manage)
-        self.create_service(Revise, "revise",  self.handle_revise)
-        self.create_service(Query, "query",  self.handle_query)
-        self.create_service(About, "about",  self.handle_about)
-        self.create_service(About, "label",  self.handle_details)
-        self.create_service(About, "details",  self.handle_details)
-        self.create_service(Lookup, "lookup",  self.handle_lookup)
-        self.create_service(KbEvent, "events",  self.handle_new_event)
-        self.create_service(Sparql, "sparql",  self.handle_sparql)
+        self.create_service(Manage, 'manage',  self.handle_manage)
+        self.create_service(Revise, 'revise',  self.handle_revise)
+        self.create_service(Query, 'query',  self.handle_query)
+        self.create_service(About, 'about',  self.handle_about)
+        self.create_service(About, 'label',  self.handle_details)
+        self.create_service(About, 'details',  self.handle_details)
+        self.create_service(Lookup, 'lookup',  self.handle_lookup)
+        self.create_service(KbEvent, 'events',  self.handle_new_event)
+        self.create_service(Sparql, 'sparql',  self.handle_sparql)
 
         self.get_logger().info(
             """
@@ -183,50 +196,50 @@ Available services:
 
         try:
             if req.action == Manage.Request.CLEAR:
-                if "keep_defaults" in req.parameters:
+                if 'keep_defaults' in req.parameters:
                     self.kb.clear(keep_defaults=True)
                 else:
                     self.kb.clear()
                 response.success = True
-                response.error_msg = ""
+                response.error_msg = ''
                 return response
 
             elif req.action == Manage.Request.LOAD:
                 if len(req.parameters) != 1:
                     response.success = False
                     response.error_msg = "'load' expects 'parameters' to contain exactly " \
-                                         "one URI pointing to the ontology to load"
+                                         'one URI pointing to the ontology to load'
                     return response
 
                 self.kb.load(req.parameters[0], models=req.models)
                 response.success = True
-                response.error_msg = ""
+                response.error_msg = ''
                 return response
 
             elif req.action == Manage.Request.SAVE:
                 if len(req.parameters) != 2:
                     response.success = False
-                    response.error_msg = "'save' expects 'parameters' to contain "
-                    "exactly two values: the path and the basename. The "
-                    "knowledge base will be saved as "
-                    "`path/basename-<model>.xml (one file per model)"
+                    response.error_msg = "'save' expects 'parameters' to contain " \
+                        'exactly two values: the path and the basename. The ' \
+                        'knowledge base will be saved as ' \
+                        '`path/basename-<model>.xml (one file per model)'
                     return response
 
                 self.kb.save(
                     req.parameters[0], req.parameters[1], models=req.models)
                 response.success = True
-                response.error_msg = ""
+                response.error_msg = ''
                 return response
 
             elif req.action == Manage.Request.STATUS:
                 status = {
-                    "name": self.kb.hello(),
-                    "version": self.kb.version(),
-                    "reasoning_enabled": self.kb.reasoner_enabled,
+                    'name': self.kb.hello(),
+                    'version': self.kb.version(),
+                    'reasoning_enabled': self.kb.reasoner_enabled,
                 }
                 response.success = True
                 response.json = json.dumps(status)
-                response.error_msg = ""
+                response.error_msg = ''
                 return response
             else:
                 response.success = False
@@ -241,15 +254,15 @@ Available services:
     def handle_revise(self, req, response):
 
         policy = {
-            "method": req.method,
-            "models": req.models,
-            "lifespan": to_sec(req.lifespan),
+            'method': req.method,
+            'models': req.models,
+            'lifespan': to_sec(req.lifespan),
         }
         try:
             self.kb.revise(req.statements, policy)
 
             response.success = True
-            response.error_msg = ""
+            response.error_msg = ''
             return response
 
         except KbServerError as kbe:
@@ -263,7 +276,7 @@ Available services:
             res = self.kb.find(req.patterns, req.vars, req.models)
             response.success = True
             response.json = json.dumps(res)
-            response.error_msg = ""
+            response.error_msg = ''
             return response
 
         except KbServerError as kbe:
@@ -277,7 +290,7 @@ Available services:
             res = self.kb.about(req.term, req.models)
             response.success = True
             response.json = json.dumps(res)
-            response.error_msg = ""
+            response.error_msg = ''
             return response
 
         except KbServerError as kbe:
@@ -291,7 +304,7 @@ Available services:
             res = self.kb.label(req.term, req.models)
             response.success = True
             response.json = json.dumps(res)
-            response.error_msg = ""
+            response.error_msg = ''
             return response
 
         except KbServerError as kbe:
@@ -305,7 +318,7 @@ Available services:
             res = self.kb.details(req.term, req.models)
             response.success = True
             response.json = json.dumps(res)
-            response.error_msg = ""
+            response.error_msg = ''
             return response
 
         except KbServerError as kbe:
@@ -319,7 +332,7 @@ Available services:
             res = self.kb.lookup(req.query, req.models)
             response.success = True
             response.json = json.dumps(res)
-            response.error_msg = ""
+            response.error_msg = ''
             return response
 
         except KbServerError as kbe:
@@ -333,7 +346,7 @@ Available services:
             res = self.kb.sparql(req.query, req.models)
             response.success = True
             response.json = json.dumps(res)
-            response.error_msg = ""
+            response.error_msg = ''
             return response
 
         except KbServerError as kbe:
@@ -373,7 +386,7 @@ Available services:
                 if self.pub.get_subscription_count() == 0:
                     if self.has_been_subscribed:
                         self.node.get_logger().warn(
-                            "No one listing to event <%s> anymore; removing it."
+                            'No one listing to event <%s> anymore; removing it.'
                             % self.evt
                         )
                         self.node.destroy_publisher(self.pub)
@@ -383,7 +396,7 @@ Available services:
 
                     evt = msg[1]
                     self.node.get_logger().info(
-                        "Event <" + evt.id + "> triggered. Notifying ROS clients."
+                        'Event <' + evt.id + '> triggered. Notifying ROS clients.'
                     )
                     evt_msg = String()
                     evt_msg.data = json.dumps(evt.content)
@@ -399,19 +412,19 @@ Available services:
             self.kb.eventsubscriptions[evt].add(evt_relay)
 
             if len(self.kb.eventsubscriptions[evt]) > prev_nb_cb:
-                self.get_logger().warn("Subscribed to event " + evt)
+                self.get_logger().warn('Subscribed to event ' + evt)
             else:
                 self.get_logger().info(
-                    "Event %s already subscribed to. Nothing to do." % evt)
+                    'Event %s already subscribed to. Nothing to do.' % evt)
 
             response.id = evt
-            response.topic = self.get_namespace() + "/" + EVENTS_TOPIC_NS + evt
+            response.topic = self.get_namespace() + '/' + EVENTS_TOPIC_NS + evt
             return response
 
         except KbServerError as kbe:
             self.get_logger().error(
-                f"Unable to create event! Original error was: {str(kbe)}")
-            response.id = ""
+                f'Unable to create event! Original error was: {str(kbe)}')
+            response.id = ''
             return response
 
     def step(self):
@@ -419,18 +432,18 @@ Available services:
 
         if (now - self.last_diagnostics_ts).nanoseconds > 1e9 / DIAGNOSTICS_FREQUENCY:
             msg = DiagnosticStatus(
-                name="/reasoning/kb/knowledge_core",
+                name='/reasoning/kb/knowledge_core',
                 values=[
-                    KeyValue(key="Module name", value="knowledge_core"),
-                    KeyValue(key="Last facts", value="; ".join([f for f in self.last_facts])),
+                    KeyValue(key='Module name', value='knowledge_core'),
+                    KeyValue(key='Last facts', value='; '.join(list(self.last_facts))),
                 ]
             )
             if self.kb.reasoner_enabled:
                 msg.level = DiagnosticStatus.OK
-                msg.message = "Knowledge base running, with OWL/RDF reasoner enabled"
+                msg.message = 'Knowledge base running, with OWL/RDF reasoner enabled'
             else:
                 msg.level = DiagnosticStatus.WARN
-                msg.message = "Knowledge base running, but OWL/RDF reasoner not enabled"
+                msg.message = 'Knowledge base running, but OWL/RDF reasoner not enabled'
             arr = DiagnosticArray()
             arr.header.stamp = self.get_clock().now().to_msg()
             arr.status = [msg]
@@ -452,6 +465,6 @@ Available services:
 
     def shutdown(self):
 
-        self.get_logger().info("KnowledgeCore closing")
+        self.get_logger().info('KnowledgeCore closing')
         self.destroy_node()
         rclpy.shutdown()

@@ -1,28 +1,40 @@
 # -*- coding: utf-8 -*-
 
+# Copyright 2026 IIIA-CSIC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import json
 import unittest
-import pytest
-import rclpy
-from rclpy.node import Node
-from rclpy.duration import Duration
 
-from std_msgs.msg import String
+from kb_msgs.srv import KbEvent
+from kb_msgs.srv import Manage
 from kb_msgs.srv import Query
 from kb_msgs.srv import Revise
-from kb_msgs.srv import Manage
-from kb_msgs.srv import KbEvent
-
-
+from launch import LaunchDescription
 import launch_ros
 import launch_testing
-from launch import LaunchDescription
+import pytest
+import rclpy
+from rclpy.duration import Duration
+from rclpy.node import Node
+from std_msgs.msg import String
 
-MANAGE_SRV = Manage, "/kb/manage"
-REVISE_SRV = Revise, "/kb/revise"
-QUERY_SRV = Query, "/kb/query"
-EVENTS_SRV = KbEvent, "/kb/events"
-EVENTS_NS = EVENTS_SRV[1] + "/"
+MANAGE_SRV = Manage, '/kb/manage'
+REVISE_SRV = Revise, '/kb/revise'
+QUERY_SRV = Query, '/kb/query'
+EVENTS_SRV = KbEvent, '/kb/events'
+EVENTS_NS = EVENTS_SRV[1] + '/'
 
 
 @pytest.mark.rostest
@@ -32,7 +44,7 @@ def generate_test_description():
         executable='knowledge_core',
         output='both',
         emulate_tty=True,
-        arguments=["--debug", "--no-reasoner"])
+        arguments=['--debug', '--no-reasoner'])
 
     ld = LaunchDescription()
     ld.add_action(kb_node)
@@ -54,7 +66,7 @@ class TestKBEvents(unittest.TestCase):
         if not rclpy.ok():
             rclpy.init()
 
-        cls.node = Node("kb_unittests")
+        cls.node = Node('kb_unittests')
         cls.logger = cls.node.get_logger()
 
         cls.manage_srv = cls.node.create_client(*MANAGE_SRV)
@@ -96,11 +108,11 @@ class TestKBEvents(unittest.TestCase):
 
     def query(self, *args, **kwargs):
         if len(args) >= 1:
-            kwargs["patterns"] = args[0]
+            kwargs['patterns'] = args[0]
         if len(args) >= 2:
-            kwargs["vars"] = args[1]
+            kwargs['vars'] = args[1]
         if len(args) >= 2:
-            kwargs["models"] = args[2]
+            kwargs['models'] = args[2]
         args = []
 
         future = self.query_srv.call_async(Query.Request(
@@ -154,7 +166,7 @@ class TestKBEvents(unittest.TestCase):
         elapsed = 0
 
         self.node.get_logger().warn(
-            "Starting to wait for event (max %sms)..." % MAX_WAIT)
+            'Starting to wait for event (max %sms)...' % MAX_WAIT)
         if not other_evt:
             while elapsed < MAX_WAIT:
                 if self.evt_semaphore:
@@ -163,9 +175,9 @@ class TestKBEvents(unittest.TestCase):
                 elapsed += 10
 
             if self.evt_semaphore ^ should_trigger:
-                msg = "The event did not trigger after %sms" % MAX_WAIT \
+                msg = 'The event did not trigger after %sms' % MAX_WAIT \
                     if should_trigger \
-                    else "The event should *not* have triggered!"
+                    else 'The event should *not* have triggered!'
                 self.node.get_logger().error(msg)
                 self.assertTrue(
                     False,
@@ -173,9 +185,9 @@ class TestKBEvents(unittest.TestCase):
 
             if should_trigger:
                 self.node.get_logger().warn(
-                    "Event triggered after %sms" % elapsed)
+                    'Event triggered after %sms' % elapsed)
             else:
-                self.node.get_logger().warn("No trigger, as expected")
+                self.node.get_logger().warn('No trigger, as expected')
 
             self.evt_semaphore = False
         else:
@@ -187,13 +199,13 @@ class TestKBEvents(unittest.TestCase):
 
             self.assertTrue(
                 not (self.evt2_semaphore ^ should_trigger),
-                "The other event did not trigger after %sms" % MAX_WAIT,
+                'The other event did not trigger after %sms' % MAX_WAIT,
             )
             if should_trigger:
                 self.node.get_logger().warn(
-                    "Event triggered after %sms" % elapsed)
+                    'Event triggered after %sms' % elapsed)
             else:
-                self.node.get_logger().warn("No trigger, as expected")
+                self.node.get_logger().warn('No trigger, as expected')
             self.evt2_semaphore = False
 
     def on_active(self):
@@ -204,7 +216,7 @@ class TestKBEvents(unittest.TestCase):
         self.evt_semaphore = False
         self.evt_active = False
 
-        evt = self.events(patterns=["?robot rdf:type Robot"], one_shot=False)
+        evt = self.events(patterns=['?robot rdf:type Robot'], one_shot=False)
         self.node.create_subscription(
             String, evt.topic, self.on_evt, 10)
 
@@ -213,18 +225,18 @@ class TestKBEvents(unittest.TestCase):
         self.revise(
             method=Revise.Request.ADD,
             statements=[
-                "joe rdf:type Robot",
+                'joe rdf:type Robot',
             ],
         )
 
         self.check_event(should_trigger=True)
 
-        self.assertCountEqual(self.last_evt, [{"robot": "joe"}])
+        self.assertCountEqual(self.last_evt, [{'robot': 'joe'}])
 
         self.revise(
             method=Revise.Request.ADD,
             statements=[
-                "joe rdf:type Robot",
+                'joe rdf:type Robot',
             ],
         )
 
@@ -233,7 +245,7 @@ class TestKBEvents(unittest.TestCase):
         self.revise(
             method=Revise.Request.ADD,
             statements=[
-                "bill rdf:type Human",
+                'bill rdf:type Human',
             ],
         )
 
@@ -242,43 +254,43 @@ class TestKBEvents(unittest.TestCase):
         self.revise(
             method=Revise.Request.ADD,
             statements=[
-                "ari rdf:type Robot",
+                'ari rdf:type Robot',
             ],
         )
 
         self.check_event(should_trigger=True)
-        self.assertCountEqual(self.last_evt, [{"robot": "ari"}])
+        self.assertCountEqual(self.last_evt, [{'robot': 'ari'}])
 
         self.revise(
             method=Revise.Request.REMOVE,
             statements=[
-                "ari rdf:type Robot",
+                'ari rdf:type Robot',
             ],
         )
 
         self.revise(
             method=Revise.Request.ADD,
             statements=[
-                "ari rdf:type Robot",
+                'ari rdf:type Robot',
             ],
         )
 
         self.check_event(should_trigger=True)
-        self.assertCountEqual(self.last_evt, [{"robot": "ari"}])
+        self.assertCountEqual(self.last_evt, [{'robot': 'ari'}])
 
     def test_oneshot_event(self):
 
         self.evt_semaphore = False
         self.evt_active = False
 
-        evt = self.events(patterns=["?human rdf:type Human"], one_shot=True)
+        evt = self.events(patterns=['?human rdf:type Human'], one_shot=True)
         self.node.create_subscription(
             String, evt.topic, self.on_evt, 10)
 
         self.revise(
             method=Revise.Request.ADD,
             statements=[
-                "joe rdf:type Human",
+                'joe rdf:type Human',
             ],
         )
 
@@ -287,7 +299,7 @@ class TestKBEvents(unittest.TestCase):
         self.revise(
             method=Revise.Request.ADD,
             statements=[
-                "john rdf:type Human",
+                'john rdf:type Human',
             ],
         )
 
@@ -298,14 +310,14 @@ class TestKBEvents(unittest.TestCase):
         self.evt_semaphore = False
         self.evt_active = False
 
-        evt = self.events(patterns=["?human rdf:type Human"], one_shot=False)
+        evt = self.events(patterns=['?human rdf:type Human'], one_shot=False)
         sub = self.node.create_subscription(
             String, evt.topic, self.on_evt, 1)
 
         self.revise(
             method=Revise.Request.ADD,
             statements=[
-                "joe rdf:type Human",
+                'joe rdf:type Human',
             ],
         )
 
@@ -321,7 +333,7 @@ class TestKBEvents(unittest.TestCase):
         self.revise(
             method=Revise.Request.ADD,
             statements=[
-                "john rdf:type Human",
+                'john rdf:type Human',
             ],
         )
 
@@ -333,7 +345,7 @@ class TestKBEvents(unittest.TestCase):
         self.revise(
             method=Revise.Request.ADD,
             statements=[
-                "bill rdf:type Human",
+                'bill rdf:type Human',
             ],
         )
 
@@ -348,11 +360,11 @@ class TestKBEvents(unittest.TestCase):
         self.evt_semaphore = False
         self.evt_active = False
 
-        evt = self.events(patterns=["?s rdf:type Human"], one_shot=False)
+        evt = self.events(patterns=['?s rdf:type Human'], one_shot=False)
         self.node.create_subscription(
             String, evt.topic, self.on_evt, 10)
 
-        evt2 = self.events(patterns=["?s rdf:type Robot"], one_shot=False)
+        evt2 = self.events(patterns=['?s rdf:type Robot'], one_shot=False)
         self.node.create_subscription(
             String, evt2.topic, self.on_other_evt, 10)
 
@@ -362,30 +374,30 @@ class TestKBEvents(unittest.TestCase):
         self.revise(
             method=Revise.Request.ADD,
             statements=[
-                "joe rdf:type Human",
+                'joe rdf:type Human',
             ],
         )
 
         self.check_event(should_trigger=True)
         self.check_event(should_trigger=False, other_evt=True)
-        self.assertCountEqual(self.last_evt, [{"s": "joe"}])
+        self.assertCountEqual(self.last_evt, [{'s': 'joe'}])
 
         self.revise(
             method=Revise.Request.ADD,
             statements=[
-                "nono rdf:type Robot",
+                'nono rdf:type Robot',
             ],
         )
 
         self.check_event(should_trigger=False)
         self.check_event(should_trigger=True, other_evt=True)
-        self.assertCountEqual(self.last_evt, [{"s": "nono"}])
+        self.assertCountEqual(self.last_evt, [{'s': 'nono'}])
 
         self.revise(
             method=Revise.Request.ADD,
             statements=[
-                "ari rdf:type Robot",
-                "john rdf:type Human",
+                'ari rdf:type Robot',
+                'john rdf:type Human',
             ],
         )
 

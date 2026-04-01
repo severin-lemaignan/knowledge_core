@@ -1,21 +1,19 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from kb_msgs.srv import Manage
-from kb_msgs.srv import Revise
-from kb_msgs.srv import Query
-from kb_msgs.srv import About
-from kb_msgs.srv import Lookup
-from kb_msgs.srv import Sparql
-from kb_msgs.srv import KbEvent
-from kb_msgs.msg import ActiveConcepts
-from std_msgs.msg import String
-
-import rclpy
-from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
-from rclpy.duration import Duration
-from rclpy.executors import MultiThreadedExecutor
-from rclpy.node import Node
+# Copyright 2026 IIIA-CSIC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 import asyncio
 import json
@@ -24,17 +22,32 @@ import shlex
 import threading
 from typing import Coroutine
 
-MANAGE_SRV = Manage, "/kb/manage"
-REVISE_SRV = Revise, "/kb/revise"
-QUERY_SRV = Query, "/kb/query"
-ABOUT_SRV = About, "/kb/about"
-LABEL_SRV = About, "/kb/label"
-DETAILS_SRV = About, "/kb/details"
-LOOKUP_SRV = Lookup, "/kb/lookup"
-SPARQL_SRV = Sparql, "/kb/sparql"
-EVENTS_SRV = KbEvent, "/kb/events"
-ACTIVE_CONCEPTS_TOPIC = "/kb/active_concepts"
-EVENTS_NS = EVENTS_SRV[1] + "/"
+from kb_msgs.msg import ActiveConcepts
+from kb_msgs.srv import About
+from kb_msgs.srv import KbEvent
+from kb_msgs.srv import Lookup
+from kb_msgs.srv import Manage
+from kb_msgs.srv import Query
+from kb_msgs.srv import Revise
+from kb_msgs.srv import Sparql
+import rclpy
+from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
+from rclpy.duration import Duration
+from rclpy.executors import MultiThreadedExecutor
+from rclpy.node import Node
+from std_msgs.msg import String
+
+MANAGE_SRV = Manage, '/kb/manage'
+REVISE_SRV = Revise, '/kb/revise'
+QUERY_SRV = Query, '/kb/query'
+ABOUT_SRV = About, '/kb/about'
+LABEL_SRV = About, '/kb/label'
+DETAILS_SRV = About, '/kb/details'
+LOOKUP_SRV = Lookup, '/kb/lookup'
+SPARQL_SRV = Sparql, '/kb/sparql'
+EVENTS_SRV = KbEvent, '/kb/events'
+ACTIVE_CONCEPTS_TOPIC = '/kb/active_concepts'
+EVENTS_NS = EVENTS_SRV[1] + '/'
 
 
 class KbError(Exception):
@@ -87,13 +100,13 @@ class KB:
         if node is None:
             if not rclpy.ok():
                 rclpy.init()
-            self.node = Node("kb")
+            self.node = Node('kb')
             self.executor = MultiThreadedExecutor()
             self.executor.add_node(self.node)
             self.thread = threading.Thread(target=self.executor.spin)
             self.thread.start()
             self.self_running = True
-            print("self running KB")
+            print('self running KB')
         else:
             self.node = node
             self.self_running = False
@@ -186,7 +199,7 @@ class KB:
     async def _hello(self):
         res = await self._manage_srv.call_async(
             Manage.Request(action=Manage.Request.STATUS))
-        return json.loads(res.json)["name"]
+        return json.loads(res.json)['name']
 
     def stats(self):
         return self.async_run(self._stats)
@@ -208,7 +221,7 @@ class KB:
     async def _clear(self, keep_defaults=False):
         if keep_defaults:
             await self._manage_srv.call_async(
-                Manage.Request(action=Manage.Request.CLEAR, parameters=["keep_defaults"]))
+                Manage.Request(action=Manage.Request.CLEAR, parameters=['keep_defaults']))
 
         else:
             await self._manage_srv.call_async(Manage.Request(action=Manage.Request.CLEAR))
@@ -265,15 +278,14 @@ class KB:
         # check if we already have a registered an identical event pattern,
         # with an identifical callback
 
-        if evt.id in self._evt_subscribers and [
-            x
-            for x in filter(
+        if evt.id in self._evt_subscribers and list(
+            filter(
                 lambda cb, callback=callback: cb[0] == callback,
                 self._evt_subscribers[evt.id],
             )
-        ]:
+        ):
             self.node.get_logger().warn(
-                "Same event already subscribed to with same callback. Skipping."
+                'Same event already subscribed to with same callback. Skipping.'
             )
             return evt.id
 
@@ -286,16 +298,16 @@ class KB:
             )
         )
 
-        self.node.get_logger().debug("New event successfully registered with ID " + evt.id)
+        self.node.get_logger().debug('New event successfully registered with ID ' + evt.id)
 
         return evt.id
 
-    def find(self, patterns, vars=[], models=[]):
-        return self.async_run(self._find, patterns, vars, models)
+    def find(self, patterns, variables=[], models=[]):
+        return self.async_run(self._find, patterns, variables, models)
 
-    async def _find(self, patterns, vars=[], models=[]):
+    async def _find(self, patterns, variables=[], models=[]):
         res = await self._query_srv.call_async(Query.Request(
-            patterns=patterns, vars=vars, models=models))
+            patterns=patterns, vars=variables, models=models))
 
         if not res.success:
             raise KbError(res.error_msg)
@@ -337,9 +349,9 @@ class KB:
         labels = json.loads(res.json)
 
         if lang is None:
-            return labels["default"]
+            return labels['default']
         else:
-            return labels.get(lang, labels["default"])
+            return labels.get(lang, labels['default'])
 
     def details(self, term, models=[]):
         return self.async_run(self._details, term, models)
@@ -423,7 +435,7 @@ class KB:
             args = args[:-1]
 
         def get_vars(s):
-            return [v for v in s if v.startswith("?")]
+            return [v for v in s if v.startswith('?')]
 
         # Single argument
         if isinstance(args, str) or len(args) == 1:
@@ -431,8 +443,8 @@ class KB:
             toks = shlex.split(pattern)
             if len(toks) == 3:
                 pattern = self._replacestar(toks)
-                vars = get_vars(pattern)
-                return self.find(["%s %s %s" % pattern], vars, models)
+                variables = get_vars(pattern)
+                return self.find(['%s %s %s' % pattern], variables, models)
             else:
                 lookup = self.lookup(pattern, models)
                 return [concept[0] for concept in lookup]
@@ -444,7 +456,7 @@ class KB:
             for p in patterns:
                 allvars |= set(get_vars(p))
 
-            return self.find(["%s %s %s" % p for p in patterns], list(allvars), models)
+            return self.find(['%s %s %s' % p for p in patterns], list(allvars), models)
 
     def exist(self, pattern, models=[]):
         return len(self.find(pattern, models)) != 0
@@ -469,29 +481,29 @@ class KB:
         toks = shlex.split(pattern)
         if len(toks) == 3:
             pattern = self._replacestar(toks)
-            return self.exist(["%s %s %s" % pattern])
+            return self.exist(['%s %s %s' % pattern])
         else:
             return True if self.lookup(pattern) else False
 
     def revise(self, stmts, policy):
 
-        if policy["method"] in ["add", "update"]:
+        if policy['method'] in ['add', 'update']:
             return self.update(
                 stmts,
-                models=policy.setdefault("models", []),
-                lifespan=policy.setdefault("lifespan", 0),
+                models=policy.setdefault('models', []),
+                lifespan=policy.setdefault('lifespan', 0),
             )
-        elif policy["method"] in ["remove", "retract"]:
-            return self.remove(stmts, models=policy.setdefault("models", []))
+        elif policy['method'] in ['remove', 'retract']:
+            return self.remove(stmts, models=policy.setdefault('models', []))
         else:
-            raise KbError("unknown revise policy %s" % policy["method"])
+            raise KbError('unknown revise policy %s' % policy['method'])
 
     def update(self, stmts, models=[], lifespan=0):
         return self.async_run(self._update, stmts, models, lifespan)
 
     async def _update(self, stmts, models=[], lifespan=0):
 
-        if not (type(stmts) == list):
+        if not (type(stmts) is list):
             stmts = [stmts]
 
         res = await self._revise_srv.call_async(
@@ -581,7 +593,7 @@ class KB:
             kb += ["toto loves tata", "tata rdf:type Robot"]
 
         """
-        if not (type(stmts) == list):
+        if not (type(stmts) is list):
             stmts = [stmts]
 
         self.update(stmts)
@@ -603,7 +615,7 @@ class KB:
             kb -= ["toto loves tata", "tata rdf:type Robot"]
 
         """
-        if not (type(stmts) == list):
+        if not (type(stmts) is list):
             stmts = [stmts]
 
         self.remove(stmts)
@@ -613,12 +625,12 @@ class KB:
     def _replacestar(self, pattern):
         res = []
         for tok in pattern:
-            if tok == "*":
+            if tok == '*':
                 res.append(
-                    "?__"
-                    + "".join(
+                    '?__'
+                    + ''.join(
                         random.sample(
-                            "abcdefghijklmopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ", 5
+                            'abcdefghijklmopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', 5
                         )
                     )
                 )

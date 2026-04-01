@@ -1,23 +1,37 @@
 # -*- coding: utf-8 -*-
 
+# Copyright 2026 IIIA-CSIC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import json
 import unittest
+
+from kb_msgs.srv import Manage
+from kb_msgs.srv import Query
+from kb_msgs.srv import Revise
+from kb_msgs.srv import Sparql
+from launch import LaunchDescription
+import launch_ros
+import launch_testing
 import pytest
 import rclpy
 from rclpy.node import Node
-from kb_msgs.srv import Sparql
-from kb_msgs.srv import Query
-from kb_msgs.srv import Revise
-from kb_msgs.srv import Manage
 
-import launch_ros
-import launch_testing
-from launch import LaunchDescription
-
-MANAGE_SRV = Manage, "/kb/manage"
-REVISE_SRV = Revise, "/kb/revise"
-QUERY_SRV = Query, "/kb/query"
-SPARQL_SRV = Sparql, "/kb/sparql"
+MANAGE_SRV = Manage, '/kb/manage'
+REVISE_SRV = Revise, '/kb/revise'
+QUERY_SRV = Query, '/kb/query'
+SPARQL_SRV = Sparql, '/kb/sparql'
 
 
 @pytest.mark.rostest
@@ -27,7 +41,7 @@ def generate_test_description():
         executable='knowledge_core',
         output='both',
         emulate_tty=True,
-        arguments=["--debug", "--no-reasoner"])
+        arguments=['--debug', '--no-reasoner'])
 
     ld = LaunchDescription()
     ld.add_action(kb_node)
@@ -49,7 +63,7 @@ class TestKB(unittest.TestCase):
         if not rclpy.ok():
             rclpy.init()
 
-        cls.node = Node("kb_unittests")
+        cls.node = Node('kb_unittests')
         cls.logger = cls.node.get_logger()
 
         cls.manage_srv = cls.node.create_client(*MANAGE_SRV)
@@ -91,11 +105,11 @@ class TestKB(unittest.TestCase):
 
     def query(self, *args, **kwargs):
         if len(args) >= 1:
-            kwargs["patterns"] = args[0]
+            kwargs['patterns'] = args[0]
         if len(args) >= 2:
-            kwargs["vars"] = args[1]
+            kwargs['vars'] = args[1]
         if len(args) >= 2:
-            kwargs["models"] = args[2]
+            kwargs['models'] = args[2]
         args = []
 
         future = self.query_srv.call_async(Query.Request(
@@ -118,57 +132,57 @@ class TestKB(unittest.TestCase):
     def test_basics(self):
 
         self.assertTrue(
-            self.revise(statements=["ari rdf:type Robot"],
+            self.revise(statements=['ari rdf:type Robot'],
                         method=Revise.Request.ADD)
         )
 
-        res = self.query(["?s rdf:type Robot"])
-        self.assertCountEqual(json.loads(res.json), [{"s": "ari"}])
+        res = self.query(['?s rdf:type Robot'])
+        self.assertCountEqual(json.loads(res.json), [{'s': 'ari'}])
 
         self.manage(action=Manage.Request.CLEAR)
 
-        res = self.query(["?s ?p ?o"])
+        res = self.query(['?s ?p ?o'])
         self.assertCountEqual(json.loads(res.json), [])
 
     def test_base_revise(self):
 
         self.assertTrue(
-            self.revise(statements=["ari rdf:type Robot"],
+            self.revise(statements=['ari rdf:type Robot'],
                         method=Revise.Request.ADD)
         )
 
-        res = self.query(["?s rdf:type Robot"])
-        self.assertCountEqual(json.loads(res.json), [{"s": "ari"}])
+        res = self.query(['?s rdf:type Robot'])
+        self.assertCountEqual(json.loads(res.json), [{'s': 'ari'}])
 
         self.assertTrue(
             self.revise(
-                statements=["tiago a Robot", "stockbot a Robot"],
+                statements=['tiago a Robot', 'stockbot a Robot'],
                 method=Revise.Request.ADD,
             )
         )
 
-        res = self.query(["?s rdf:type Robot"])
+        res = self.query(['?s rdf:type Robot'])
         self.assertCountEqual(
             json.loads(res.json),
             [
-                {"s": "ari"},
-                {"s": "tiago"},
-                {"s": "stockbot"},
+                {'s': 'ari'},
+                {'s': 'tiago'},
+                {'s': 'stockbot'},
             ],
         )
 
         self.assertTrue(
             self.revise(
-                statements=["tiago a Robot", "ari rdf:type Robot"],
+                statements=['tiago a Robot', 'ari rdf:type Robot'],
                 method=Revise.Request.DELETE,
             )
         )
 
-        res = self.query(["?s rdf:type Robot"])
+        res = self.query(['?s rdf:type Robot'])
         self.assertCountEqual(
             json.loads(res.json),
             [
-                {"s": "stockbot"},
+                {'s': 'stockbot'},
             ],
         )
 
@@ -177,10 +191,10 @@ class TestKB(unittest.TestCase):
         self.assertTrue(
             self.revise(
                 statements=[
-                    "ari rdf:type Robot",
-                    "ari isIn kitchen",
-                    "tiago rdf:type Robot",
-                    "tiago isIn living_room",
+                    'ari rdf:type Robot',
+                    'ari isIn kitchen',
+                    'tiago rdf:type Robot',
+                    'tiago isIn living_room',
                 ],
                 method=Revise.Request.ADD,
             )
@@ -188,35 +202,35 @@ class TestKB(unittest.TestCase):
 
         self.assertTrue(
             self.revise(
-                statements=["ari ?p ?o"],
+                statements=['ari ?p ?o'],
                 method=Revise.Request.DELETE,
             )
         )
 
-        res = self.query(["ari ?p ?o"])
+        res = self.query(['ari ?p ?o'])
         self.assertFalse(json.loads(res.json))
 
         self.assertTrue(
             self.revise(
-                statements=["tiago isIn ?loc"],
+                statements=['tiago isIn ?loc'],
                 method=Revise.Request.DELETE,
             )
         )
 
-        res = self.query(["tiago ?p ?o"])
+        res = self.query(['tiago ?p ?o'])
         self.assertCountEqual(
             json.loads(res.json),
-            [{"p": "rdf:type", "o": "Robot"}],
+            [{'p': 'rdf:type', 'o': 'Robot'}],
         )
 
         self.assertTrue(
             self.revise(
-                statements=["?robot rdf:type Robot"],
+                statements=['?robot rdf:type Robot'],
                 method=Revise.Request.DELETE,
             )
         )
 
-        res = self.query(["?s rdf:type Robot"])
+        res = self.query(['?s rdf:type Robot'])
         self.assertFalse(json.loads(res.json))
 
         # TODO:
@@ -224,82 +238,82 @@ class TestKB(unittest.TestCase):
         # for a single statement.
         # self.assertTrue(
         #    self.revise(
-        #        statements=["stockbot rdf:type Robot", "talos rdf:type Robot"],
+        #        statements=['stockbot rdf:type Robot', 'talos rdf:type Robot'],
         #        method=Revise.Request.ADD,
         #    )
         # )
 
         # self.assertTrue(
         #    self.revise(
-        #        statements=["stockbot ?p ?o", "talos ?a ?b"],
+        #        statements=['stockbot ?p ?o', 'talos ?a ?b'],
         #        method=Revise.Request.DELETE,
         #    )
         # )
 
-        # res = self.query(["?s rdf:type Robot"])
+        # res = self.query(['?s rdf:type Robot'])
         # self.assertFalse(json.loads(res.json))
 
     def test_errors(self):
 
         self.assertFalse(
-            self.revise(statements=["term"], method=Revise.Request.ADD).success
+            self.revise(statements=['term'], method=Revise.Request.ADD).success
         )
         self.assertFalse(
-            self.revise(statements=["term term"],
+            self.revise(statements=['term term'],
                         method=Revise.Request.ADD).success
         )
         self.assertFalse(
             self.revise(
-                statements=["term term term term"], method=Revise.Request.ADD
+                statements=['term term term term'], method=Revise.Request.ADD
             ).success
         )
 
         self.assertFalse(
             self.revise(
-                statements=["subject predicate object", "term term term term"],
+                statements=['subject predicate object', 'term term term term'],
                 method=Revise.Request.ADD,
             ).success
         )
 
         # one of the previous statement is invalid -> no triples should have
         # been added at all
-        res = self.query(["subject predicate object"])
+        res = self.query(['subject predicate object'])
         self.assertFalse(json.loads(res.json))
 
         # invalid query
-        res = self.query(["subject"])
+        res = self.query(['subject'])
         self.assertFalse(res.success)
 
     def test_update(self):
 
         self.revise(
             statements=[
-                "hasGender rdf:type owl:FunctionalProperty",
-                "joe hasGender male",
+                'hasGender rdf:type owl:FunctionalProperty',
+                'joe hasGender male',
             ],
             method=Revise.Request.ADD,
         )
 
-        res = self.query(["joe hasGender ?gender"])
+        res = self.query(['joe hasGender ?gender'])
         self.assertCountEqual(
             json.loads(res.json),
             [
-                {"gender": "male"},
+                {'gender': 'male'},
             ],
         )
 
         self.revise(
             statements=[
-                "joe hasGender female",
+                'joe hasGender female',
             ],
             method=Revise.Request.UPDATE,
         )
 
-        res = self.query(["joe hasGender ?gender"])
+        res = self.query(['joe hasGender ?gender'])
         self.assertCountEqual(
             json.loads(res.json),
             [
-                {"gender": "female"},
+                {'gender': 'female'},
             ],
         )
 
@@ -308,96 +322,96 @@ class TestKB(unittest.TestCase):
         self.revise(
             method=Revise.Request.ADD,
             statements=[
-                "ari rdf:type Robot",
-                "Robot rdfs:subClassOf Machine",
-                "Robot rdfs:subClassOf Agent",
-                "joe rdf:type Human",
-                "Human rdfs:subClassOf Agent",
-                "joe eats carrot",
-                "ari eats electricity",
-                "eats rdfs:range Food",
+                'ari rdf:type Robot',
+                'Robot rdfs:subClassOf Machine',
+                'Robot rdfs:subClassOf Agent',
+                'joe rdf:type Human',
+                'Human rdfs:subClassOf Agent',
+                'joe eats carrot',
+                'ari eats electricity',
+                'eats rdfs:range Food',
             ],
         )
 
-        res = self.query(patterns=["?agent rdf:type Robot"])
+        res = self.query(patterns=['?agent rdf:type Robot'])
         self.assertCountEqual(
             json.loads(res.json),
             [
-                {"agent": "ari"},
+                {'agent': 'ari'},
             ],
         )
 
-        res = self.query(["Robot rdfs:subClassOf ?cls"])
+        res = self.query(['Robot rdfs:subClassOf ?cls'])
         self.assertCountEqual(
             json.loads(res.json),
             [
-                {"cls": "Machine"},
-                {"cls": "Agent"},
+                {'cls': 'Machine'},
+                {'cls': 'Agent'},
             ],
         )
 
-        res = self.query(["?subcls rdfs:subClassOf ?cls"])
+        res = self.query(['?subcls rdfs:subClassOf ?cls'])
         self.assertCountEqual(
             json.loads(res.json),
             [
-                {"cls": "Machine", "subcls": "Robot"},
-                {"cls": "Agent", "subcls": "Robot"},
-                {"cls": "Agent", "subcls": "Human"},
-            ],
-        )
-
-        res = self.query(
-            patterns=["?subcls rdfs:subClassOf ?cls"], vars=["?cls"])
-        self.assertCountEqual(
-            json.loads(res.json),
-            [
-                {"cls": "Machine"},
-                {"cls": "Agent"},
-                {"cls": "Agent"},
-            ],
-        )
-
-        res = self.query(["?__ rdfs:subClassOf Agent"])
-        self.assertCountEqual(
-            json.loads(res.json),
-            [
-                {"var1": "Robot"},
-                {"var1": "Human"},
+                {'cls': 'Machine', 'subcls': 'Robot'},
+                {'cls': 'Agent', 'subcls': 'Robot'},
+                {'cls': 'Agent', 'subcls': 'Human'},
             ],
         )
 
         res = self.query(
-            patterns=["?agent rdf:type Robot", "?agent eats ?food"])
+            patterns=['?subcls rdfs:subClassOf ?cls'], vars=['?cls'])
         self.assertCountEqual(
             json.loads(res.json),
             [
-                {"agent": "ari", "food": "electricity"},
+                {'cls': 'Machine'},
+                {'cls': 'Agent'},
+                {'cls': 'Agent'},
+            ],
+        )
+
+        res = self.query(['?__ rdfs:subClassOf Agent'])
+        self.assertCountEqual(
+            json.loads(res.json),
+            [
+                {'var1': 'Robot'},
+                {'var1': 'Human'},
+            ],
+        )
+
+        res = self.query(
+            patterns=['?agent rdf:type Robot', '?agent eats ?food'])
+        self.assertCountEqual(
+            json.loads(res.json),
+            [
+                {'agent': 'ari', 'food': 'electricity'},
             ],
         )
 
     def test_sparql(self):
 
         res = self.sparql(
-            query="SELECT ?a WHERE { ?a :eats ?b . }")
+            query='SELECT ?a WHERE { ?a :eats ?b . }')
 
-        # self.assertCountEqual(json.loads(res.json)["results"]["bindings"], [])
+        # self.assertCountEqual(json.loads(res.json)['results']['bindings'], [])
 
         self.revise(
             method=Revise.Request.ADD,
             statements=[
-                "joe eats carrot",
-                "ari eats electricity",
+                'joe eats carrot',
+                'ari eats electricity',
             ],
         )
 
         res = self.sparql(
-            query="SELECT ?a WHERE { ?a :eats ?b . }")
+            query='SELECT ?a WHERE { ?a :eats ?b . }')
 
-        self.assertEquals(len(json.loads(res.json)["results"]["bindings"]), 2)
+        self.assertEquals(len(json.loads(res.json)['results']['bindings']), 2)
 
         # invalid SPARQL! 'eats' has no namespace
         res = self.sparql(
-            query="SELECT ?a WHERE { ?a eats ?b . }")
+            query='SELECT ?a WHERE { ?a eats ?b . }')
         self.assertFalse(res.success)
 
     def test_reasoning(self):
@@ -405,47 +419,47 @@ class TestKB(unittest.TestCase):
 
         status = json.loads(self.manage(action=Manage.Request.STATUS).json)
 
-        if not status["reasoning_enabled"]:
+        if not status['reasoning_enabled']:
             self.logger.warn(
-                "RDFS Reasoner not available/enable. Skipping this test.")
+                'RDFS Reasoner not available/enable. Skipping this test.')
             return
 
         self.revise(
             method=Revise.Request.ADD,
             statements=[
-                "ari rdf:type Robot",
-                "Robot rdfs:subClassOf Machine",
-                "Robot rdfs:subClassOf Agent",
-                "joe rdf:type Human",
-                "Human rdfs:subClassOf Agent",
-                "joe eats carrot",
-                "ari eats electricity",
-                "eats rdfs:range Food",
+                'ari rdf:type Robot',
+                'Robot rdfs:subClassOf Machine',
+                'Robot rdfs:subClassOf Agent',
+                'joe rdf:type Human',
+                'Human rdfs:subClassOf Agent',
+                'joe eats carrot',
+                'ari eats electricity',
+                'eats rdfs:range Food',
             ],
         )
 
-        res = self.query(["?agent rdf:type Agent"])
+        res = self.query(['?agent rdf:type Agent'])
         self.assertCountEqual(
             json.loads(res.json),
             [
-                {"agent": "joe"},
-                {"agent": "ari"},
+                {'agent': 'joe'},
+                {'agent': 'ari'},
             ],
         )
 
-        res = self.query(["?food rdf:type Food"])
+        res = self.query(['?food rdf:type Food'])
         self.assertCountEqual(
             json.loads(res.json),
             [
-                {"food": "carrot"},
-                {"food": "electricity"},
+                {'food': 'carrot'},
+                {'food': 'electricity'},
             ],
         )
 
-        res = self.query(["?agent rdf:type Human", "?agent eats ?food"])
+        res = self.query(['?agent rdf:type Human', '?agent eats ?food'])
         self.assertCountEqual(
             json.loads(res.json),
             [
-                {"agent": "joe", "food": "carrot"},
+                {'agent': 'joe', 'food': 'carrot'},
             ],
         )

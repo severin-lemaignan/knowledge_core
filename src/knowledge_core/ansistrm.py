@@ -1,11 +1,43 @@
+# Copyright 2010-2011 Vinay Sajip
+# All rights reserved.
+#
+# Software License Agreement (BSD License 2.0)
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#
+#  * Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+#  * Redistributions in binary form must reproduce the above
+#    copyright notice, this list of conditions and the following
+#    disclaimer in the documentation and/or other materials provided
+#    with the distribution.
+#  * Neither the name of Vinay Sajip nor the names of its
+#    contributors may be used to endorse or promote products derived
+#    from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+
+
 #
 # Based on https://gist.github.com/758430
-# Copyright (C) 2010-2011 Vinay Sajip. All rights reserved. Licensed under the new BSD license.
 #
 import logging
 import os
 
-if os.name == "nt":
+if os.name == 'nt':
     import ctypes
     import re
 
@@ -13,31 +45,31 @@ if os.name == "nt":
 class ColorizingStreamHandler(logging.StreamHandler):
     # color names to indices
     color_map = {
-        "black": 0,
-        "red": 1,
-        "green": 2,
-        "yellow": 3,
-        "blue": 4,
-        "magenta": 5,
-        "cyan": 6,
-        "white": 7,
+        'black': 0,
+        'red': 1,
+        'green': 2,
+        'yellow': 3,
+        'blue': 4,
+        'magenta': 5,
+        'cyan': 6,
+        'white': 7,
     }
 
     # levels to (background, foreground, bold/intense, blink -- only if bold = False)
     bright_scheme = {
-        logging.DEBUG: (None, "blue", False, False),
-        logging.INFO: (None, "white", False, False),
-        logging.WARNING: (None, "yellow", False, False),
-        logging.ERROR: (None, "red", False, False),
-        logging.CRITICAL: ("red", "white", True, False),
+        logging.DEBUG: (None, 'blue', False, False),
+        logging.INFO: (None, 'white', False, False),
+        logging.WARNING: (None, 'yellow', False, False),
+        logging.ERROR: (None, 'red', False, False),
+        logging.CRITICAL: ('red', 'white', True, False),
     }
 
     dark_scheme = {
-        logging.DEBUG: (None, "blue", False, False),
-        logging.INFO: (None, "black", False, False),
-        logging.WARNING: (None, "yellow", False, False),
-        logging.ERROR: (None, "red", False, False),
-        logging.CRITICAL: ("red", "black", True, False),
+        logging.DEBUG: (None, 'blue', False, False),
+        logging.INFO: (None, 'black', False, False),
+        logging.WARNING: (None, 'yellow', False, False),
+        logging.ERROR: (None, 'red', False, False),
+        logging.CRITICAL: ('red', 'black', True, False),
     }
 
     mono_scheme = {
@@ -49,30 +81,30 @@ class ColorizingStreamHandler(logging.StreamHandler):
     }
 
     xmas_scheme = {
-        logging.DEBUG: ("red", "yellow", False, True),
-        logging.INFO: ("red", "white", False, True),
-        logging.WARNING: ("red", "yellow", False, True),
-        logging.ERROR: ("red", "yellow", False, True),
-        logging.CRITICAL: ("red", "white", False, True),
+        logging.DEBUG: ('red', 'yellow', False, True),
+        logging.INFO: ('red', 'white', False, True),
+        logging.WARNING: ('red', 'yellow', False, True),
+        logging.ERROR: ('red', 'yellow', False, True),
+        logging.CRITICAL: ('red', 'white', False, True),
     }
 
-    csi = "\x1b["
-    reset = "\x1b[0m"
+    csi = '\x1b['
+    reset = '\x1b[0m'
 
     def __init__(self, scheme=None):
         super(ColorizingStreamHandler, self).__init__()
-        if scheme == "xmas":
+        if scheme == 'xmas':
             self.level_map = self.xmas_scheme
-        elif scheme == "dark":
+        elif scheme == 'dark':
             self.level_map = self.dark_scheme
-        elif scheme == "mono":
+        elif scheme == 'mono':
             self.level_map = self.mono_scheme
         else:
             self.level_map = self.bright_scheme
 
     @property
     def is_tty(self):
-        isatty = getattr(self.stream, "isatty", None)
+        isatty = getattr(self.stream, 'isatty', None)
         return isatty and isatty()
 
     def emit(self, record):
@@ -86,18 +118,18 @@ class ColorizingStreamHandler(logging.StreamHandler):
                 stream.write(message)
             else:
                 self.output_colorized(message)
-            stream.write(getattr(self, "terminator", "\n"))
+            stream.write(getattr(self, 'terminator', '\n'))
             self.flush()
         except (KeyboardInterrupt, SystemExit):
             raise
 
-    if os.name != "nt":
+    if os.name != 'nt':
 
         def output_colorized(self, message):
             self.stream.write(message)
 
     else:
-        ansi_esc = re.compile(r"\x1b\[((?:\d+)(?:;(?:\d+))*)m")
+        ansi_esc = re.compile(r'\x1b\[((?:\d+)(?:;(?:\d+))*)m')
 
         nt_color_map = {
             0: 0x00,  # black
@@ -114,7 +146,7 @@ class ColorizingStreamHandler(logging.StreamHandler):
             parts = self.ansi_esc.split(message)
             write = self.stream.write
             h = None
-            fd = getattr(self.stream, "fileno", None)
+            fd = getattr(self.stream, 'fileno', None)
             if fd is not None:
                 fd = fd()
                 if fd in (1, 2):  # stdout or stderr
@@ -126,7 +158,7 @@ class ColorizingStreamHandler(logging.StreamHandler):
                 if parts:
                     params = parts.pop(0)
                     if h is not None:
-                        params = [int(p) for p in params.split(";")]
+                        params = [int(p) for p in params.split(';')]
                         color = 0
                         for p in params:
                             if 40 <= p <= 47:
@@ -151,16 +183,16 @@ class ColorizingStreamHandler(logging.StreamHandler):
             if fg in self.color_map:
                 params.append(str(self.color_map[fg] + 30))
             if bold:
-                params.append("1")
+                params.append('1')
             elif blink:
-                params.append("5")
+                params.append('5')
             if params:
-                message = "".join(
-                    (self.csi, ";".join(params), "m", message, self.reset)
+                message = ''.join(
+                    (self.csi, ';'.join(params), 'm', message, self.reset)
                 )
         return message
 
-    def format(self, record):
+    def format(self, record):  # noqa: A003
         try:
             message = logging.StreamHandler.format(self, record)
         # Catch the case when there is a zombie logger, when re-launching
@@ -177,12 +209,12 @@ def main():
     root = logging.getLogger()
     root.setLevel(logging.DEBUG)
     root.addHandler(ColorizingStreamHandler())
-    logging.debug("DEBUG")
-    logging.info("INFO")
-    logging.warning("WARNING")
-    logging.error("ERROR")
-    logging.critical("CRITICAL")
+    logging.debug('DEBUG')
+    logging.info('INFO')
+    logging.warning('WARNING')
+    logging.error('ERROR')
+    logging.critical('CRITICAL')
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
