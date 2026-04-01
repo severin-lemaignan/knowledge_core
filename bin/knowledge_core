@@ -1,10 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import asynchat
-import asyncore
+import asyncio
 import json
-import socket
 import sys
 from knowledge_core import __version__
 
@@ -15,50 +13,18 @@ logger = logging.getLogger("KnowledgeCore")
 
 PORT = 6969
 
+TERMINATOR = "#end#"
 
-class KnowledgeCoreChannel(asynchat.async_chat):
-    def __init__(self, server, sock, addr, kb):
-        asynchat.async_chat.__init__(self, sock)
-        self.set_terminator("#end#".encode("utf-8"))
-        self.request = None
-        self.data = ""
 
-        self.kb = kb
+class KnowledgeCoreClient:
+    """Represents a connected TCP client.
 
-    def parse_request(self, req):
-        tokens = [a.strip() for a in req.strip().split("\n")]
-        if len(tokens) == 1:
-            return tokens[0], [], {}
-        else:
-            args = []
-            for t in tokens[1:]:
-                try:
-                    args.append(json.loads(t))
-                except ValueError:
-                    logger.error(
-                        "Invalid arguments for <%s>: %s. Valid JSON was expected."
-                        % (tokens[0], t)
-                    )
+    Stored by the KB in its request/response queues, and called back
+    via sendmsg() from kb.process().
+    """
 
-            if isinstance(args[-1], dict) and "kwargs" in args[-1]:
-                kwargs = args[-1]["kwargs"]
-                args = args[:-1]
-            else:
-                kwargs = {}
-            return tokens[0], args, kwargs
-
-    def collect_incoming_data(self, data):
-        self.data = self.data + data.decode()
-
-    def found_terminator(self):
-
-        logger.debug("Got request:" + self.data)
-        request, args, kwargs = self.parse_request(self.data)
-        self.data = ""
-        self.kb.submitrequest(self, request, *args, **kwargs)
-
-        if request == "close":
-            self.close_when_done()
+    def __init__(self, writer):
+        self.writer = writer
 
     def sendmsg(self, msg):
         status, res = msg
@@ -81,23 +47,96 @@ class KnowledgeCoreChannel(asynchat.async_chat):
             raise RuntimeError("Unexpected message status: %s" % status)
 
         logger.debug("Sent message:" + raw)
-        self.push((raw + "#end#\n").encode("utf-8"))
+        self.writer.write((raw + "#end#\n").encode("utf-8"))
 
 
-class KnowledgeCoreServer(asyncore.dispatcher):
-    def __init__(self, port, kb):
-        asyncore.dispatcher.__init__(self)
+def parse_request(req):
+    tokens = [a.strip() for a in req.strip().split("\n")]
+    if len(tokens) == 1:
+        return tokens[0], [], {}
+    else:
+        args = []
+        for t in tokens[1:]:
+            try:
+                args.append(json.loads(t))
+            except ValueError:
+                logger.error(
+                    "Invalid arguments for <%s>: %s. Valid JSON was expected."
+                    % (tokens[0], t)
+                )
 
-        self.kb = kb
+        if isinstance(args[-1], dict) and "kwargs" in args[-1]:
+            kwargs = args[-1]["kwargs"]
+            args = args[:-1]
+        else:
+            kwargs = {}
+        return tokens[0], args, kwargs
 
-        self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.set_reuse_addr()
-        self.bind(("", port))
-        self.listen(5)
 
-    def handle_accept(self):
-        conn, addr = self.accept()
-        KnowledgeCoreChannel(self, conn, addr, kb)
+async def handle_client(reader, writer, kb):
+    client = KnowledgeCoreClient(writer)
+    buffer = ""
+
+    try:
+        while True:
+            data = await reader.read(4096)
+            if not data:
+                break
+            buffer += data.decode()
+
+            while TERMINATOR in buffer:
+                message, buffer = buffer.split(TERMINATOR, 1)
+                message = message.strip()
+                if not message:
+                    continue
+
+                logger.debug("Got request:" + message)
+                request, args, kwargs = parse_request(message)
+                kb.submitrequest(client, request, *args, **kwargs)
+
+                if request == "close":
+                    writer.close()
+                    await writer.wait_closed()
+                    return
+    except (ConnectionResetError, BrokenPipeError):
+        pass
+    finally:
+        if not writer.is_closing():
+            writer.close()
+            await writer.wait_closed()
+
+
+async def process_loop(kb, ros=None):
+    """Periodic processing loop, replacing the old asyncore-based main loop."""
+    while True:
+        kb.process()
+        if ros:
+            ros.step()
+        await asyncio.sleep(0.02)
+
+
+async def run_server(port, kb, ros=None):
+    server = await asyncio.start_server(
+        lambda r, w: handle_client(r, w, kb),
+        "",
+        port,
+        reuse_address=True,
+    )
+
+    logger.info("Starting to serve at port %d..." % port)
+    logger.info("KnowledgeCore ready")
+
+    processing_task = asyncio.create_task(process_loop(kb, ros))
+
+    try:
+        async with server:
+            await server.serve_forever()
+    finally:
+        processing_task.cancel()
+        try:
+            await processing_task
+        except asyncio.CancelledError:
+            pass
 
 
 def version():
@@ -169,9 +208,7 @@ def main():
 
     kb = KnowledgeCore(args.ontology, enable_reasoner=args.no_reasoner)
 
-    s = KnowledgeCoreServer(args.port, kb)
-    logger.info("Starting to serve at port %d..." % args.port)
-
+    ros = None
     if args.no_ros:
         logger.info("Initializing the ROS node...")
         from knowledge_core.knowledge_core_ros import KnowledgeCoreROS
@@ -182,19 +219,10 @@ def main():
 
         ros = KnowledgeCoreROS(kb)
 
-    logger.info("KnowledgeCore ready")
-
     try:
-        while True:
-            asyncore.loop(
-                timeout=0.02, count=1
-            )  # event will be notified at worst 20ms after they are triggered
-            kb.process()
-            if args.no_ros:
-                ros.step()
-
+        asyncio.run(run_server(args.port, kb, ros))
     except KeyboardInterrupt:
-        if args.no_ros:
+        if ros:
             ros.shutdown()
         logger.info("Bye bye")
 
