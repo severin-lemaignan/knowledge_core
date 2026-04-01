@@ -2,8 +2,8 @@
 Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.11.0 (2026-04-01)
+-------------------
 * port from asynchat to asyncio
   asynchat has been deprecated since Python 3.6, and removed in Python 3.12
   Port entierly written by Claude AI
