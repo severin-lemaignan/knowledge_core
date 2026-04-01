@@ -15,7 +15,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import asyncio
 import json
 import random
 import shlex
@@ -181,7 +180,8 @@ class KB:
 
     @staticmethod
     def async_run(coro: Coroutine, *args, **kwargs):
-        """Run an async method synchronously by driving rclpy Futures directly.
+        """
+        Run an async method synchronously by driving rclpy Futures directly.
 
         rclpy Futures are not asyncio-compatible, so we manually step through
         the coroutine, waiting for each yielded rclpy Future to complete

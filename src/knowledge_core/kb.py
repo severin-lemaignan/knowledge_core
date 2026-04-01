@@ -103,6 +103,23 @@ N3_PROLOGUE += (
 QUOTE_REGEX = re.compile(
     r'^(\".*\"|\'.*\'|\"\"\".*\"\"\"|\'\'\'.*\'\'\')$', re.DOTALL)
 
+# Regex to tokenize a statement into terms while respecting quoted strings.
+# Matches triple-quoted strings (with optional lang/datatype suffix),
+# single-quoted strings (with optional suffix), or non-whitespace tokens.
+STMT_TOKEN_REGEX = re.compile(
+    r'""".*?"""(?:@[\w-]+|\^\^(?:<[^>]+>|[\w:]+))?'
+    r'|"[^"]*"(?:@[\w-]+|\^\^(?:<[^>]+>|[\w:]+))?'
+    r"|'''.*?'''(?:@[\w-]+|\^\^(?:<[^>]+>|[\w:]+))?"
+    r"|'[^']*'(?:@[\w-]+|\^\^(?:<[^>]+>|[\w:]+))?"
+    r'|[^\s]+',
+    re.DOTALL,
+)
+
+
+def split_stmt(stmt):
+    """Split a statement into tokens, respecting quoted strings."""
+    return STMT_TOKEN_REGEX.findall(stmt)
+
 
 def ORO(term: str):
     return URIRef(IRIS[DEFAULT_PREFIX] + term)
@@ -132,7 +149,7 @@ def parse_stmts_to_graph(stmts):
                 'invalid syntax for statement %s: it should be formed of 3 terms.'
                 % stmt
             )
-        stmt = ' '.join([turtle_escape(t) for t in stmt.split()])
+        stmt = ' '.join([turtle_escape(t) for t in split_stmt(stmt)])
         data += ' %s . ' % stmt
 
     try:
@@ -160,6 +177,18 @@ def turtle_escape(string):
     if bool(QUOTE_REGEX.fullmatch(string)):
         return string
 
+    # Don't escape quoted literals with lang/datatype suffixes
+    # (e.g. "foo"@en, "10"^^xsd:integer)
+    if string.startswith(('"""', "'''", '"', "'")):
+        return string
+
+    # Don't escape numeric literals (integers, floats, scientific notation)
+    try:
+        float(string)
+        return string
+    except ValueError:
+        pass
+
     for c in "~.-!$&'()*+,;=/#%":  # exclude ? and @, as they might be legitimate in a term
         string = string.replace(c, '\\' + c)
     return string
@@ -169,7 +198,7 @@ def turtle_escape(string):
 def parse_stmt(stmt):
 
     logger.warning('Parsing statement: %s' % stmt)
-    stmt = ' '.join([turtle_escape(t) for t in stmt.split()])
+    stmt = ' '.join([turtle_escape(t) for t in split_stmt(stmt)])
 
     try:
         return list(Graph().parse(data=N3_PROLOGUE + '%s .' % stmt, format='n3'))[0]

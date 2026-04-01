@@ -222,8 +222,8 @@ class TestPythonicROSKb(unittest.TestCase):
         )
 
         # as 'sentence' is only a partial match, it should be listed last
-        self.assertEqual(self.kb.lookup('alfred')
-                          [-1], ['sentence', 'undecided'])
+        self.assertEqual(
+            self.kb.lookup('alfred')[-1], ['sentence', 'undecided'])
 
         self.kb.clear()
 
