@@ -179,19 +179,27 @@ class KB:
         for cb in self._active_concepts_callbacks:
             cb(msg.concepts)
 
-    """
-    Helper function to run an async function as a standard blocking one.
-
-    It attempts to execute the coroutine in a new event loop.
-    If it fails due to a running event loop already existing,
-    it uses the latter to execute the coroutine.
-    """
     @staticmethod
     def async_run(coro: Coroutine, *args, **kwargs):
+        """Run an async method synchronously by driving rclpy Futures directly.
+
+        rclpy Futures are not asyncio-compatible, so we manually step through
+        the coroutine, waiting for each yielded rclpy Future to complete
+        (resolved by whatever rclpy executor is spinning the node).
+        """
+        import time
+        gen = coro(*args, **kwargs)
         try:
-            return asyncio.run(coro(*args, **kwargs))
-        except RuntimeError:
-            return asyncio.get_running_loop().run_until_complete(coro(*args, **kwargs))
+            future = gen.send(None)
+            while True:
+                while rclpy.ok() and not future.done():
+                    time.sleep(0.01)
+                try:
+                    future = gen.send(future.result())
+                except StopIteration as e:
+                    return e.value
+        except StopIteration as e:
+            return e.value
 
     def hello(self):
         return self.async_run(self._hello)
