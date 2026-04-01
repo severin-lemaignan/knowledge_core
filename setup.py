@@ -21,8 +21,11 @@ def generate_kb_explorer_files():
 
 
 def readme():
-    with open('README-pypi.rst') as f:
-        return f.read()
+    try:
+        with open('README-pypi.rst') as f:
+            return f.read()
+    except FileNotFoundError:
+        return ""
 
 
 setup(
