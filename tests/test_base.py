@@ -455,6 +455,199 @@ class TestKnowledgeCore(unittest.TestCase):
         self.kb.check_expired_stmts()
         self.assertFalse('john' in self.kb)
 
+    def test_sparql(self):
+
+        self.kb += ['joe eats carrot', 'ari eats electricity']
+
+        res = self.kb.sparql('SELECT ?a WHERE { ?a :eats ?b . }')
+        self.assertEqual(len(res['results']['bindings']), 2)
+
+        # empty result
+        res = self.kb.sparql('SELECT ?a WHERE { ?a :drinks ?b . }')
+        self.assertEqual(len(res['results']['bindings']), 0)
+
+        # invalid SPARQL ('eats' has no namespace prefix)
+        with self.assertRaises(KbServerError):
+            self.kb.sparql('SELECT ?a WHERE { ?a eats ?b . }')
+
+    def test_label(self):
+
+        self.kb += ['robot1 rdf:type Robot']
+
+        # no label set -> returns the term name
+        labels = self.kb.label('robot1')
+        self.assertEqual(labels['default'], 'robot1')
+
+        # set an untagged label
+        self.kb += ['robot1 rdfs:label "My Robot"']
+        labels = self.kb.label('robot1')
+        self.assertEqual(str(labels['default']), 'My Robot')
+
+        # set language-tagged labels
+        self.kb += ['robot1 rdfs:label "Mon Robot"@fr']
+        self.kb += ['robot1 rdfs:label "Mi Robot"@es']
+        labels = self.kb.label('robot1')
+        self.assertEqual(str(labels['fr']), 'Mon Robot')
+        self.assertEqual(str(labels['es']), 'Mi Robot')
+
+    def test_details(self):
+
+        self.kb += [
+            'Robot rdfs:subClassOf Agent',
+            'ari rdf:type Robot',
+            'ari likes cookies',
+        ]
+
+        details = self.kb.details('ari')
+        self.assertEqual(details['id'], 'ari')
+        self.assertEqual(details['type'], 'instance')
+        # ari should have 'Robot' as a class
+        class_ids = [
+            v['id'] for v in details['attributes'][0]['values']
+        ]
+        self.assertIn('Robot', class_ids)
+        # ari likes cookies should appear in relations
+        rel_strs = [' '.join(r) for r in details['relations']]
+        self.assertTrue(
+            any('likes' in r and 'cookies' in r for r in rel_strs)
+        )
+
+        details = self.kb.details('Robot')
+        self.assertEqual(details['type'], 'class')
+
+    def test_wildcard_retract(self):
+
+        self.kb += [
+            'ari rdf:type Robot',
+            'ari isIn kitchen',
+            'tiago rdf:type Robot',
+            'tiago isIn living_room',
+        ]
+
+        # retract all properties of ari
+        self.kb.remove(['ari ?p ?o'])
+        self.assertFalse('ari' in self.kb)
+
+        # tiago should still be there
+        self.assertTrue('tiago rdf:type Robot' in self.kb)
+        self.assertTrue('tiago isIn living_room' in self.kb)
+
+        # retract a specific predicate with wildcard object
+        self.kb.remove(['tiago isIn ?loc'])
+        self.assertFalse('tiago isIn living_room' in self.kb)
+        self.assertTrue('tiago rdf:type Robot' in self.kb)
+
+        # retract with wildcard subject
+        self.kb.remove(['?robot rdf:type Robot'])
+        self.assertFalse('tiago rdf:type Robot' in self.kb)
+
+    def test_wildcard_retract_multi_stmt_error(self):
+
+        self.kb += ['alpha bravo charlie', 'delta echo foxtrot']
+
+        with self.assertRaises(KbServerError):
+            self.kb.remove(['?s bravo ?o', '?s echo ?o'])
+
+    def test_oneshot_event(self):
+
+        CLIENT = 'test_client'
+
+        evt_id = self.kb.subscribe(['?h rdf:type Human'], one_shot=True)
+        self.kb.eventsubscriptions.setdefault(evt_id, []).append(CLIENT)
+
+        # should trigger
+        self.kb += ['joe rdf:type Human']
+        msg_type, evt = self._get_event(CLIENT)
+        self.assertEqual(msg_type, 'event')
+
+        # should NOT trigger again (one-shot)
+        self.kb += ['john rdf:type Human']
+        self._assert_no_event(CLIENT)
+
+    def test_event_deduplication(self):
+
+        # subscribing the same pattern twice should return the same event id
+        evt_id1 = self.kb.subscribe(['?x rdf:type Cat'])
+        evt_id2 = self.kb.subscribe(['?x rdf:type Cat'])
+        self.assertEqual(evt_id1, evt_id2)
+
+    def test_model_isolation(self):
+
+        self.kb.update(['alice rdf:type Human'], ['modelA'])
+        self.kb.update(['bob rdf:type Robot'], ['modelB'])
+
+        # alice should be visible in modelA but not modelB
+        res = self.kb.find(['?s rdf:type Human'], models=['modelA'])
+        self.assertEqual(len(res), 1)
+        self.assertEqual(res[0]['s'], 'alice')
+
+        res = self.kb.find(['?s rdf:type Human'], models=['modelB'])
+        self.assertEqual(len(res), 0)
+
+        # bob should be visible in modelB but not modelA
+        res = self.kb.find(['?s rdf:type Robot'], models=['modelB'])
+        self.assertEqual(len(res), 1)
+        res = self.kb.find(['?s rdf:type Robot'], models=['modelA'])
+        self.assertEqual(len(res), 0)
+
+    def test_find_with_explicit_variables(self):
+
+        self.kb += [
+            'alice rdf:type Human',
+            'bob rdf:type Human',
+            'alice likes pizza',
+            'bob likes pasta',
+        ]
+
+        # without restricting variables -> all named vars returned
+        res = self.kb.find(
+            ['?person rdf:type Human', '?person likes ?food']
+        )
+        self.assertTrue(all('person' in r and 'food' in r for r in res))
+
+        # restricting to only ?food
+        res = self.kb.find(
+            ['?person rdf:type Human', '?person likes ?food'],
+            variables=['?food'],
+        )
+        self.assertCountEqual(res, [{'food': 'pizza'}, {'food': 'pasta'}])
+        # ?person should not be in the results
+        self.assertTrue(all('person' not in r for r in res))
+
+    def test_retract_nonexistent(self):
+
+        # removing a statement that doesn't exist should not raise
+        self.kb.remove(['nonexistent somerel something'])
+
+    def test_exist_direct(self):
+
+        self.kb += ['alice rdf:type Human']
+
+        self.assertTrue(self.kb.exist(['alice rdf:type Human']))
+        self.assertFalse(self.kb.exist(['bob rdf:type Human']))
+
+        # exist with variables (acts as a query)
+        self.assertTrue(self.kb.exist(['?s rdf:type Human']))
+        self.assertFalse(self.kb.exist(['?s rdf:type Robot']))
+
+        # exist with explicit models
+        self.kb.update(['secret rdf:type Spy'], ['hidden_model'])
+        self.assertTrue(
+            self.kb.exist(['secret rdf:type Spy'], models=['hidden_model'])
+        )
+        self.assertFalse(
+            self.kb.exist(['secret rdf:type Spy'], models=['default'])
+        )
+
+    def test_clear_keeps_defaults(self):
+
+        self.kb += ['temporary rdf:type Thing']
+        self.assertTrue('temporary rdf:type Thing' in self.kb)
+
+        self.kb.clear(keep_defaults=True)
+        # after clear, the temporary fact should be gone
+        self.assertFalse('temporary' in self.kb)
+
 
 def version():
     print('KnowledgeCore tests %s' % __version__)
