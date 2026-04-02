@@ -2,8 +2,8 @@
 Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.12.0 (2026-04-02)
+-------------------
 * [minor] add .vscode to gitignore
 * linting
 * add batch mode benchmark comparing sequential vs batched updates
