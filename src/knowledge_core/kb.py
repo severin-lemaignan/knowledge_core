@@ -93,6 +93,11 @@ SPARQL_PREFIXES = ''.join(['PREFIX %s: <%s>\n' % (p, iri)
 SPARQL_PREFIXES += 'PREFIX : <%s>\n' % IRIS[DEFAULT_PREFIX]
 SPARQL_PREFIXES += 'BASE <%s>\n' % IRIS[DEFAULT_PREFIX]
 
+# Pre-computed namespace map for use with rdflib's initNs parameter,
+# avoiding repeated string concatenation of PREFIX blocks in SPARQL queries.
+SPARQL_NS_MAP = {p: Namespace(iri) for p, iri in IRIS.items()}
+SPARQL_NS_MAP[''] = Namespace(IRIS[DEFAULT_PREFIX])
+
 
 # reference: https://www.w3.org/TeamSubmission/n3/#syntax
 N3_PROLOGUE = ' '.join(['@prefix %s: <%s>.' % (p, iri)
@@ -1111,16 +1116,19 @@ class KnowledgeCore:
 
     def mark_active_concept(self, term: Node, model: str):
         expiry_date = date_time(time.time() + ACTIVE_CONCEPT_LIFESPAN)
-        subgraph = Graph()
-        for p, iri in IRIS.items():
-            subgraph.bind(p, iri)
-        subgraph.bind('', IRIS[DEFAULT_PREFIX])
 
-        subgraph.add((term, RDF.type, ORO('ActiveConcept')))
-        concept = shorten_term(subgraph, term)
+        # Add the triple directly to the model graph (avoid creating
+        # a heavyweight Graph with namespace bindings for a single triple)
+        triple = (term, RDF.type, ORO('ActiveConcept'))
+        self.models[model].graph.add(triple)
+
+        concept = shorten_term(self.models[model].graph, term)
         logger.info('Marking <%s> as ActiveConcept' % concept)
         self.active_concepts.add(concept)
-        self.models[model].graph += subgraph
+
+        # Metadata still needs a subgraph as key for expiry tracking
+        subgraph = Graph()
+        subgraph.add(triple)
         self.models[model].metadata.add(
             (subgraph, EXPIRES_ON_TERM, Literal(expiry_date, datatype=XSD.dateTime)))
 
@@ -1408,31 +1416,27 @@ class KnowledgeCore:
 
         :return: result of the query(see `raw` parameter) and original query,
         augmented with standard SPARQL prefixes.
-
-        TODO: as a(potential?) optimization, pass initNs to graph.query,
-              instead of adding the PREFIX strings to the query
         """
-        q = SPARQL_PREFIXES
-        q += query
-
-        logger.debug('Executing SPARQL query in model: %s\n%s' % (model, q))
+        logger.debug('Executing SPARQL query in model: %s\n%s' % (model, query))
 
         import pyparsing
 
         try:
-            res = self.models[model].materialized_graph.query(q)
+            res = self.models[model].materialized_graph.query(
+                query, initNs=SPARQL_NS_MAP
+            )
             if raw:
-                return res, q
+                return res, query
             else:
                 no_bnode = list(filter(
                     lambda s: all(type(t) is not BNode for t in s), res))
-                return no_bnode, q
+                return no_bnode, query
         except pyparsing.ParseException:
             raise KbServerError(
-                'Syntax error while parsing SPARQL query:\n%s' % q)
+                'Syntax error while parsing SPARQL query:\n%s' % query)
         except TypeError as te:
             raise KbServerError(
-                'Syntax error while parsing SPARQL query:\n%s\nException was: %s' % (q, te))
+                'Syntax error while parsing SPARQL query:\n%s\nException was: %s' % (query, te))
 
     def named_variables(self, variables):
         """
@@ -1559,25 +1563,26 @@ class KnowledgeCore:
                 % ((end - start) * 1000)
             )
 
-    def check_expired_stmts(self):
-        logger.debug('Checking for expired statements...')
-
-        # TODO: as a (potential?) optimization, pass initNs to graph.query,
-        # instead of adding the PREFIX strings to the query
-        q = SPARQL_PREFIXES
-        q += """
+    _EXPIRED_STMTS_QUERY = """
         SELECT ?subgraph ?date
         WHERE {
            ?subgraph :expiresOn ?date .
            FILTER (?date <= ?now)
         }
-        """
+    """
+
+    def check_expired_stmts(self):
+        logger.debug('Checking for expired statements...')
 
         now = Literal(date_time(time.time()), datatype=XSD.dateTime)
 
         for name, model in self.models.items():
 
-            res = model.metadata.query(q, initBindings={'now': now})
+            res = model.metadata.query(
+                self._EXPIRED_STMTS_QUERY,
+                initBindings={'now': now},
+                initNs=SPARQL_NS_MAP,
+            )
             if res:
                 for row in res:
                     graph = row[0]
