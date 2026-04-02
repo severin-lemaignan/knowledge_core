@@ -1464,8 +1464,10 @@ class KnowledgeCore:
             return False
 
     def batch(self):
-        """Return a context manager that defers materialisation and event
-        evaluation until all updates in the batch complete.
+        """
+        Return a context manager that defers materialisation and event evaluation.
+
+        Defered until all updates in the batch complete.
 
         Usage::
 
@@ -1478,7 +1480,8 @@ class KnowledgeCore:
         return self._BatchContext(self)
 
     def _ensure_materialised(self, models=None):
-        """Materialise if any model is dirty, then update functional properties.
+        """
+        Materialise if any model is dirty, then update functional properties.
 
         Called lazily before any query against the materialised graph.
         """
@@ -1495,7 +1498,6 @@ class KnowledgeCore:
         # need to materialise as soon as possible after the model has been
         # changed so that events are triggered in a timely fashion
         self._ensure_materialised()
-
 
         to_remove = [
             e_id for e_id, clients in self.eventsubscriptions.items() if len(clients) == 0]

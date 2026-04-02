@@ -14,9 +14,8 @@
 
 """Shared fixtures for performance benchmarks."""
 
-import pytest
-
 from knowledge_core.kb import KnowledgeCore
+import pytest
 
 from .generators import generate_flat_triples, generate_typed_triples
 
@@ -31,17 +30,17 @@ KB_SIZES = [100, 1_000, 10_000]
 KB_SIZES_LIGHT = [100, 1_000]
 
 
-@pytest.fixture(params=[False, True], ids=["no_reasoner", "reasoner"])
+@pytest.fixture(params=[False, True], ids=['no_reasoner', 'reasoner'])
 def reasoner_enabled(request):
     return request.param
 
 
-@pytest.fixture(params=KB_SIZES, ids=[f"{n}_facts" for n in KB_SIZES])
+@pytest.fixture(params=KB_SIZES, ids=[f'{n}_facts' for n in KB_SIZES])
 def kb_size(request):
     return request.param
 
 
-@pytest.fixture(params=KB_SIZES_LIGHT, ids=[f"{n}_facts" for n in KB_SIZES_LIGHT])
+@pytest.fixture(params=KB_SIZES_LIGHT, ids=[f'{n}_facts' for n in KB_SIZES_LIGHT])
 def kb_size_light(request):
     return request.param
 
