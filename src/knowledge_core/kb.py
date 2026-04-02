@@ -458,6 +458,8 @@ class KnowledgeCore:
 
         self._functionalproperties = frozenset()
 
+        self._batch_depth = 0  # >0 means we're inside a batch() context
+
         # perform initial materialisation so that built-in OWL2 RL axioms
         # (cls-thing, cls-nothing1) are available immediately
         self.materialise()
@@ -545,6 +547,7 @@ class KnowledgeCore:
         result = []
 
         models = self.normalize_models(models)
+        self._ensure_materialised(models)
 
         term = None
         try:
@@ -582,6 +585,7 @@ class KnowledgeCore:
         instance, class, datatype_property, object_property, literal)
         """
         models = self.normalize_models(models)
+        self._ensure_materialised(models)
         logger.info(
             'Lookup for '
             + str(term)
@@ -637,6 +641,7 @@ class KnowledgeCore:
     def _instancesof(self, term, direct=False, models=[]):
 
         models = self.normalize_models(models)
+        self._ensure_materialised(models)
         result = []
 
         if not isinstance(term, Node):
@@ -661,6 +666,7 @@ class KnowledgeCore:
     def _classesof(self, term, direct=False, models=[]):
 
         models = self.normalize_models(models)
+        self._ensure_materialised(models)
         result = []
 
         if not isinstance(term, Node):
@@ -726,6 +732,7 @@ class KnowledgeCore:
         knowledge base.
         """
         models = self.normalize_models(models)
+        self._ensure_materialised(models)
         result = {}
 
         if not isinstance(term, URIRef):
@@ -819,6 +826,7 @@ class KnowledgeCore:
                 'the details() method can only operate on a single model. Got: %s' % models)
 
         model = list(models)[0]
+        self._ensure_materialised(models)
 
         try:
             term = parse_term(raw_term)
@@ -923,6 +931,7 @@ class KnowledgeCore:
     def exist(self, raw_stmts, models=None):
         """Check if all the statements exist -- eg, are materialised -- in all the given models."""
         models = self.normalize_models(models)
+        self._ensure_materialised(models)
 
         logger.info(
             'Checking existence of '
@@ -1097,7 +1106,8 @@ class KnowledgeCore:
             raise KbServerError(
                 'Unknown method in revise: %s' % policy['method'])
 
-        self.onupdate()
+        if self._batch_depth == 0:
+            self.onupdate()
 
     def mark_active_concept(self, term: Node, model: str):
         expiry_date = date_time(time.time() + ACTIVE_CONCEPT_LIFESPAN)
@@ -1225,6 +1235,7 @@ class KnowledgeCore:
             return None
 
         model = list(models)[0]
+        self._ensure_materialised(models)
 
         logger.info('Executing SPARQL query in model: %s\n%s' % (model, query))
 
@@ -1273,6 +1284,7 @@ class KnowledgeCore:
                 return patterns if self.exist(patterns, models) else []
 
         models = self.normalize_models(models)
+        self._ensure_materialised(models)
 
         patterns = [parse_stmt(p) for p in patterns]
 
@@ -1431,15 +1443,55 @@ class KnowledgeCore:
         """
         return [v for v in variables if not v.startswith('?__')]
 
+    class _BatchContext:
+        """Context manager that defers onupdate() until the batch completes."""
+
+        def __init__(self, kb):
+            self.kb = kb
+
+        def __enter__(self):
+            self.kb._batch_depth += 1
+            return self
+
+        def __exit__(self, exc_type, exc_val, exc_tb):
+            self.kb._batch_depth -= 1
+            if self.kb._batch_depth == 0:
+                self.kb.onupdate()
+            return False
+
+    def batch(self):
+        """Return a context manager that defers materialisation and event
+        evaluation until all updates in the batch complete.
+
+        Usage::
+
+            with kb.batch():
+                kb.update(["a rdf:type A"])
+                kb.update(["b rdf:type B"])
+                kb.update(["c rdf:type C"])
+            # materialisation + event evaluation happens once here
+        """
+        return self._BatchContext(self)
+
+    def _ensure_materialised(self, models=None):
+        """Materialise if any model is dirty, then update functional properties.
+
+        Called lazily before any query against the materialised graph.
+        """
+        if models is None:
+            models = self.models.keys()
+        if any(self.models[m].is_dirty for m in models):
+            self.materialise(models)
+            self._functionalproperties = frozenset(
+                self._instancesof('owl:FunctionalProperty', False)
+            )
+
     def onupdate(self):
 
         # need to materialise as soon as possible after the model has been
         # changed so that events are triggered in a timely fashion
-        self.materialise()
+        self._ensure_materialised()
 
-        self._functionalproperties = frozenset(
-            self._instancesof('owl:FunctionalProperty', False)
-        )
 
         to_remove = [
             e_id for e_id, clients in self.eventsubscriptions.items() if len(clients) == 0]
