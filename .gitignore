@@ -1,4 +1,5 @@
 debian/
+.vscode/
 
 *.py[cod]
 
