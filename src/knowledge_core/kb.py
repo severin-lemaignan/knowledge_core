@@ -457,6 +457,10 @@ class KnowledgeCore:
 
         self._functionalproperties = frozenset()
 
+        # perform initial materialisation so that built-in OWL2 RL axioms
+        # (cls-thing, cls-nothing1) are available immediately
+        self.materialise()
+
         self.default_ontologies = []
         if filenames:
             for filename in filenames:

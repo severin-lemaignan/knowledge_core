@@ -15,31 +15,33 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Unit tests for KnowledgeCore RDFS/OWL2 RL reasoning.
+"""
+Unit tests for KnowledgeCore RDFS/OWL2 RL reasoning.
 
 These tests require the 'reasonable' OWL2 RL reasoner. If not available,
 all tests are skipped.
 
 KNOWN LIMITATIONS of the 'reasonable' reasoner:
-The following OWL2 RL inferences are NOT currently supported by 'reasonable'
-and are tested separately (marked with expectedFailure):
-
-- cls-thing / cls-nothing1: built-in axioms
-  (owl:Thing rdf:type owl:Class, owl:Nothing rdf:type owl:Class)
-  are not materialised.
+The following inferences are NOT currently supported by 'reasonable' and are
+tested separately (marked with expectedFailure):
 
 - rdfs11 (TBox subclass transitivity): if A rdfs:subClassOf B and
   B rdfs:subClassOf C, 'reasonable' does NOT infer A rdfs:subClassOf C.
+  This is an RDFS entailment rule, not an OWL2 RL rule. The reasonable
+  README notes RDFS entailment is TODO.
   However, instance-level inference still works: if x rdf:type A, then
-  x rdf:type C IS correctly inferred.
+  x rdf:type C IS correctly inferred (via cax-sco).
 
-- eq-trans (equivalentClass transitivity): if A owl:equivalentClass B and
+- equivalentClass transitivity: if A owl:equivalentClass B and
   B owl:equivalentClass C, 'reasonable' does NOT infer
-  A owl:equivalentClass C. Instance-level inference works though.
+  A owl:equivalentClass C. The eq-trans rule only handles owl:sameAs,
+  not owl:equivalentClass. Instance-level inference works though
+  (via cax-eqc1/cax-eqc2).
 
-- eq-rep-s applied to rdfs:subClassOf via equivalentClass: if
-  A owl:equivalentClass B and C rdfs:subClassOf B, 'reasonable' does NOT
-  infer C rdfs:subClassOf A.
+- equivalentClass -> subClassOf propagation: if A owl:equivalentClass B
+  and C rdfs:subClassOf B, 'reasonable' does NOT infer
+  C rdfs:subClassOf A. This would require scm-eqc rules (Schema
+  Vocabulary) which are not implemented.
 """
 
 from queue import Empty
@@ -49,7 +51,7 @@ from knowledge_core import __version__
 from knowledge_core.kb import KnowledgeCore
 
 try:
-    import reasonable
+    import reasonable  # noqa: F401
     HAS_REASONER = True
 except ImportError:
     HAS_REASONER = False
@@ -66,6 +68,20 @@ class TestRDFSReasoner(unittest.TestCase):
     ##########################################################
     # Tests for SUPPORTED reasoning capabilities
     ##########################################################
+
+    def test_owl2_rl_axioms_on_new_models(self):
+        """cls-thing/cls-nothing1 should also be available on new models."""
+        self.kb.update(['s p o'], ['model1', 'model2'])
+        self.assertTrue(
+            self.kb.exist(
+                ['owl:Thing rdf:type owl:Class'], models=['model1']
+            )
+        )
+        self.assertTrue(
+            self.kb.exist(
+                ['owl:Nothing rdf:type owl:Class'], models=['model2']
+            )
+        )
 
     def test_instance_type_via_subclass(self):
         """rdfs9: if C1 rdfs:subClassOf C2 and x rdf:type C1, infer x rdf:type C2."""
@@ -101,7 +117,7 @@ class TestRDFSReasoner(unittest.TestCase):
         self.assertTrue('myself rdf:type Automaton' in self.kb)
 
     def test_taxonomy_walking_with_reasoning(self):
-        """classesof returns inferred classes from subclass hierarchy."""
+        """Classesof returns inferred classes from subclass hierarchy."""
         self.kb += ['john rdf:type Human']
         self.assertIn('Human', self.kb.classesof('john'))
 
@@ -119,8 +135,7 @@ class TestRDFSReasoner(unittest.TestCase):
         self.assertFalse(self.kb.classesof('john'))
 
     def test_subclass_triggers_inference_on_existing_instances(self):
-        """Adding a subclass relation should trigger type inference on
-        already-existing instances."""
+        """Adding a subclass relation triggers type inference on existing instances."""
         self.kb += ['ragnagna rdf:type Zorro']
         self.assertFalse('ragnagna rdf:type Action' in self.kb)
 
@@ -155,7 +170,7 @@ class TestRDFSReasoner(unittest.TestCase):
         self.assertEqual(msg_type, 'event')
 
     def test_classesof_with_equivalent_classes(self):
-        """classesof should return equivalent classes as well."""
+        """Classesof should return equivalent classes as well."""
         self.kb += [
             'myself rdf:type Robot',
             'Robot owl:equivalentClass Machine',
@@ -166,6 +181,14 @@ class TestRDFSReasoner(unittest.TestCase):
         self.assertIn('Robot', classes)
         self.assertIn('Machine', classes)
         self.assertIn('Automaton', classes)
+
+    def test_owl2_rl_cls_thing(self):
+        """OWL2 RL cls-thing: owl:Thing rdf:type owl:Class is materialised."""
+        self.assertTrue('owl:Thing rdf:type owl:Class' in self.kb)
+
+    def test_owl2_rl_cls_nothing(self):
+        """OWL2 RL cls-nothing1: owl:Nothing rdf:type owl:Class is materialised."""
+        self.assertTrue('owl:Nothing rdf:type owl:Class' in self.kb)
 
     ##########################################################
     # Tests for UNSUPPORTED reasoning capabilities
@@ -178,30 +201,14 @@ class TestRDFSReasoner(unittest.TestCase):
     ##########################################################
 
     @unittest.expectedFailure
-    def test_owl2_rl_cls_thing(self):
-        """OWL2 RL cls-thing: owl:Thing rdf:type owl:Class should be
-        materialised.
-
-        NOT SUPPORTED by 'reasonable'.
-        """
-        self.assertTrue('owl:Thing rdf:type owl:Class' in self.kb)
-
-    @unittest.expectedFailure
-    def test_owl2_rl_cls_nothing(self):
-        """OWL2 RL cls-nothing1: owl:Nothing rdf:type owl:Class should be
-        materialised.
-
-        NOT SUPPORTED by 'reasonable'.
-        """
-        self.assertTrue('owl:Nothing rdf:type owl:Class' in self.kb)
-
-    @unittest.expectedFailure
     def test_tbox_subclass_transitivity(self):
-        """rdfs11: A rdfs:subClassOf B, B rdfs:subClassOf C should infer
-        A rdfs:subClassOf C at the TBox level.
+        """
+        Rdfs11: infer A rdfs:subClassOf C from A subClassOf B subClassOf C.
 
-        NOT SUPPORTED by 'reasonable'. Instance-level inference (x rdf:type A
-        -> x rdf:type C) works correctly, but the TBox-level triple
+        NOT SUPPORTED by 'reasonable'. This is an RDFS entailment rule, not
+        an OWL2 RL rule. The reasonable README notes that RDFS entailment
+        semantics are TODO. Instance-level inference (x rdf:type A -> x
+        rdf:type C) works correctly via cax-sco, but the TBox-level triple
         A rdfs:subClassOf C is not materialised.
         """
         self.kb += [
@@ -214,10 +221,13 @@ class TestRDFSReasoner(unittest.TestCase):
 
     @unittest.expectedFailure
     def test_equivalentclass_transitivity(self):
-        """eq-trans: A owl:equivalentClass B, B owl:equivalentClass C should
-        infer A owl:equivalentClass C.
+        """
+        Infer A owl:equivalentClass C from A equivClass B equivClass C.
 
-        NOT SUPPORTED by 'reasonable'.
+        NOT SUPPORTED by 'reasonable'. The eq-trans rule only handles
+        owl:sameAs transitivity, not owl:equivalentClass. This would require
+        scm-eqc1/scm-eqc2 (Schema Vocabulary rules) to decompose
+        equivalentClass into mutual subClassOf, then rdfs11 for transitivity.
         """
         self.kb += [
             'Robot owl:equivalentClass Machine',
@@ -229,10 +239,12 @@ class TestRDFSReasoner(unittest.TestCase):
 
     @unittest.expectedFailure
     def test_equivalentclass_subclass_propagation(self):
-        """If A owl:equivalentClass B and C rdfs:subClassOf B, then
-        C rdfs:subClassOf A should be inferred.
+        """
+        Infer C rdfs:subClassOf A from A equivClass B and C subClassOf B.
 
-        NOT SUPPORTED by 'reasonable'.
+        NOT SUPPORTED by 'reasonable'. Would require scm-eqc1/scm-eqc2
+        (Schema Vocabulary rules, not implemented) to derive mutual
+        subClassOf from equivalentClass.
         """
         self.kb += [
             'Robot owl:equivalentClass Machine',
