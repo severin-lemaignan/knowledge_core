@@ -42,6 +42,7 @@ def generate_test_description():
     kb_node = launch_ros.actions.Node(
         package='knowledge_core',
         executable='knowledge_core',
+        namespace='kb',
         output='both',
         emulate_tty=True,
         arguments=['--debug', '--no-reasoner'])

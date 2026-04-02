@@ -1053,8 +1053,8 @@ class KnowledgeCore:
                 # final list of statments to remove
                 new_stmts = []
                 for e in res:
-                    new_stmts.append(' '.join([str(e[tok_order[0]]), str(
-                        e[tok_order[1]]), parse_term(e[tok_order[2]]).n3()]))
+                    new_stmts.append(
+                        ' '.join([str(e[t]) for t in tok_order]))
 
                 subgraph = parse_stmts_to_graph(new_stmts)
                 parsed_stmts = '\n\t- '.join(

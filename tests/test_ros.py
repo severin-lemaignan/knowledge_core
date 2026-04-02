@@ -39,6 +39,7 @@ def generate_test_description():
     kb_node = launch_ros.actions.Node(
         package='knowledge_core',
         executable='knowledge_core',
+        namespace='kb',
         output='both',
         emulate_tty=True,
         arguments=['--debug', '--no-reasoner'])
@@ -407,7 +408,7 @@ class TestKB(unittest.TestCase):
         res = self.sparql(
             query='SELECT ?a WHERE { ?a :eats ?b . }')
 
-        self.assertEquals(len(json.loads(res.json)['results']['bindings']), 2)
+        self.assertEqual(len(json.loads(res.json)['results']['bindings']), 2)
 
         # invalid SPARQL! 'eats' has no namespace
         res = self.sparql(

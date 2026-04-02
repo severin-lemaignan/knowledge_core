@@ -25,7 +25,7 @@ def readme():
         with open('README-pypi.rst') as f:
             return f.read()
     except FileNotFoundError:
-        return ""
+        return ''
 
 
 setup(
