@@ -8,14 +8,14 @@ KnowledgeCore
 
 KnowledgeCore is a RDFlib-backed minimalistic knowledge base, initially designed
 for robots (in particular human-robot interaction or multi-robot interaction).
-It features full [ROS](https://www.ros.org) support.
+It features full [ROS 2](https://www.ros.org) support.
 
 It stores triples (like RDF/OWL triples), and provides an [API](doc/api.md)
-accessible via a simple socket protocol or a [ROS wrapper](#ros-usage).
-
-[pykb](https://github.com/severin-lemaignan/pykb) provides an idiomatic Python
-binding over the socket interface, making easy to integrate the knowledge base in your application.
-A similar API wrapper exists for ROS as well (see example below).
+accessible via three interfaces:
+- **directly in Python** by instantiating the `KnowledgeCore` class;
+- over **ROS 2** topics and services (the main supported interface);
+- over a **TCP socket** protocol, compatible with the
+  [pykb](https://github.com/severin-lemaignan/pykb) client library.
 
 It integrates with the [reasonable](https://github.com/gtfierro/reasonable) OWL2
 RL reasoner to provide OWL2 semantics and fast knowledge materialisation.
@@ -51,6 +51,19 @@ will print:
 A robot entered Antonio's kitchen: ari
 ```
 
+You can also use the core `KnowledgeCore` class directly (without ROS):
+
+```python
+from knowledge_core.kb import KnowledgeCore
+kb = KnowledgeCore()
+
+kb += ["ari rdf:type Robot", "ari isIn kitchen"]
+print(kb["* rdf:type Robot"])            # [{'var1': 'ari'}]
+print("ari isIn kitchen" in kb)          # True
+print(kb.classesof("ari"))              # ['Robot']
+kb -= ["ari isIn kitchen"]
+```
+
 Installation
 ------------
 
@@ -70,11 +83,11 @@ For reasoning (optional):
 $ pip install reasonable
 ```
 
-If you want to use the ROS interface, you also need to install the `kb_msgs`
-package, available here: https://github.com/pal-robotics/kb_msgs/
+If you want to use the ROS 2 interface, you also need to install the `kb_msgs`
+package, available here: https://gitlab.iiia.csic.es/socialminds/neurosymbolic-ai/kb_msgs
 
 Finally, you might want to install the [OpenRobots
-Ontology](https://github.com/severin-lemaignan/openrobots-ontology/) as a
+Ontology](https://gitlab.iiia.csic.es/socialminds/neurosymbolic-ai/openrobots-ontology) as a
 sample ontology to play with.
 
 
@@ -83,91 +96,90 @@ sample ontology to play with.
 From `pypi`:
 
 ```
-$ pip install knowledge_core
+$ pip3 install knowledge_core
+```
+
+or with `uv`:
+
+```
+$ uv pip install knowledge_core
 ```
 
 From source:
 
 ```
-$ git clone https://github.com/severin-lemaignan/knowledge_core.git
+$ git clone https://gitlab.iiia.csic.es/socialminds/neurosymbolic-ai/knowledge_core.git
 $ cd knowledge_core
-$ python setup.py install
+$ python3 setup.py install
 $ knowledge_core
 ```
 
-If using ROS, you can also use your regular colcon/ament workflow.
+If using ROS 2, you can also use your regular colcon/ament workflow:
+
+```
+$ cd ~/ros2_ws/src
+$ git clone https://gitlab.iiia.csic.es/socialminds/neurosymbolic-ai/knowledge_core.git
+$ git clone https://gitlab.iiia.csic.es/socialminds/neurosymbolic-ai/kb_msgs.git
+$ cd ~/ros2_ws
+$ colcon build --packages-up-to knowledge_core
+$ source install/setup.bash
+```
 
 
 Documentation
 -------------
 
+See the full [API documentation](doc/api.md) for details on each interface.
+
 ### General usage
 
-**If you are a roboticist, [jump to ROS usage](#ros-usage)**
+You can use `KnowledgeCore` in three ways:
 
-You can use `KnowledgeCore` either as a server, accessible from multiple
-applications (clients), or in *embedded* mode (which does not require to start a
-server process, but is limited to one single client). Note that the embedded
-mode is only available for Python applications.
+1. **Directly in Python** (embedded mode): instantiate `KnowledgeCore` and call
+   methods directly. No server process needed, but limited to one client.
 
-In both case, and if your application is written in Python, it is highly recommended
-to use [pykb](https://github.com/severin-lemaignan/pykb) to interact the
-knowledge base.
+2. **Via ROS 2** (recommended for robotics): start the ROS 2 node, then use the
+   `knowledge_core.api.KB` Pythonic wrapper or interact with topics/services
+   directly.
 
-#### Server mode
+3. **Via the TCP socket server**: start the `knowledge_core` process and connect
+   using [pykb](https://github.com/severin-lemaignan/pykb) or any TCP client
+   implementing the protocol.
 
-
-To start the knowledge base as a server, simply type:
-
-```
-$ knowledge_core
-```
-
-(run `knowledge_core --help` for available options)
-
-Then:
+### Direct Python usage (embedded mode)
 
 ```python
-import kb
+from knowledge_core.kb import KnowledgeCore
 
-with kb.KB() as kb:
-    #...
+kb = KnowledgeCore()
+
+kb += ["sky hasColor blue", "sky rdf:type Object"]
+print(kb["* hasColor *"])       # [{'var1': 'sky', 'var2': 'blue'}]
+print("sky hasColor blue" in kb) # True
+
+kb.clear()
 ```
 
-See usage examples on the [pykb](https://github.com/severin-lemaignan/pykb)
-page, or in the `KnowledgeCore` [unit-tests](testing).
-
-#### Embedded mode
-
-No need to start `KnowledgeCore`. Simply use the following code to start using the
-knowledge base in your code:
-
-```python
-import kb
-
-with kb.KB(embedded=True) as kb:
-    #...
-```
-
-### ROS usage
+### ROS 2 usage
 
 **This version of KnowledgeCore only supports ROS 2.**
 
 **Please first read the general [API introduction](doc/api.md), as this applies
-to the ROS interface as well.**
+to the ROS 2 interface as well.**
 
-To start the ROS node:
+To start the ROS 2 node:
 
 ```
 ros2 launch knowledge_core knowledge_core.launch.py
 ```
 
-**Note that, in general, you want to use the 'Pythonic' wrapper built on top of
-the low-level ROS topics/services API. See example above. This Pythonic
-interface follows the [`pykb`](https://gitlab/interaction/pykb/) API (except in
-a few corner case that are not supported by the ROS interface).**
+**Note that, in general, you want to use the Pythonic wrapper
+(`knowledge_core.api.KB`) built on top of the low-level ROS topics/services API.
+See example above. This Pythonic interface follows the
+[`pykb`](https://github.com/severin-lemaignan/pykb) API (except in a few corner
+cases that are not supported by the ROS 2 interface).**
 
-`knowledge_core` exposes two topics, `/kb/add_facts` and `/kb/remove_facts`, to
+`knowledge_core` exposes two topics, `/kb/add_fact` and `/kb/remove_fact`, to
 add/remove triples to the knowledge base. Both topics expect a simple string
 with 3 tokens separated by spaces (if the object is a literal string, use double
 quotes to escape it).
@@ -175,27 +187,47 @@ quotes to escape it).
 It also exposes the following services:
 
 - `/kb/manage` to manage the knowledge base (including eg clearing all the
-  facts)
-- `/kb/revise` to add/remove facts using a synchronous interface
+  facts, loading ontologies, saving the KB, and status checks)
+- `/kb/revise` to add/remove/update facts using a synchronous interface
 - `/kb/query` to perform simple queries
 - `/kb/about` to return the list of all statements involving a specific concept
-- `/kb/label` to return the of a specific concept (or the concept name if no
-  label available)
+- `/kb/label` to return the label of a specific concept (or the concept name if no
+  label is available)
 - `/kb/details` to return details about one specific concept (for instance,
-  parents classes, instances,...)
+  parent classes, instances,...)
 - `/kb/lookup` to return the list of terms matching the provided string, either
   in their name or in their label
-- `/kb/sparql` to perform complex queries (full SPARQL end-point)
+- `/kb/sparql` to perform complex queries (full SPARQL endpoint)
 - `/kb/events` to subscribe to 'events' by providing a (set of) partially-bound
   triples. Calling the service returns an event *id*. Subscribe then to the
-  `/kb/events/<id>` topic to be notified each time a new instance/class match the
+  `/kb/events/<id>` topic to be notified each time a new instance/class matches the
   provided pattern
+
+### Socket server usage
+
+To start the knowledge base as a server:
+
+```
+$ knowledge_core
+```
+
+(run `knowledge_core --help` for available options)
+
+Then, using [pykb](https://github.com/severin-lemaignan/pykb):
+
+```python
+import kb
+
+with kb.KB() as kb:
+    kb += ["sky hasColor blue"]
+    print(kb["* hasColor *"])
+```
 
 ### Interacting with KnowledgeCore from other languages
 
 - from C++: check [liboro](https://github.com/severin-lemaignan/liboro) (note:
   this library is not actively maintained anymore)
-- from any other language: the communication with the server relies on a simply
+- from any other language: the communication with the server relies on a simple
   socket-based text protocol. Feel free to get in touch if you need help to add
   support for your favourite language!
 
@@ -215,8 +247,8 @@ Features
 
 ### Server-Client or embedded
 
-`KnowledgeCore` can be run as a stand-alone (socket) server, or directly embedded
-in Python applications.
+`KnowledgeCore` can be run as a stand-alone (socket) server, as a ROS 2 node,
+or directly embedded in Python applications.
 
 ### Multi-models
 
@@ -224,9 +256,9 @@ in Python applications.
 contexts/agents requiring separate knowledge models.
 
 New models can be created at any time and each operation (like knowledge
-addition/retractation/query) can operate on a specific subset of models.
+addition/retraction/query) can operate on a specific subset of models.
 
-Each models are also independently classified by the reasoner.
+Each model is independently classified by the reasoner.
 
 ### Event system
 
@@ -251,3 +283,14 @@ they are automatically collected.
 
 `KnowledgeCore` exposes several methods to explore the different ontological models
 of the knowledge base.
+
+Testing
+-------
+
+`KnowledgeCore` has two test suites:
+
+- `tests/test_base.py`: tests the core `KnowledgeCore` class directly (no ROS
+  required). Run with: `python -m pytest tests/test_base.py`
+- `tests/test_ros.py`, `tests/test_ros_events.py`,
+  `tests/test_pythonic_api_ros.py`: test the ROS 2 interface via
+  `launch_testing`. Run with: `colcon test --packages-select knowledge_core`

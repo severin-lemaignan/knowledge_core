@@ -1,182 +1,370 @@
 KnowledgeCore API
 =================
 
-Core API
---------
+KnowledgeCore exposes three interfaces, all backed by the same core engine:
+
+1. **Internal Python API** (`knowledge_core.kb.KnowledgeCore`): direct access to
+   the knowledge base. No server or ROS node needed.
+2. **ROS 2 API** (`knowledge_core.api.KB`): the main supported interface for
+   robotics applications. Wraps the ROS 2 topics and services with a Pythonic
+   API.
+3. **Socket API**: a TCP-based text protocol, compatible with
+   [pykb](https://github.com/severin-lemaignan/pykb).
+
+All three interfaces share the same concepts (statements, patterns, models,
+events) described below.
+
+
+Core concepts
+-------------
 
 ### Statements
 
-`KnowledgeCore` currently only support binary predicates, using the infix syntax to
-represent symbolic statements as triples: `subject predicate object`.
-For instance: `sky0 hasColor blue`
+`KnowledgeCore` stores knowledge as RDF-like triples, using the infix syntax:
+`subject predicate object`.  For instance: `sky0 hasColor blue`
 
-Triples *must* follow the [Turtle
-syntax](https://www.w3.org/TR/turtle/#language-features): 
-statements are represented as a single string, with the subject, predicate and
-object separated by a space character.
+Triples follow the [Turtle
+syntax](https://www.w3.org/TR/turtle/#language-features):
 
-In a nutshell:
+- subjects and predicates must be valid RDF identifiers;
+- objects can be either RDF identifiers or literals. String literals must be
+  surrounded by double quotes (e.g. `"hello"`). Language tags (`"hello"@en`) and
+  datatype annotations (`"10"^^xsd:integer`) are supported.
+- RDF identifiers may include XML namespace prefixes, separated with a colon.
+  For instance: `james rdf:type oro:Human`. The following prefixes are
+  predefined:
 
-- subjects and predicates must by valid RDF identifiers;
-- objects can be either RDF identifiers, or literals. String literals must be
-  surrounded by double quotes.
-- RDF identifiers might include XML namespaces. Prefixes can be used (see below
-  the list of recognised prefixes), separated with a semi colon. For instance:
-  `james rdf:type oro:Human`
-- as the triples are actually parsed with the
-  [N3](https://www.w3.org/TeamSubmission/n3/) grammar (a super-set of Turtle),
-  the namespace/prefix can actually be omitted altogether. In that case, the
-  default prefix of the OpenRobots Ontology (`oro:`) is used.
-- the means that all the terms defined in the OpenRobots ontology (eg `Robot`) can be used
-  without prefix, and all new terms added without a specific prefix will be
-  added to the OpenRobots ontology namespace.
+  | Prefix | Namespace |
+  |--------|-----------|
+  | `oro`  | `http://kb.openrobots.org#` (default) |
+  | `rdf`  | `http://www.w3.org/1999/02/22-rdf-syntax-ns#` |
+  | `rdfs` | `http://www.w3.org/2000/01/rdf-schema#` |
+  | `owl`  | `http://www.w3.org/2002/07/owl#` |
+  | `xsd`  | `http://www.w3.org/2001/XMLSchema#` |
 
-Triples might occasionaly also include *variables* (eg, unbound terms).
-Variables must start with a question mark `?`. For instance: `["?agent sees obj1",
-"?agent rdf:type Human"]`.  Sets of triples that include variables are refered
-to as *patterns* by `KnowledgeCore`, and used as such in methods like `find`.
+- the namespace prefix can be omitted altogether. In that case, the default
+  OpenRobots Ontology prefix (`oro:`) is used. All new terms added without a
+  prefix are added to this namespace.
 
-Instead of such *named* variables, you can also use `*` as an unnamed variable.
-For instance, `kb["* rdf:type Agent"]` would return the list of all agents.
+### Patterns and variables
 
-Note however that if you mix named and unnamed variables, only the *named*
-variables will be returned: `kb["?agent looksAt *"]` would therefore return a
-list of agents looking at 'something'.
+Triples may include *variables* (unbound terms). Variables must start with a
+question mark `?`. For instance: `["?agent sees obj1", "?agent rdf:type
+Human"]`.
 
+Sets of triples that include variables are called *patterns*, and are used in
+methods like `find`, `subscribe`, and the `[]` operator.
+
+Instead of named variables, you can use `*` as an unnamed wildcard. For
+instance, `kb["* rdf:type Agent"]` returns the list of all agents. Unnamed
+wildcards are returned as `var1`, `var2`, etc.
+
+If you mix named and unnamed variables, only the *named* variables are returned:
+`kb["?agent looksAt *"]` returns a list of agents looking at 'something'.
 
 ### Models
 
-Models can be understood as independent knowledge bases, meant for instance to 
-store the (guessed) knowledge of the humans that are interacting with the robot.
+Models are independent knowledge bases, meant for instance to store the
+(estimated) knowledge of different agents interacting with the robot.
 
-Several methods take an optional `models` parameter. If set to `None` or to an
-empty list, the method will update/query statements in the robot's base
-cognitive model. If set to a list containing a single string `all`, all the
-existing models are update/queried. Otherwise, you can pass a list of models you
-want to update/query.
+Several methods take an optional `models` parameter:
+- if `None` or an empty list, the method operates on the default model;
+- if a list of model names (strings), the method operates on those specific
+  models. Non-existing models are created automatically.
+
+Facts added to one model are not visible in other models.
+
+
+Internal Python API
+-------------------
+
+The core `KnowledgeCore` class (`knowledge_core.kb.KnowledgeCore`) provides
+direct access to the knowledge base without any network or ROS layer.
+
+### Quick start
+
+```python
+from knowledge_core.kb import KnowledgeCore
+
+kb = KnowledgeCore()                        # with OWL2 RL reasoner (if available)
+kb = KnowledgeCore(enable_reasoner=False)   # without reasoner
+
+kb += ["ari rdf:type Robot", "ari isIn kitchen"]
+print(kb["* rdf:type Robot"])               # [{'var1': 'ari'}]
+print("ari isIn kitchen" in kb)             # True
+kb -= ["ari isIn kitchen"]
+```
+
+### Operators
+
+The `KnowledgeCore` class supports the following Python operators:
+
+| Operator | Example | Description |
+|----------|---------|-------------|
+| `+=`     | `kb += ["s p o"]` | Add/update statements |
+| `-=`     | `kb -= ["s p o"]` | Remove statements |
+| `[]`     | `kb["?x rdf:type Robot"]` | Query (returns list of dicts) |
+| `in`     | `"ari rdf:type Robot" in kb` | Check existence (returns bool) |
+
+The `[]` operator behaviour depends on the arguments:
+
+- **Single 3-token pattern with variables**: returns a list of dictionaries
+  with bindings. E.g. `kb["* rdf:type Robot"]` returns `[{'var1': 'ari'}]`.
+- **Single 3-token pattern, fully bound**: returns the query results (truthy if
+  the triple exists). E.g. `kb["ari rdf:type Robot"]` returns a non-empty list.
+- **Multiple patterns**: returns matching variable bindings across all patterns.
+  E.g. `kb["?a rdf:type Robot", "?a isIn ?place"]`.
+- **A non-triple string**: performs a `lookup`. E.g. `kb["ari"]`.
+
+An optional **models list** can be passed as the last argument:
+`kb["?x rdf:type Robot", ["model1"]]`.
 
 ### Methods
 
-- `about(term, models=None)`: returns the list of triples where `term` is either
-  subject, predicate or object
-- `add(stmts, models=None, lifespan=0)`: adds statements to the given model(s)
-  with the given lifespan. Alias for `revise` with `policy['method']='add'`
-- `classesof(term, direct=False, models=None)`: returns the list of (direct
-  of direct + indirect) classes of the given term
-- `clear()`: reset the knowledge base, deleting all facts and all models
-- `details(resource, models=None)`: returns a dictionary containing the
-  following details on a given resource:
-  - `name`: resource label, if any, literal value for literals, else resource ID.
-  - `id`: resource ID or `literal` for literals
-  - `type`: one of `['instance', 'class', 'object_property', 'datatype_property', 'undecided']`
-  - `sameAs`: list of equivalent classes or instances, if any
-  - 'attributes':
-    -  for classes, a list of three dictionaries:
-       `{"name": "Parents","id": "superClasses", "values":[ids...]}`
-       `{"name": "Children","id": "subClasses", "values":[ids...]}`
-       `{"name": "Instances","id": "instances", "values":[ids...]}`
-        (only direct super/sub-classes and instances)
-    -  for instances, a list of one dictionary:
-       `{"name": "Classes","id": "classes", "values":[ids...]}`
-       (only direct classes)
+#### Knowledge management
 
-- `exist(stmts, models=None)`
-- `find(vars, patterns, constraints=None, models=None)`: performs a query on
-  one or several models.
+- **`update(stmts, models=None, lifespan=0)`**: add or update one or more
+  statements.  If a statement's predicate is a functional property (i.e. it
+  accepts only one value), the previous value is replaced. `lifespan` is the
+  time in seconds before automatic removal (0 = no expiration).
 
-  `vars`: the list of variables (prefixed with `?`) that you want to
-  select. If None or an empty list, returns all the variables found in
-  the patterns.
+- **`remove(stmts, models=None)`**: retract one or more statements. Supports
+  wildcard patterns (e.g. `remove(["ari ?p ?o"])`) to retract all matching
+  triples, but only with a single pattern at a time. Removing a non-existent
+  statement is a silent no-op.
 
-  `patterns`: a list of triples containing unbound terms (eg, variables).
-  As a convenience, if the patterns do not contain any variable, `find`
-  will return whether the provided list of triples is present in the
-  model(s).
+- **`revise(stmts, policy)`**: the general-purpose method for modifying the
+  knowledge base. `policy` is a dictionary:
+  - `method` (required): `'update'` or `'retract'`
+  - `models` (optional): list of model names
+  - `lifespan` (optional): duration in seconds (float), only for `update`
 
-  `models`: the list of models you want to run the query against. The
-  returned result will be the conjunction of results when running the
-  query on each models separately.
+- **`clear(keep_defaults=False)`**: reset the knowledge base. If
+  `keep_defaults=True`, re-loads the default ontologies after clearing.
 
-  A list of dictionaries is returned with possible combination of values
-  for the different variables. For instance, find(["?agent", "?action"],
-  ["?agent desires ?action", "?action rdf:type Jump"]) would return
-  something like: [{"agent":"james", "action": "jumpHigh"}, {"agent":
-  "laurel", "action":"jumpHigher"}]
+- **`load(filename, models=None)`**: load an OWL/RDF ontology file into the
+  given model(s). Supported formats: RDF/XML, N3, N-Triples, Turtle.
 
-  If you were using anonymous variables (starting with `?__`) in your query
-  (eg generated by `pykb` when using a ` * ` wildcard), they will be
-  renamed `var1`, `var2`, etc.
+- **`save(path, basename='kb', models=None)`**: save the knowledge base to
+  RDF/XML files. One file per model: `path/basename-<model>.rdf`.
 
-- `hello()`: returns the version number of the `KnowledgeCore` server as a string. Can be used
-  to check connection status.
-- `label(self, term, models=[])`: returns the labels attached to a term, as a
-  dictionary `{"default":"label1", "lang_code1": label1, "lang_code2":
-  "label2",...}` where the 'default' key returns either the English version of
-  the label, or the name of the term, if no label is available, and the other
-  keys provide localised version of the label, if available in the knowledge
-  base.
-- `load(filename, models=None)`: loads the content of the specified OWL
-  ontology. Format is inferred from the file content. Currently support RDF/XML,
-  n3, n-triples, turtle.
-- `lookup(resource, models=None)`: search the knowledge base for a term matching
-  a string. The search is performed both on terms' names and on label.
+#### Querying
 
-  Returns the list of found terms, alongside with their type (one of
-  instance, class, datatype_property, object_property, literal)
- - `methods()`: list available methods exposed by the server
-- `remove(stmts, models=None)`: alias for `revise` with
-  `policy['method']='retract'`.
-- `revise(stmts, policy)`: Add/retract/updates one or several statements in the
-  specified model.
-
-  `policy` is a dictionary with the following fields:
-  -  `method` (required): string in [`add`, `safe_add`, `retract`, `update`, `safe_update`, `revision`]
-  -  `models` (optional, default to `None`): list of strings
-  -  `lifespan` (optional, default to `0`): duration before automatic removal of statements, in
-     seconds, float. If set to 0, statements do not expire.
-
-- `sparql(query, model='default')`: performs a raw SPARQL query on a given
-  model.  The SPARQL PREFIX and BASE are automatically added, no need to do it
-  manually (even though you can if you want to use non-standard prefixes).
-
-  Note that you are responsible for writing a syntactically corret SPARQL
-  query. In particualar, all non-literal/non-variable terms must have a
-  namespace (or a prefix).
-  
-  Results is returned as a JSON object that follow the standard [JSON
-  serialization of SPARQL Results](https://www.w3.org/TR/2013/REC-sparql11-results-json-20130321/)
-
-- `subscribe(patterns, one_shot=False, models=None)`: subscribes to a specified
-  event in the ontology.
-
-  Every time the model(s) is(are) updated, the provided `patterns` are evaluated
-  against the set of asserted and inferred triples. If at least one triple is
-  returned, the event is fired.
-
-  The terms bounded to the named variables in the patterns are attached to the
-  fired event.
-
-  For instance:
+- **`find(patterns, variables=None, models=None)`**: query the knowledge base.
+  Returns a list of dictionaries with variable bindings. If `variables` is
+  provided, only those variables are returned.
 
   ```python
-  from kb import KB
+  kb.find(["?person rdf:type Human", "?person likes ?food"])
+  # [{'person': 'alice', 'food': 'pizza'}, {'person': 'bob', 'food': 'pasta'}]
 
-  def on_new_robot_instance(instances):
-      print("New robots: " + ", ".join(instances))
-
-  with KB() as kb:
-      kb.subscribe(["?robot rdf:type Robot"])
-
-      kb += ["myself rdf:type Robot"] # should print "New robots: myself"
-      time.sleep()
+  kb.find(["?person rdf:type Human", "?person likes ?food"], variables=["?food"])
+  # [{'food': 'pizza'}, {'food': 'pasta'}]
   ```
 
-  If `one_shot` is set to true, the event is discarded once it has fired
-  once.
+- **`exist(stmts, models=None)`**: check whether all the given statements are
+  asserted in the knowledge base. If the statements contain variables, runs a
+  query and returns `True` if at least one result matches.
+
+- **`about(term, models=None)`**: return all triples where `term` appears as
+  subject, predicate, or object.
+
+- **`lookup(term, models=None)`**: search for resources matching a string, both
+  by name and by label. Returns a list of `(name, type)` tuples, where type is
+  one of: `instance`, `class`, `object_property`, `datatype_property`,
+  `literal`, `undecided`.
+
+- **`label(term, models=None)`**: return the labels attached to a term, as a
+  dictionary: `{"default": "...", "en": "...", "fr": "...", ...}`. The
+  `default` key returns the English label, or the term name if no label exists.
+
+- **`details(term, model=None)`**: return a rich dictionary with:
+  - `id`: resource identifier
+  - `label`: label dictionary (see `label()`)
+  - `type`: one of `instance`, `class`, `object_property`, `datatype_property`, `undecided`
+  - `attributes`: for classes: parents, children, instances; for instances: classes
+  - `relations`: list of triples involving the term
+
+- **`sparql(query, model=None)`**: execute a raw SPARQL query on a single model.
+  PREFIX and BASE declarations are added automatically. Returns a JSON object
+  following the [SPARQL Results JSON
+  format](https://www.w3.org/TR/2013/REC-sparql11-results-json-20130321/).
+
+  ```python
+  res = kb.sparql("SELECT ?a WHERE { ?a :eats ?b . }")
+  print(res['results']['bindings'])
+  ```
+
+#### Ontology introspection
+
+- **`classesof(term, direct=False, models=None)`**: return the list of classes
+  of the given term. If `direct=True`, only direct classes are returned (not
+  inferred parent classes).
+
+- **`hello()`**: return the name of the knowledge base server.
+
+- **`version()`**: return the version string.
+
+- **`methods()`**: return the list of available API methods.
+
+#### Events
+
+- **`subscribe(patterns, one_shot=False, models=None)`**: subscribe to an event.
+  Every time the knowledge base is updated, `patterns` are evaluated. If they
+  match, the event is fired. Returns an event ID (string).
+
+  If `one_shot=True`, the event is automatically discarded after firing once.
+
+  Subscribing to the same pattern twice returns the same event ID (event
+  deduplication).
+
+  *Note*: the event delivery mechanism depends on the interface (ROS topics,
+  socket messages, or internal queues). See the interface-specific sections
+  below.
 
 
-- `update(stmts, models=None, lifespan=0)`: updates statements in the given model(s)
-  with the given lifespan. Alias for `revise` with `policy['method']='update'`.
-  If the predicate(s) are *not* inferred to be functional (i.e., it accept only
-  one single value), behaves like `add`.
+ROS 2 API
+---------
 
+The ROS 2 interface is the main supported interface for robotics applications.
+
+### Starting the node
+
+```
+ros2 launch knowledge_core knowledge_core.launch.py
+```
+
+Or with command-line arguments:
+
+```
+ros2 run knowledge_core knowledge_core --debug --no-reasoner
+```
+
+### Pythonic wrapper (`knowledge_core.api.KB`)
+
+The recommended way to interact with the ROS 2 interface from Python is via the
+`knowledge_core.api.KB` wrapper:
+
+```python
+from knowledge_core.api import KB
+
+kb = KB()  # creates its own ROS node and executor
+# or:
+kb = KB(my_ros_node)  # reuses an existing node (must use MultiThreadedExecutor)
+
+kb += ["ari rdf:type Robot"]
+print(kb["* rdf:type Robot"])
+
+def on_event(evt):
+    print("Event:", evt)
+
+kb.subscribe(["?robot rdf:type Robot"], on_event)
+```
+
+The `KB` class provides the same operators (`+=`, `-=`, `[]`, `in`) and methods
+(`update`, `remove`, `find`, `about`, `lookup`, `label`, `details`, `sparql`,
+`subscribe`, `clear`, `load`, `revise`) as the internal `KnowledgeCore` class,
+but routes all calls through ROS 2 services.
+
+Event callbacks are delivered via ROS 2 topic subscriptions.
+
+### Low-level ROS 2 topics and services
+
+**Topics** (in the `/kb` namespace):
+
+| Topic | Type | Description |
+|-------|------|-------------|
+| `/kb/add_fact` | `std_msgs/String` | Add a single triple |
+| `/kb/remove_fact` | `std_msgs/String` | Remove a single triple |
+| `/kb/active_concepts` | `kb_msgs/ActiveConcepts` | Currently active concepts |
+| `/kb/events/<id>` | `std_msgs/String` | Event notifications (one topic per event) |
+
+**Services** (in the `/kb` namespace):
+
+| Service | Type | Description |
+|---------|------|-------------|
+| `/kb/manage` | `kb_msgs/Manage` | Clear, load, save, status |
+| `/kb/revise` | `kb_msgs/Revise` | Add/remove/update statements |
+| `/kb/query` | `kb_msgs/Query` | Pattern-based queries |
+| `/kb/about` | `kb_msgs/About` | All triples involving a term |
+| `/kb/label` | `kb_msgs/About` | Label of a term |
+| `/kb/details` | `kb_msgs/About` | Detailed info about a term |
+| `/kb/lookup` | `kb_msgs/Lookup` | Full-text resource search |
+| `/kb/sparql` | `kb_msgs/Sparql` | Raw SPARQL queries |
+| `/kb/events` | `kb_msgs/KbEvent` | Subscribe to events |
+
+The message types are defined in the
+[kb_msgs](https://github.com/pal-robotics/kb_msgs/) package.
+
+
+Socket API
+----------
+
+The socket API is a TCP-based text protocol, primarily used with the
+[pykb](https://github.com/severin-lemaignan/pykb) Python client library.
+
+### Starting the server
+
+```
+$ knowledge_core                    # default port 6969
+$ knowledge_core --port 7000        # custom port
+$ knowledge_core --no-ros           # without ROS support
+$ knowledge_core --no-reasoner      # without OWL2 RL reasoner
+$ knowledge_core --debug            # verbose logging
+$ knowledge_core ontology.owl       # pre-load an ontology
+```
+
+When started, the server listens for TCP connections and also starts the ROS 2
+node (unless `--no-ros` is passed). Both interfaces share the same underlying
+`KnowledgeCore` instance.
+
+### Protocol
+
+Messages are terminated by `#end#`. Each request is a newline-separated message:
+
+```
+method_name
+arg1_as_json
+arg2_as_json
+...
+#end#
+```
+
+Responses are:
+
+```
+ok
+result_as_json
+#end#
+```
+
+or, on error:
+
+```
+error
+kberror
+error message
+#end#
+```
+
+Events are pushed asynchronously:
+
+```
+event
+event_id
+event_content_as_json
+#end#
+```
+
+### Using pykb
+
+```python
+import kb
+
+with kb.KB() as kb:
+    kb += ["ari rdf:type Robot"]
+    print(kb["* rdf:type Robot"])
+```
+
+See the [pykb documentation](https://github.com/severin-lemaignan/pykb) for
+details.
