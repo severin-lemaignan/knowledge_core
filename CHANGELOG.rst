@@ -2,6 +2,145 @@
 Changelog for package knowledge_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* [minor] add .vscode to gitignore
+* linting
+* add batch mode benchmark comparing sequential vs batched updates
+  Shows 2.8x-8.5x speedup with batch() at 100-5000 facts, growing
+  with KB size since materialisation cost is O(n).
+  Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>
+* optimise mark_active_concept and use initNs for SPARQL queries
+  - mark_active_concept: add triple directly to model graph instead of
+  creating a full Graph with all namespace bindings for a single triple
+  - _sparql: use rdflib initNs parameter instead of string-concatenating
+  PREFIX block onto every query (resolves TODO comments)
+  - check_expired_stmts: same initNs optimization, pre-compute query string
+  Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>
+* add lazy materialisation and batch() context manager
+  - Add _ensure_materialised() which materialises only if models are
+  dirty, called lazily before any query (find, exist, about, sparql,
+  lookup, label, details, classesof, instancesof).
+  - Replace direct materialise() call in onupdate() with
+  _ensure_materialised() to avoid redundant work.
+  - Add batch() context manager that defers onupdate() (materialisation
+  + event evaluation) until the batch completes. Multiple sequential
+  updates inside a batch trigger only one materialisation.
+  This is the highest-impact optimization: with N sequential updates
+  in a batch, materialisation drops from N times to 1 time.
+  Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>
+* enable LRU-bounded memoization on N3 parsing functions
+  Upgrade helpers.memoize to LRU-bounded cache (maxsize=4096) and
+  add memoize_list_args variant for list-accepting functions. Enable
+  caching on parse_stmt, parse_stmts_to_graph, parse_stmts, and
+  parse_term -- previously commented out.
+  These functions create a new rdflib Graph and parse N3 on every call,
+  dominating the cost of update/find/exist operations (~250us each).
+  With memoization, repeated patterns (e.g. event re-evaluation) hit
+  the cache instead.
+  Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>
+* add performance benchmark harness with pytest-benchmark
+  Covers parsing, revision, queries, materialisation, events, and
+  full pipeline benchmarks parameterised by KB size (100-10K facts),
+  reasoner on/off, and event count. Includes synthetic data generators
+  and initial baseline results.
+  Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>
+* bring back the reasoner unit tests
+* port test_reasoner.py to test KnowledgeCore directly
+  Port the pre-ROS2 reasoner test suite to use KnowledgeCore directly.
+  Tests require the 'reasonable' OWL2 RL reasoner; skipped if unavailable.
+  Supported inferences (8 passing tests):
+  - rdfs9: instance type via rdfs:subClassOf (single and chained)
+  - owl:equivalentClass instance type inference
+  - classesof with inferred classes and direct=True filtering
+  - subclass addition triggers inference on existing instances
+  - complex events fired by reasoning-inferred triples
+  Known limitations of 'reasonable' (5 expectedFailure tests):
+  - cls-thing/cls-nothing1: built-in OWL2 RL axioms not materialised
+  - rdfs11: TBox-level subclass transitivity not materialised
+  (A rdfs:subClassOf B, B rdfs:subClassOf C =/=> A rdfs:subClassOf C)
+  Note: instance-level inference (x rdf:type A => x rdf:type C) works.
+  - eq-trans: equivalentClass transitivity not materialised
+  - equivalentClass -> subClassOf propagation not materialised
+  Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>
+* update documentation to match current API
+  README.md:
+  - document all three interfaces (direct Python, ROS 2, socket)
+  - add direct Python usage example with KnowledgeCore operators
+  - update ROS 2 section (topics use correct names, add /kb/manage details)
+  - add Testing section describing the test suites
+  - minor fixes (ROS -> ROS 2, typos)
+  doc/api.md:
+  - restructure into three clear sections: Internal Python API, ROS 2 API,
+  Socket API
+  - add Core Concepts section (statements, patterns/variables, models)
+  - document all KnowledgeCore operators (+=, -=, [], in) with examples
+  - document all methods: update, remove, revise, clear, load, save, find,
+  exist, about, lookup, label, details, sparql, classesof, subscribe
+  - add ROS 2 topics and services reference table
+  - document the socket protocol format and pykb usage
+  - add predefined namespace prefix table
+  Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>
+* extend test_base.py with additional coverage
+  New tests covering previously untested KnowledgeCore functionality:
+  - sparql(): raw SPARQL queries including empty results and invalid syntax
+  - label(): labels with language tags (@fr, @es) and default fallback
+  - details(): resource details for instances and classes
+  - wildcard retract: delete with ?var patterns (the bug we just fixed)
+  - multi-statement wildcard retract error: verify KbServerError is raised
+  - one-shot events: subscribe with one_shot=True fires only once
+  - event deduplication: same pattern returns same event id
+  - model isolation: facts in modelA not visible in modelB
+  - find() with explicit variables parameter to restrict returned columns
+  - retract of non-existent statements: silent no-op
+  - exist() with explicit models parameter
+  - clear(keep_defaults=True)
+  Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>
+* port test_base.py to test KnowledgeCore directly (non-ROS)
+  Port the pre-ROS2 test suite to test KnowledgeCore directly without
+  going through ROS services. This provides unit test coverage of the
+  core KB logic independently from the ROS layer.
+  Key adaptations from the old pykb-based test:
+  - import kb -> knowledge_core.kb.KnowledgeCore
+  - uses KnowledgeCore operators (+=, -=, [], in) and methods directly
+  - events tested via internal requestresults queue
+  - lookup returns tuples (not lists) in current implementation
+  - memory/lifespan test uses longer delays for timestamp precision
+  Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>
+* add +=, -=, [], in operators to KnowledgeCore
+  Add Pythonic operator support directly on the KnowledgeCore class:
+  - __iadd_\_ (+=): add/update statements
+  - __isub_\_ (-=): remove statements
+  - __getitem_\_ ([]): query with pattern matching and wildcard support
+  - __contains_\_ (in): check existence of concepts or statements
+  Also adds _replacestar() helper to convert '*' wildcards to anonymous
+  variables in query patterns.
+  Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>
+* fix unit tests: namespace, wildcard retract, and linting
+  - test_ros.py, test_ros_events.py: add namespace='kb' to launched node.
+  Services use relative names ('manage', 'revise', etc.) so without the
+  namespace, they were at /manage instead of /kb/manage, causing
+  wait_for_service to always time out.
+  - kb.py: fix wildcard retract hanging the ROS service. parse_term().n3()
+  converted shortened names (eg 'Robot') to full URIs which then got
+  double-escaped by turtle_escape() in parse_stmts_to_graph(), producing
+  mangled URIs. shorten_graph() then raised ValueError (uncaught by the
+  service handler), so no response was ever sent and the client hung
+  forever. Fix: use str() directly since find() already returns properly
+  shortened names.
+  - test_ros.py: assertEquals -> assertEqual (deprecated in Python 3.12)
+  - setup.py: fix flake8 Q000 (double quotes -> single quotes)
+  - Rename _test_ros.py -> test_ros.py, _test_ros_events.py ->
+  test_ros_events.py so pytest discovers and runs them.
+  Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>
+* ignore missing README-pypi.rst -- the CI/CD pipeline does not see this file
+* fix escaping of triple-quoted literal + linting
+* fix the creation of the 'label' service:
+* re-enable test_pythonic_api_ros.py, fixing async stale issues
+* fix linter issues
+* update maintainer email
+* Contributors: Séverin Lemaignan
+
 3.11.0 (2026-04-01)
 -------------------
 * port from asynchat to asyncio
