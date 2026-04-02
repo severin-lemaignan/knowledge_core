@@ -16,7 +16,8 @@ import functools
 
 
 def memoize(maxsize=4096):
-    """LRU-bounded cache for functions with hashable arguments.
+    """
+    LRU-bounded cache for functions with hashable arguments.
 
     Usage::
 
@@ -78,7 +79,6 @@ def memoize_list_args(maxsize=4096):
 
     def decorator(fn):
         inner = memoize(maxsize=maxsize)(fn)
-        original_fn = fn
 
         @functools.wraps(fn)
         def wrapper(stmts, *args, **kwargs):

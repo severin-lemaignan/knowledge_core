@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Benchmarks for fact revision (add/update/remove).
+"""
+Benchmarks for fact revision (add/update/remove).
 
 Parameterised by KB size to show how performance scales.
 """
@@ -36,7 +37,7 @@ class TestBenchUpdate:
 
         def add_one():
             i = next(counter)
-            kb_populated.update([f"newEntity{i} hasNewProp newObj{i}"])
+            kb_populated.update([f'newEntity{i} hasNewProp newObj{i}'])
 
         benchmark(add_one)
 
@@ -45,7 +46,10 @@ class TestBenchUpdate:
 
         def add_batch():
             base = next(counter) * 10
-            stmts = [f"batchEnt{base + j} hasBatchProp batchObj{base + j}" for j in range(10)]
+            stmts = [
+                f'batchEnt{base + j} hasBatchProp batchObj{base + j}'
+                for j in range(10)
+            ]
             kb_populated.update(stmts)
 
         benchmark(add_batch)
@@ -55,7 +59,10 @@ class TestBenchUpdate:
 
         def add_batch():
             base = next(counter) * 100
-            stmts = [f"bigBatchEnt{base + j} hasProp bigBatchObj{base + j}" for j in range(100)]
+            stmts = [
+                f'bigBatchEnt{base + j} hasProp bigBatchObj{base + j}'
+                for j in range(100)
+            ]
             kb_populated.update(stmts)
 
         benchmark(add_batch)
@@ -67,7 +74,7 @@ class TestBenchUpdate:
 
 
 class TestBenchUpdateWithReasoner:
-    """Same as above but with reasoner enabled (uses kb_populated_reasoner)."""
+    """Same as above but with reasoner enabled."""
 
     def _make_counter(self):
         return itertools.count()
@@ -77,7 +84,9 @@ class TestBenchUpdateWithReasoner:
 
         def add_one():
             i = next(counter)
-            kb_populated_reasoner.update([f"rNewEntity{i} hasNewProp rNewObj{i}"])
+            kb_populated_reasoner.update(
+                [f'rNewEntity{i} hasNewProp rNewObj{i}']
+            )
 
         benchmark(add_one)
 
@@ -86,7 +95,10 @@ class TestBenchUpdateWithReasoner:
 
         def add_batch():
             base = next(counter) * 10
-            stmts = [f"rBatchEnt{base + j} hasProp rBatchObj{base + j}" for j in range(10)]
+            stmts = [
+                f'rBatchEnt{base + j} hasProp rBatchObj{base + j}'
+                for j in range(10)
+            ]
             kb_populated_reasoner.update(stmts)
 
         benchmark(add_batch)
@@ -102,24 +114,24 @@ class TestBenchRemove:
 
     def test_single_fact(self, benchmark, kb_populated):
         # Pre-add facts to remove (one per benchmark round)
-        facts = [f"rmEntity{i} hasRmProp rmObj{i}" for i in range(1000)]
+        facts = [f'rmEntity{i} hasRmProp rmObj{i}' for i in range(1000)]
         kb_populated.update(facts)
         counter = itertools.count()
 
         def remove_one():
             i = next(counter) % 1000
-            kb_populated.remove([f"rmEntity{i} hasRmProp rmObj{i}"])
+            kb_populated.remove([f'rmEntity{i} hasRmProp rmObj{i}'])
 
         benchmark(remove_one)
 
     def test_wildcard_remove(self, benchmark, kb_populated):
         # Pre-add facts with a common predicate
-        facts = [f"wcEntity{i} hasWcProp wcObj{i}" for i in range(500)]
+        facts = [f'wcEntity{i} hasWcProp wcObj{i}' for i in range(500)]
         kb_populated.update(facts)
         counter = itertools.count()
 
         def remove_wildcard():
             i = next(counter) % 500
-            kb_populated.remove([f"wcEntity{i} ?p ?o"])
+            kb_populated.remove([f'wcEntity{i} ?p ?o'])
 
         benchmark(remove_wildcard)

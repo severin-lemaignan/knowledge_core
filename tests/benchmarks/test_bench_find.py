@@ -12,12 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Benchmarks for fact retrieval (find/exist/sparql).
+"""
+Benchmarks for fact retrieval (find/exist/sparql).
 
 Parameterised by KB size to show scaling behaviour.
 """
-
-import pytest
 
 
 # ---------------------------------------------------------------------------
@@ -31,8 +30,8 @@ class TestBenchFind:
         """Query matching a single specific class (few results)."""
         result = benchmark(
             kb_typed.find,
-            ["?x rdf:type BenchClass0"],
-            ["?x"],
+            ['?x rdf:type BenchClass0'],
+            ['?x'],
         )
         assert len(result) > 0
 
@@ -40,8 +39,8 @@ class TestBenchFind:
         """Query with a broad wildcard predicate."""
         result = benchmark(
             kb_typed.find,
-            ["?x hasName ?name"],
-            ["?x", "?name"],
+            ['?x hasName ?name'],
+            ['?x', '?name'],
         )
         assert len(result) > 0
 
@@ -49,8 +48,8 @@ class TestBenchFind:
         """Two-pattern join: type + property."""
         result = benchmark(
             kb_typed.find,
-            ["?x rdf:type BenchClass0", "?x hasName ?name"],
-            ["?x", "?name"],
+            ['?x rdf:type BenchClass0', '?x hasName ?name'],
+            ['?x', '?name'],
         )
         assert len(result) > 0
 
@@ -59,11 +58,11 @@ class TestBenchFind:
         result = benchmark(
             kb_typed.find,
             [
-                "?x rdf:type BenchClass0",
-                "?x hasName ?name",
-                "?x hasIndex ?idx",
+                '?x rdf:type BenchClass0',
+                '?x hasName ?name',
+                '?x hasIndex ?idx',
             ],
-            ["?x", "?name", "?idx"],
+            ['?x', '?name', '?idx'],
         )
         assert len(result) > 0
 
@@ -71,8 +70,8 @@ class TestBenchFind:
         """Query that matches nothing."""
         result = benchmark(
             kb_typed.find,
-            ["?x rdf:type NonExistentClass"],
-            ["?x"],
+            ['?x rdf:type NonExistentClass'],
+            ['?x'],
         )
         assert len(result) == 0
 
@@ -86,12 +85,16 @@ class TestBenchExist:
 
     def test_exist_true(self, benchmark, kb_typed):
         """Check existence of a known fact."""
-        result = benchmark(kb_typed.exist, ["benchInst0 rdf:type BenchClass0"])
+        result = benchmark(
+            kb_typed.exist, ['benchInst0 rdf:type BenchClass0']
+        )
         assert result is True
 
     def test_exist_false(self, benchmark, kb_typed):
         """Check existence of a non-existent fact."""
-        result = benchmark(kb_typed.exist, ["nonExistent rdf:type BenchClass0"])
+        result = benchmark(
+            kb_typed.exist, ['nonExistent rdf:type BenchClass0']
+        )
         assert result is False
 
 
@@ -106,7 +109,7 @@ class TestBenchSparql:
         """Direct SPARQL SELECT query."""
         result = benchmark(
             kb_typed.sparql,
-            "SELECT ?x WHERE { ?x rdf:type :BenchClass0 }",
+            'SELECT ?x WHERE { ?x rdf:type :BenchClass0 }',
         )
         assert len(result) > 0
 
@@ -114,6 +117,6 @@ class TestBenchSparql:
         """SPARQL COUNT query."""
         result = benchmark(
             kb_typed.sparql,
-            "SELECT (COUNT(?x) AS ?count) WHERE { ?x ?p ?o }",
+            'SELECT (COUNT(?x) AS ?count) WHERE { ?x ?p ?o }',
         )
         assert len(result) > 0

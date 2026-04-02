@@ -12,15 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Benchmarks isolating N3 parsing overhead.
+"""
+Benchmarks isolating N3 parsing overhead.
 
-These measure the cost of parse_stmt(), parse_stmts_to_graph(), and
+Measures the cost of parse_stmt(), parse_stmts_to_graph(), and
 parse_term() independently from any KB operations.
 """
 
-import pytest
-
 from knowledge_core.kb import parse_stmt, parse_stmts_to_graph, parse_term
+import pytest
 
 
 # ---------------------------------------------------------------------------
@@ -31,7 +31,7 @@ from knowledge_core.kb import parse_stmt, parse_stmts_to_graph, parse_term
 class TestBenchParseStmt:
 
     def test_simple_triple(self, benchmark):
-        result = benchmark(parse_stmt, "alice rdf:type Human")
+        result = benchmark(parse_stmt, 'alice rdf:type Human')
         assert len(result) == 3
 
     def test_with_literal(self, benchmark):
@@ -43,13 +43,14 @@ class TestBenchParseStmt:
         assert len(result) == 3
 
     def test_with_uri(self, benchmark):
-        result = benchmark(parse_stmt, "alice owl:sameAs bob")
+        result = benchmark(parse_stmt, 'alice owl:sameAs bob')
         assert len(result) == 3
 
     def test_long_names(self, benchmark):
         result = benchmark(
             parse_stmt,
-            "veryLongEntityNameForBenchmark hasVeryLongProperty anotherLongObjectName",
+            'veryLongEntityNameForBenchmark'
+            ' hasVeryLongProperty anotherLongObjectName',
         )
         assert len(result) == 3
 
@@ -64,9 +65,11 @@ BATCH_SIZES = [1, 5, 10, 50]
 
 class TestBenchParseStmtsToGraph:
 
-    @pytest.mark.parametrize("n", BATCH_SIZES, ids=[f"batch_{n}" for n in BATCH_SIZES])
+    @pytest.mark.parametrize(
+        'n', BATCH_SIZES, ids=[f'batch_{n}' for n in BATCH_SIZES]
+    )
     def test_batch(self, benchmark, n):
-        stmts = [f"entity{i} hasProp obj{i}" for i in range(n)]
+        stmts = [f'entity{i} hasProp obj{i}' for i in range(n)]
         g = benchmark(parse_stmts_to_graph, stmts)
         assert len(list(g)) == n
 
@@ -79,11 +82,11 @@ class TestBenchParseStmtsToGraph:
 class TestBenchParseTerm:
 
     def test_simple_name(self, benchmark):
-        result = benchmark(parse_term, "alice")
+        result = benchmark(parse_term, 'alice')
         assert result is not None
 
     def test_prefixed_name(self, benchmark):
-        result = benchmark(parse_term, "rdf:type")
+        result = benchmark(parse_term, 'rdf:type')
         assert result is not None
 
     def test_string_literal(self, benchmark):
