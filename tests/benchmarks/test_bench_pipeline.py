@@ -106,3 +106,34 @@ class TestBenchPipelineQueryAfterUpdate:
 
         result = benchmark(update_and_query)
         assert len(result) > 0
+
+
+class TestBenchBatchMode:
+    """Benchmark the batch() context manager vs sequential updates."""
+
+    @pytest.mark.parametrize("n", PIPELINE_SIZES, ids=[f"{n}" for n in PIPELINE_SIZES])
+    def test_10_updates_sequential(self, benchmark, n):
+        """10 sequential update() calls (no batch)."""
+        kb = _make_pipeline_kb(n, enable_reasoner=True)
+        counter = itertools.count()
+
+        def sequential():
+            base = next(counter) * 10
+            for j in range(10):
+                kb.update([f"seqEnt{base + j} rdf:type BenchClass0"])
+
+        benchmark(sequential)
+
+    @pytest.mark.parametrize("n", PIPELINE_SIZES, ids=[f"{n}" for n in PIPELINE_SIZES])
+    def test_10_updates_batched(self, benchmark, n):
+        """10 update() calls inside a batch() context."""
+        kb = _make_pipeline_kb(n, enable_reasoner=True)
+        counter = itertools.count()
+
+        def batched():
+            base = next(counter) * 10
+            with kb.batch():
+                for j in range(10):
+                    kb.update([f"batEnt{base + j} rdf:type BenchClass0"])
+
+        benchmark(batched)
