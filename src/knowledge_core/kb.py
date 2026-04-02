@@ -27,6 +27,7 @@ import traceback
 from knowledge_core import __version__
 
 from .exceptions import KbServerError
+from .helpers import memoize, memoize_list_args
 
 logger = logging.getLogger('KnowledgeCore.' + __name__)
 
@@ -140,7 +141,7 @@ def compat(fn):
     return fn
 
 
-# @memoize
+@memoize_list_args()
 def parse_stmts_to_graph(stmts):
 
     data = N3_PROLOGUE
@@ -160,7 +161,7 @@ def parse_stmts_to_graph(stmts):
         raise KbServerError('invalid syntax for statements %s' % stmts)
 
 
-# @memoize
+@memoize_list_args()
 def parse_stmts(stmts):
 
     return list(parse_stmts_to_graph(stmts))
@@ -196,7 +197,7 @@ def turtle_escape(string):
     return string
 
 
-# @memoize
+@memoize()
 def parse_stmt(stmt):
 
     logger.warning('Parsing statement: %s' % stmt)
@@ -218,7 +219,7 @@ def parse_stmt(stmt):
             f'invalid syntax for statement <{stmt}>. Original error: {e}')
 
 
-# @memoize
+@memoize()
 def parse_term(term):
 
     if type(term) in [bool, int, float]:
