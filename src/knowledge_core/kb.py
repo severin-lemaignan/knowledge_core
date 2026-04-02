@@ -18,7 +18,9 @@ import hashlib
 import logging
 import pathlib
 from queue import Empty, Queue
+import random
 import re
+import shlex
 import time
 import traceback
 
@@ -287,6 +289,24 @@ def shorten_graph(graph, double_quote_for_str=False):
     (eg, using prefixes when possible).
     """
     return [shorten(graph, s, double_quote_for_str) for s in graph.triples([None, None, None])]
+
+
+def _replacestar(toks):
+    """Replace '*' wildcards with anonymous variables."""
+    res = []
+    for tok in toks:
+        if tok == '*':
+            res.append(
+                '?__'
+                + ''.join(
+                    random.sample(
+                        'abcdefghijklmopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', 5
+                    )
+                )
+            )
+        else:
+            res.append(tok)
+    return tuple(res)
 
 
 def get_variables(stmt):
@@ -1107,6 +1127,57 @@ class KnowledgeCore:
         return self.revise(
             stmts, {'method': 'update', 'models': models, 'lifespan': lifespan}
         )
+
+    def __iadd__(self, stmts):
+        if not isinstance(stmts, list):
+            stmts = [stmts]
+        self.update(stmts)
+        return self
+
+    def __isub__(self, stmts):
+        if not isinstance(stmts, list):
+            stmts = [stmts]
+        self.remove(stmts)
+        return self
+
+    def __contains__(self, pattern):
+        toks = shlex.split(pattern)
+        if len(toks) == 3:
+            pattern = _replacestar(toks)
+            return self.exist(['%s %s %s' % pattern])
+        else:
+            return True if self.lookup(pattern) else False
+
+    def __getitem__(self, *args):
+        args = args[0]
+
+        models = []
+        if len(args) > 1 and isinstance(args[-1], list):
+            models = args[-1]
+            args = args[:-1]
+
+        def get_vars(s):
+            return [v for v in s if v.startswith('?')]
+
+        if isinstance(args, str) or len(args) == 1:
+            pattern = args if isinstance(args, str) else args[0]
+            toks = shlex.split(pattern)
+            if len(toks) == 3:
+                pattern = _replacestar(toks)
+                variables = get_vars(pattern)
+                return self.find(['%s %s %s' % pattern], variables, models)
+            else:
+                lookup = self.lookup(pattern, models)
+                return [concept[0] for concept in lookup]
+
+        else:
+            patterns = [_replacestar(shlex.split(p)) for p in args]
+            allvars = set()
+            for p in patterns:
+                allvars |= set(get_vars(p))
+            return self.find(
+                ['%s %s %s' % p for p in patterns], list(allvars), models
+            )
 
     @api
     def sparql(self, query, model=None):
